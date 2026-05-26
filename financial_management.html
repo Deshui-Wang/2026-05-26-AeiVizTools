@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务管理流程与资金链动力学 - AI可视化教学生成器</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Element Plus -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+    
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Font Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-gold: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #D97706 100%);
+            --bg-gradient: linear-gradient(180deg, #050502 0%, #161204 60%, #050502 100%);
+            --glass-bg: rgba(28, 23, 10, 0.7);
+            --glass-border: rgba(245, 158, 11, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(28, 23, 10, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(251, 191, 36, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 奢华金色科技网格 */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(245, 158, 11, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glow-gold {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+        }
+        .glow-text-gold {
+            text-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+        }
+
+        /* Element Plus 覆盖 */
+        .el-slider {
+            --el-slider-main-bg-color: #F59E0B;
+            --el-slider-runway-bg-color: rgba(255, 255, 255, 0.06);
+            --el-slider-stop-bg-color: rgba(255, 255, 255, 0.12);
+        }
+        .el-slider__button {
+            border: 2px solid #FBBF24 !important;
+            background-color: #0F0A02 !important;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+<div id="app" class="flex flex-col h-full">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-amber-500/30 bg-slate-950/90 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-amber-500 to-emerald-500 flex items-center justify-center font-bold text-slate-950 glow-gold">📊</div>
+            <div>
+                <h1 class="text-base font-extrabold bg-gradient-to-r from-amber-400 via-yellow-300 to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+                    财务流程与资金链动力学 <span class="text-xs font-normal text-amber-400/80 normal-case ml-1">Corporate Finance & Capital Flow Dynamics</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <el-button size="small" type="warning" plain @click="resetSimulation">重置资金链</el-button>
+            <el-button size="small" type="success" plain @click="injectCapitalSession">手动注入运营资本</el-button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-amber-500/20 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-amber-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2" v-for="(goal, idx) in goals" :key="idx">
+                        <input type="checkbox" :id="'goal-'+idx" class="accent-amber w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" v-model="goal.checked">
+                        <label :for="'goal-'+idx" class="leading-relaxed cursor-pointer hover:text-amber-300 transition-colors">{{ goal.text }}</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 财务管理核心公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-amber-400 rounded-sm"></span> 经典财务与资本等式
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-amber-950/60 text-center flex flex-col gap-2">
+                    <div id="latex-balance-eq" class="text-[12px] text-amber-300 font-medium"></div>
+                    <div class="border-t border-amber-950/80 pt-2 mt-1 flex flex-col gap-1.5 text-[10px] text-left text-slate-400">
+                        <div id="latex-npv-formula"></div>
+                        <div id="latex-financial-leverage"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 原理生动解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-amber-400 rounded-sm"></span> 什么是企业生命线“资金链”？
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">🌊 资金的流体属性：资产的循环</span>
+                        <p class="mt-1 text-slate-400">财务管理本质上是管理“资产的流动性”。预算就像水库，项目支出是分流管道。如果风控网闸（Gate）过松，超支损耗会引发“现金流干涸”；而过紧则导致业务“失血坏死”。</p>
+                    </div>
+                    <div class="border-t border-amber-950/40 pt-2">
+                        <span class="text-emerald-300 font-semibold">⚖️ 杠杆是一把双刃剑：运营放大镜</span>
+                        <p class="mt-1 text-slate-400">运营杠杆（Financial Leverage）通过债务放大企业资产。当杠杆率变高时，同样的预算收益会大幅翻倍（加速利润水桶注入），但若遭遇市场下行风险，也会以数倍速度抽取储备资金，最终引发资金链断裂。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-600">
+                    <span>学科领域：财经商贸 & 企业管理</span>
+                    <span>AI-Viz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央主交互区域 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 资金管道 SVG 拓扑图 -->
+            <div id="canvas-container" class="absolute inset-0 z-0 cyber-grid">
+                <svg id="svg-topology" class="w-full h-full text-slate-600"></svg>
+            </div>
+
+            <!-- 数据状态 HUD (左上角) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-amber-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">资金链大盘状态 HUD</h4>
+                    
+                    <div class="bg-slate-950/70 p-2.5 rounded border border-amber-950/60 text-xs flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>当前运营利润:</span>
+                            <span class="font-bold font-mono" :class="profitClass">${{ currentProfit.toFixed(0) }} 万</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>系统储备现金:</span>
+                            <span class="font-bold text-amber-400 font-mono">${{ currentCash.toFixed(0) }} 万</span>
+                        </div>
+                        <div class="border-t border-amber-950/80 my-0.5"></div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>风控审批拦截率:</span>
+                            <span class="font-bold text-emerald-400 font-mono">{{ calculatedBlockRate }} %</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>本期财务健康评分:</span>
+                            <span class="font-bold font-mono" :class="healthClass">{{ healthScore }} / 100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 动态分析仪表盘 (右上角) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <!-- 动态 SVG 图表渲染 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-amber-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-amber-400 flex items-center justify-between">
+                        <span>📈 企业现金流与利润趋势 (多期)</span>
+                        <span class="text-[10px] text-slate-500">动态更新</span>
+                    </h4>
+                    <!-- 动态折线图 -->
+                    <div class="h-[100px] w-full flex items-end justify-between bg-slate-950/80 p-2 rounded-lg border border-slate-900">
+                        <svg class="w-full h-full">
+                            <!-- 折线路径 -->
+                            <path :d="cashLinePath" fill="none" stroke="#F59E0B" stroke-width="2" />
+                            <path :d="profitLinePath" fill="none" stroke="#10B981" stroke-width="2" />
+                            <!-- 数据小圆点 -->
+                            <circle v-for="(pt, idx) in chartPoints" :key="'cash-'+idx" :cx="pt.x" :cy="pt.cy" r="3" fill="#F59E0B" />
+                            <circle v-for="(pt, idx) in chartPoints" :key="'prof-'+idx" :cx="pt.x" :cy="pt.py" r="3" fill="#10B981" />
+                            <!-- 底部年份文字 -->
+                            <text v-for="(pt, idx) in chartPoints" :key="'txt-'+idx" :x="pt.x" y="96" fill="#64748B" font-size="8" text-anchor="middle">
+                                Q{{ idx + 1 }}
+                            </text>
+                        </svg>
+                    </div>
+                    <div class="flex justify-around text-[10px] text-slate-400">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 bg-amber-500 inline-block rounded-sm"></span> 储备现金</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-1.5 bg-emerald-500 inline-block rounded-sm"></span> 累积利润</span>
+                    </div>
+                </div>
+
+                <!-- 终端明细日志 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-emerald-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-emerald-400 flex items-center justify-between">
+                        <span>💻 财务明细审计与资金核算日志</span>
+                        <span class="text-[10px] text-slate-500">流式账本</span>
+                    </h4>
+                    <div id="terminal-log" class="h-[100px] bg-slate-950/90 rounded-lg p-2 overflow-y-auto border border-amber-950/40 font-mono text-[10px] leading-relaxed text-emerald-400 flex flex-col gap-1">
+                        <div>&gt;_ System: Financial Accounting Ledger Initialized.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-amber-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button @click="togglePlay" class="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 flex items-center justify-center glow-gold hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg v-if="!isPlaying" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon -->
+                        <svg v-else class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button @click="stepForward" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步月度核算">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">运营预算引擎</span>
+                        <span class="text-amber-400 font-medium" v-if="isPlaying">预算循环执行中</span>
+                        <span class="text-slate-400 font-medium" v-else>已暂停</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 1 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-amber-400 font-semibold">🧪 研发预算分配比例 (R&D)</span>
+                            <span class="font-mono text-slate-300">{{ budgetRD }} %</span>
+                        </div>
+                        <el-slider v-model="budgetRD" :min="10" :max="80" :step="5" @change="onParamChange"></el-slider>
+                    </div>
+
+                    <!-- 参数 2 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-yellow-400 font-semibold">🛡️ 风控准入审批阈值 (Gate)</span>
+                            <span class="font-mono text-slate-300">{{ gateThreshold }} %</span>
+                        </div>
+                        <el-slider v-model="gateThreshold" :min="10" :max="90" :step="5" @change="onParamChange"></el-slider>
+                    </div>
+
+                    <!-- 参数 3 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-emerald-400 font-semibold">🚀 财务杠杆率 (Financial Leverage)</span>
+                            <span class="font-mono text-slate-300">{{ leverage }} x</span>
+                        </div>
+                        <el-slider v-model="leverage" :min="1.0" :max="5.0" :step="0.5" @change="onParamChange"></el-slider>
+                    </div>
+                </div>
+
+                <!-- 运行倍速 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">运营频率</span>
+                    <select v-model="simSpeed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1 outline-none cursor-pointer hover:border-amber-500 transition-colors">
+                        <option :value="0.5">0.5x 审慎</option>
+                        <option :value="1.0">1.0x 标准</option>
+                        <option :value="2.0">2.0x 激进</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <transition name="slide-up">
+                <div v-if="showQuiz" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-amber-500/30 rounded-2xl overflow-hidden flex flex-col">
+                    <div class="h-10 border-b border-amber-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                            ⚡ 财经商贸财务决策力小测验
+                        </span>
+                        <button @click="showQuiz = false" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">✕</button>
+                    </div>
+                    
+                    <div class="p-4 flex flex-col gap-3 text-xs">
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-amber-500 uppercase block mb-1">问题 {{ currentQuestionIdx + 1 }} of {{ quizQuestions.length }}</span>
+                            <p class="text-slate-200 font-medium leading-relaxed">{{ quizQuestions[currentQuestionIdx].q }}</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button v-for="(opt, oIdx) in quizQuestions[currentQuestionIdx].o" :key="oIdx"
+                                    @click="submitQuizAnswer(oIdx)"
+                                    class="w-full text-left p-2.5 rounded-lg border text-[11px] transition-all"
+                                    :class="getOptionClass(oIdx)">
+                                {{ opt }}
+                            </button>
+                        </div>
+                        <div v-if="quizFeedback" class="p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"
+                             :class="quizFeedbackCorrect ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/60 border-rose-500/40 text-rose-300'">
+                            {{ quizFeedback }}
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-2 border-t border-slate-800 pt-2" v-if="quizAnswered">
+                            <span class="text-[10px] text-slate-500">回答完毕</span>
+                            <button @click="nextQuestion" class="px-3 py-1 rounded bg-amber-500 text-slate-950 font-bold hover:bg-yellow-400 active:scale-95 transition-all text-[10px]">
+                                {{ currentQuestionIdx < quizQuestions.length - 1 ? '下一题' : '重新开始' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button v-if="!showQuiz" @click="showQuiz = true" class="absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-amber-400 text-amber-400 flex items-center justify-center hover:scale-110 glow-gold active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- 底部状态条 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-600 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>企业资金链不仅是一串串数字会计报表，更是一套通过风控审批、预算分配等经典杠杆工具制衡约束的流体生命网。</span>
+        <span class="text-amber-500/80">由 AI可视化教学生成器 为你生成 ❤️</span>
+    </footer>
+
+</div>
+
+<!-- Script Block -->
+<script>
+    const { createApp } = Vue;
+
+    // 拓扑图节点配置
+    const Nodes = {
+        pool: { id: "nd-pool", name: "🏦 企业运营总预算池", cx: 0.14, cy: 0.5, color: "#F59E0B" },
+        gate: { id: "nd-gate", name: "🛡️ 风控预审闸门", cx: 0.32, cy: 0.5, color: "#FBBF24" },
+        auditing: { id: "nd-auditing", name: "⚙️ 待审计预备缓存", cx: 0.48, cy: 0.22, color: "#FB7185" },
+        rd_expense: { id: "nd-rd", name: "🚀 项目支出：研发 (R&D)", cx: 0.54, cy: 0.48, color: "#60A5FA" },
+        mkt_expense: { id: "nd-mkt", name: "📢 项目支出：商贸推广", cx: 0.54, cy: 0.72, color: "#A78BFA" },
+        accounting: { id: "nd-accounting", name: "✍️ 会计分录核算账本", cx: 0.74, cy: 0.5, color: "#34D399" },
+        vault: { id: "nd-vault", name: "💰 核心储备现金库", cx: 0.9, cy: 0.5, color: "#10B981" }
+    };
+
+    const app = createApp({
+        data() {
+            return {
+                goals: [
+                    { text: "理解企业资金在预算、审批、明细分录核算全链路的流转过程。", checked: true },
+                    { text: "掌握运营风控准入阈值与超支损耗、运营流速的互动逻辑。", checked: true },
+                    { text: "学习财务杠杆在市场行情下如何成倍放大核心利润与储备风险的关系。", checked: false }
+                ],
+                // 仿真核心控制参数
+                isPlaying: false,
+                budgetRD: 40,        // 研发分配比率
+                gateThreshold: 50,    // 审批拦截强度
+                leverage: 2.0,        // 杠杆率
+                simSpeed: 1.0,
+                timeStep: 0.25,       // 控制流畅度
+                flowProgress: 0.0,
+                workflowPhase: 0,     // 0: 就绪, 1: 预算流出, 2: 风控审计拦截, 3: 管道分流支出, 4: 核算汇总, 5: 核心现汇回注
+
+                // 账本状态
+                currentCash: 1200,    // 可用储备现金（万）
+                currentProfit: 350,   // 运营总利润（万）
+                calculatedBlockRate: 45,
+                healthScore: 85,
+
+                // 多周期财务图表数据（初始4个点对应过去4季）
+                chartHistory: [
+                    { cash: 1000, profit: 200 },
+                    { cash: 1100, profit: 250 },
+                    { cash: 980,  profit: 290 },
+                    { cash: 1200, profit: 350 }
+                ],
+
+                // 测验
+                showQuiz: true,
+                currentQuestionIdx: 0,
+                selectedOptionIdx: null,
+                quizAnswered: false,
+                quizFeedback: '',
+                quizFeedbackCorrect: false,
+                quizQuestions: [
+                    {
+                        q: "在进行项目支出审批时，如果风控预审闸门拦截阈值 (Gate) 设置得极其严格（高达 90%），以下说法最准确的是？",
+                        o: [
+                            "A. 资金流速暴增，企业运营效率成倍提升",
+                            "B. 企业超支漏损极小，但由于业务审批过慢可能错失商机导致发展失血",
+                            "C. 储备现金将在一周期内瞬间耗尽",
+                            "D. 财务健康度评分会立即跌为零"
+                        ],
+                        a: 1,
+                        explain: "正确答案为 B。极高的风控虽然大幅遏制了资金的超支溢出，但也导致资金流通速度变慢，影响研发和业务的效率，从而阻碍企业增长。"
+                    },
+                    {
+                        q: "若公司的财务杠杆率 (Financial Leverage) 调的非常高，遭遇市场萎缩时的风险是？",
+                        o: [
+                            "A. 高杠杆没有风险，是无本万利的操作",
+                            "B. 预算分配率会自动归零",
+                            "C. 在亏损状态下杠杆会加速放大资金的流出与损耗，容易瞬间造成资金链断裂",
+                            "D. 会自动减少企业所得税"
+                        ],
+                        a: 2,
+                        explain: "正确答案为 C。杠杆率是放大器。业务顺风时它能成倍放大获利，但当业务亏损且现金流告急时，高杠杆也会以几倍的速度抽空现金储备，瞬间导致爆仓。"
+                    },
+                    {
+                        q: "资产负债表的恒等核心关系是什么？",
+                        o: [
+                            "A. 资产 = 负债 + 所有者权益",
+                            "B. 资产 = 研发支出 + 商贸推广",
+                            "C. 所有者权益 = 现金 + 净利润",
+                            "D. 现金流 = 杠杆率 × 拦截率"
+                        ],
+                        a: 0,
+                        explain: "正确答案为 A。这是会计学的基石恒等式：资产（Assets）必须完全对应于负债（Liabilities）以及所有者所拥有的权益（Owner's Equity）的总和。"
+                    }
+                ]
+            };
+        },
+        computed: {
+            healthScoreCalculated() {
+                // 财务健康度打分公式
+                // 完美状态：杠杆适度 (2.0x 左右)，风控阈值合理 (50% 左右)，且储备现金充沛
+                const leverageDiff = Math.abs(this.leverage - 2.0);
+                const gateDiff = Math.abs(this.gateThreshold - 50);
+                const cashScore = Math.min(40, (this.currentCash / 1200) * 40);
+                const penalty = (leverageDiff * 10) + (gateDiff * 0.3);
+                return Math.min(100, Math.max(10, Math.round(100 - penalty - (40 - cashScore))));
+            },
+            calculatedBlockRate() {
+                // 风控拦截率与风控阈值正相关
+                return Math.round(this.gateThreshold * 0.95);
+            },
+            healthClass() {
+                const score = this.healthScore;
+                if (score >= 80) return "text-emerald-400 glow-text-gold";
+                if (score >= 60) return "text-yellow-400";
+                return "text-rose-400 font-bold animate-pulse";
+            },
+            profitClass() {
+                return this.currentProfit >= 300 ? "text-emerald-400 font-bold" : "text-amber-400";
+            },
+            // SVG折线图的路径计算
+            chartPoints() {
+                const count = this.chartHistory.length;
+                const points = [];
+                // 假定 SVG 图表宽高 300x80
+                const width = 280;
+                const height = 80;
+                
+                this.chartHistory.forEach((h, idx) => {
+                    const x = 20 + (idx * (width / (count - 1 || 1)) * 0.85);
+                    // 现金范围 500 ~ 2000，映射到高度 10 ~ 75
+                    const cy = height - 10 - ((h.cash - 500) / 1500) * (height - 20);
+                    // 利润范围 100 ~ 600
+                    const py = height - 10 - ((h.profit - 100) / 500) * (height - 20);
+                    points.push({ x, cy, py });
+                });
+                return points;
+            },
+            cashLinePath() {
+                if (this.chartPoints.length === 0) return '';
+                let path = `M ${this.chartPoints[0].x},${this.chartPoints[0].cy}`;
+                for (let i = 1; i < this.chartPoints.length; i++) {
+                    path += ` L ${this.chartPoints[i].x},${this.chartPoints[i].cy}`;
+                }
+                return path;
+            },
+            profitLinePath() {
+                if (this.chartPoints.length === 0) return '';
+                let path = `M ${this.chartPoints[0].x},${this.chartPoints[0].py}`;
+                for (let i = 1; i < this.chartPoints.length; i++) {
+                    path += ` L ${this.chartPoints[i].x},${this.chartPoints[i].py}`;
+                }
+                return path;
+            }
+        },
+        watch: {
+            healthScoreCalculated(newScore) {
+                this.healthScore = newScore;
+            }
+        },
+        mounted() {
+            this.healthScore = this.healthScoreCalculated;
+            
+            // 初始化 KaTeX 渲染
+            this.renderMath();
+            
+            // 初始化 SVG 拓扑图与粒子
+            window.addEventListener('resize', this.initTopology);
+            this.initTopology();
+
+            // 启动定时仿真渲染循环
+            this.animationLoop();
+        },
+        unmounted() {
+            window.removeEventListener('resize', this.initTopology);
+        },
+        methods: {
+            renderMath() {
+                this.$nextTick(() => {
+                    const balDiv = document.getElementById('latex-balance-eq');
+                    if (balDiv) {
+                        katex.render("Assets = Liabilities + Owner's\\,Equity", balDiv, { displayMode: true, throwOnError: false });
+                    }
+
+                    const npvDiv = document.getElementById('latex-npv-formula');
+                    if (npvDiv) {
+                        katex.render("Net\\,Present\\,Value: NPV = \\sum_{t=1}^n \\frac{CF_t}{(1+r)^t} - CF_0", npvDiv, { displayMode: false, throwOnError: false });
+                    }
+
+                    const levDiv = document.getElementById('latex-financial-leverage');
+                    if (levDiv) {
+                        katex.render("Operating\\,Leverage\\,Factor: OLF", levDiv, { displayMode: false, throwOnError: false });
+                    }
+                });
+            },
+            onParamChange() {
+                this.addLog(`控制台策略已修订。预算R&D:${this.budgetRD}% | 审批拦截阈值:${this.gateThreshold}%`, "text-amber-400");
+                this.renderMath();
+            },
+            togglePlay() {
+                this.isPlaying = !this.isPlaying;
+                this.addLog(this.isPlaying ? "激活财务周期运营循环仿真..." : "手动暂停预算周期挂起.", this.isPlaying ? "text-emerald-400" : "text-slate-400");
+            },
+            stepForward() {
+                this.isPlaying = false;
+                this.flowProgress = (this.flowProgress + 15) % 100;
+                this.updateWorkflowPhaseByProgress();
+                this.addLog(`单步推进月度核算周期, 当前核算进度: ${this.flowProgress.toFixed(0)}%`, "text-yellow-400");
+                this.drawTopology();
+            },
+            resetSimulation() {
+                this.flowProgress = 0.0;
+                this.workflowPhase = 0;
+                this.isPlaying = false;
+                this.currentCash = 1200;
+                this.currentProfit = 350;
+                // 复原四期历史
+                this.chartHistory = [
+                    { cash: 1000, profit: 200 },
+                    { cash: 1100, profit: 250 },
+                    { cash: 980,  profit: 290 },
+                    { cash: 1200, profit: 350 }
+                ];
+                this.addLog("财务账户池重置。总资本已归库复原.", "text-slate-400");
+                this.drawTopology();
+            },
+            injectCapitalSession() {
+                // 手动注资
+                this.currentCash += 150;
+                this.addLog("核心注资：大股东手动注资 150 万元运营周转金！流动性大幅改善.", "text-emerald-400 animate-pulse");
+                this.drawTopology();
+            },
+            addLog(msg, colorClass = "") {
+                const logBox = document.getElementById('terminal-log');
+                if(!logBox) return;
+
+                const div = document.createElement('div');
+                if (colorClass) div.className = colorClass;
+                div.innerHTML = `&gt;_ ${msg}`;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+            initTopology() {
+                const svg = document.getElementById('svg-topology');
+                if(!svg) return;
+
+                const w = svg.clientWidth;
+                const h = svg.clientHeight;
+
+                Object.keys(Nodes).forEach(k => {
+                    const node = Nodes[k];
+                    node.px = w * node.cx;
+                    node.py = h * node.cy;
+                });
+
+                this.drawTopology();
+            },
+            updateWorkflowPhaseByProgress() {
+                const p = this.flowProgress;
+                if (p < 15 && this.workflowPhase !== 1) {
+                    this.workflowPhase = 1;
+                    this.addLog("启动季度财务运营流程...可用预算流水自库池注入。", "text-amber-300");
+                } 
+                else if (p >= 15 && p < 35 && this.workflowPhase !== 2) {
+                    this.workflowPhase = 2;
+                    // 部分被拦截
+                    const blockedAmount = (200 * (this.gateThreshold / 100)).toFixed(0);
+                    this.addLog(`风控审查网闸拦截异常报销与高风险项目申请。审计拦截: ${blockedAmount}万!`, "text-rose-400");
+                }
+                else if (p >= 35 && p < 65 && this.workflowPhase !== 3) {
+                    this.workflowPhase = 3;
+                    const rdBudget = (250 * (this.budgetRD / 100)).toFixed(0);
+                    const mktBudget = (250 * ((100 - this.budgetRD) / 100)).toFixed(0);
+                    this.addLog(`资金分流进入支出管道。研发R&D投入: ${rdBudget}万 | 市场推广推广预算: ${mktBudget}万`, "text-cyan-300");
+                }
+                else if (p >= 65 && p < 85 && this.workflowPhase !== 4) {
+                    this.workflowPhase = 4;
+                    this.addLog("会计中心接收明细回执，轧账编制分录核算账本，准备汇总损益...", "text-emerald-400");
+                }
+                else if (p >= 85 && this.workflowPhase !== 5) {
+                    this.workflowPhase = 5;
+                    
+                    // 基于策略计算本季度新增回报
+                    // 杠杆大、R&D配合、风控合理时增加现金和利润；风控太低则产生坏账超支损耗
+                    const leverageImpact = this.leverage;
+                    const rdImpact = this.budgetRD / 40; // 40%是基准
+                    const riskLoss = this.gateThreshold < 30 ? (35 - this.gateThreshold) * 6 : 0;
+                    
+                    const newProfit = Math.round((50 * rdImpact * leverageImpact) - riskLoss);
+                    const netCashChange = Math.round((newProfit * 1.2) - (riskLoss * 1.5));
+                    
+                    this.currentProfit += newProfit;
+                    this.currentCash += netCashChange;
+
+                    this.addLog(`轧账损益完毕。本期净收益: +${newProfit}万元 | 现汇周转注入库: ${netCashChange}万`, "text-emerald-400 glow-text-gold font-bold");
+                    if (riskLoss > 0) {
+                        this.addLog(`🚨 警告：风控预审力度太低产生巨额坏账溢损: -${riskLoss}万元！`, "text-rose-500 animate-pulse font-bold");
+                    }
+                    
+                    // 记录图表年份，自动滑动淘汰最早的数据
+                    const lastCash = this.currentCash;
+                    const lastProf = this.currentProfit;
+                    this.chartHistory.push({ cash: lastCash, profit: lastProf });
+                    if (this.chartHistory.length > 5) {
+                        this.chartHistory.shift();
+                    }
+                }
+            },
+            animationLoop() {
+                if (this.isPlaying) {
+                    this.flowProgress += this.timeStep * this.simSpeed;
+                    if (this.flowProgress >= 100) {
+                        this.flowProgress = 0;
+                        this.workflowPhase = 0;
+                        this.isPlaying = false; // 运行一圈自动暂停
+                        this.addLog("本运营核算周期成功结账，报表已提交审计系统。", "text-slate-500");
+                    }
+                    this.updateWorkflowPhaseByProgress();
+                    this.drawTopology();
+                }
+                requestAnimationFrame(this.animationLoop);
+            },
+            drawTopology() {
+                const svg = document.getElementById('svg-topology');
+                if(!svg) return;
+
+                // 资金管道线
+                const paths = [
+                    { from: Nodes.pool, to: Nodes.gate, stroke: "#F59E0B" },
+                    { from: Nodes.gate, to: Nodes.auditing, stroke: "#FB7185" },
+                    { from: Nodes.gate, to: Nodes.rd_expense, stroke: "#60A5FA" },
+                    { from: Nodes.gate, to: Nodes.mkt_expense, stroke: "#A78BFA" },
+                    { from: Nodes.rd_expense, to: Nodes.accounting, stroke: "#60A5FA" },
+                    { from: Nodes.mkt_expense, to: Nodes.accounting, stroke: "#A78BFA" },
+                    { from: Nodes.accounting, to: Nodes.vault, stroke: "#10B981" }
+                ];
+
+                let pathsHtml = '';
+                paths.forEach(p => {
+                    pathsHtml += `<path d="M ${p.from.px},${p.from.py} L ${p.to.px},${p.to.py}" fill="none" stroke="${p.stroke}" stroke-width="2" opacity="0.25" />`;
+                });
+
+                // 高亮导轨
+                let activePathHtml = '';
+                const p = this.flowProgress;
+                if (this.isPlaying) {
+                    if (p < 15) {
+                        activePathHtml += `<path d="M ${Nodes.pool.px},${Nodes.pool.py} L ${Nodes.gate.px},${Nodes.gate.py}" fill="none" stroke="#F59E0B" stroke-width="3" opacity="0.8" marker-end="url(#arrow-gold)" />`;
+                    } else if (p >= 15 && p < 35) {
+                        activePathHtml += `
+                            <path d="M ${Nodes.gate.px},${Nodes.gate.py} L ${Nodes.auditing.px},${Nodes.auditing.py}" fill="none" stroke="#FB7185" stroke-width="2.5" opacity="0.8" />
+                            <path d="M ${Nodes.gate.px},${Nodes.gate.py} L ${Nodes.rd_expense.px},${Nodes.rd_expense.py}" fill="none" stroke="#60A5FA" stroke-width="2.5" opacity="0.8" />
+                        `;
+                    } else if (p >= 35 && p < 65) {
+                        activePathHtml += `
+                            <path d="M ${Nodes.gate.px},${Nodes.gate.py} L ${Nodes.rd_expense.px},${Nodes.rd_expense.py}" fill="none" stroke="#60A5FA" stroke-width="2.5" opacity="0.8" />
+                            <path d="M ${Nodes.gate.px},${Nodes.gate.py} L ${Nodes.mkt_expense.px},${Nodes.mkt_expense.py}" fill="none" stroke="#A78BFA" stroke-width="2.5" opacity="0.8" />
+                        `;
+                    } else if (p >= 65 && p < 85) {
+                        activePathHtml += `
+                            <path d="M ${Nodes.rd_expense.px},${Nodes.rd_expense.py} L ${Nodes.accounting.px},${Nodes.accounting.py}" fill="none" stroke="#60A5FA" stroke-width="2.5" opacity="0.8" />
+                            <path d="M ${Nodes.mkt_expense.px},${Nodes.mkt_expense.py} L ${Nodes.accounting.px},${Nodes.accounting.py}" fill="none" stroke="#A78BFA" stroke-width="2.5" opacity="0.8" />
+                        `;
+                    } else if (p >= 85) {
+                        activePathHtml += `<path d="M ${Nodes.accounting.px},${Nodes.accounting.py} L ${Nodes.vault.px},${Nodes.vault.py}" fill="none" stroke="#10B981" stroke-width="3" opacity="0.8" marker-end="url(#arrow-green)" />`;
+                    }
+                }
+
+                // 资金粒子流动
+                let particleHtml = '';
+                if (this.isPlaying) {
+                    let particlePos = { x: 0, y: 0 };
+                    let particleColor = "#F59E0B";
+                    if (p < 15) {
+                        particlePos = this.lerp(Nodes.pool, Nodes.gate, p / 15);
+                    } else if (p >= 15 && p < 35) {
+                        // 拦截分支与主分支同时流过粒子
+                        const t = (p - 15) / 20;
+                        const p1 = this.lerp(Nodes.gate, Nodes.auditing, t);
+                        const p2 = this.lerp(Nodes.gate, Nodes.rd_expense, t);
+                        particleHtml += `<circle cx="${p1.x}" cy="${p1.y}" r="4" fill="#FB7185" />`;
+                        particleHtml += `<circle cx="${p2.x}" cy="${p2.y}" r="4" fill="#60A5FA" />`;
+                        particlePos = p2;
+                    } else if (p >= 35 && p < 65) {
+                        // 研发和商贸分支粒子流动，流速受 R&D 分配参数控制
+                        const t = (p - 35) / 30;
+                        const p1 = this.lerp(Nodes.gate, Nodes.rd_expense, t);
+                        const p2 = this.lerp(Nodes.gate, Nodes.mkt_expense, t);
+                        
+                        // 基于 budgetRD 的大小调整粒子半径
+                        const rdRadius = 3 + (this.budgetRD / 100) * 3;
+                        const mktRadius = 3 + ((100 - this.budgetRD) / 100) * 3;
+
+                        particleHtml += `<circle cx="${p1.x}" cy="${p1.y}" r="${rdRadius}" fill="#60A5FA" class="glow-gold" />`;
+                        particleHtml += `<circle cx="${p2.x}" cy="${p2.y}" r="${mktRadius}" fill="#A78BFA" class="glow-gold" />`;
+                        particlePos = p1;
+                    } else if (p >= 65 && p < 85) {
+                        const t = (p - 65) / 20;
+                        const p1 = this.lerp(Nodes.rd_expense, Nodes.accounting, t);
+                        const p2 = this.lerp(Nodes.mkt_expense, Nodes.accounting, t);
+                        particleHtml += `<circle cx="${p1.x}" cy="${p1.y}" r="4" fill="#60A5FA" />`;
+                        particleHtml += `<circle cx="${p2.x}" cy="${p2.y}" r="4" fill="#A78BFA" />`;
+                        particlePos = p1;
+                    } else if (p >= 85) {
+                        // 回流总储备现金库，杠杆率影响粒子发光大小
+                        particlePos = this.lerp(Nodes.accounting, Nodes.vault, (p - 85) / 15);
+                        particleColor = "#10B981";
+                        const size = 4 + (this.leverage / 5.0) * 4;
+                        particleHtml += `<circle cx="${particlePos.x}" cy="${particlePos.y}" r="${size}" fill="${particleColor}" class="glow-gold" />`;
+                    }
+
+                    if (p < 15 || (p >= 65 && p < 85)) {
+                        particleHtml += `<circle cx="${particlePos.x}" cy="${particlePos.y}" r="5.5" fill="${particleColor}" class="glow-gold" />`;
+                    }
+                }
+
+                // 物理节点
+                let nodesHtml = '';
+                Object.keys(Nodes).forEach(k => {
+                    const node = Nodes[k];
+                    let r = 12;
+                    let strokeWidth = 2.5;
+                    let strokeColor = node.color;
+
+                    if (this.isPlaying) {
+                        if (k === 'pool' && p < 15) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'gate' && p >= 15 && p < 35) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'auditing' && p >= 15 && p < 35) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'rd_expense' && p >= 35 && p < 65) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'mkt_expense' && p >= 35 && p < 65) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'accounting' && p >= 65 && p < 85) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'vault' && p >= 85) { r = 15; strokeColor = "#FFF"; }
+                    }
+
+                    nodesHtml += `
+                        <g>
+                            <circle cx="${node.px}" cy="${node.py}" r="${r + 5}" fill="none" stroke="${node.color}" stroke-width="1" opacity="0.2" />
+                            <circle cx="${node.px}" cy="${node.py}" r="${r}" fill="#0F0A02" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+                            <circle cx="${node.px}" cy="${node.py}" r="4.5" fill="${node.color}" />
+                            <text x="${node.px}" y="${node.py - r - 12}" fill="#94A3B8" font-size="9.5" font-weight="600" text-anchor="middle">${node.name}</text>
+                        </g>
+                    `;
+                });
+
+                svg.innerHTML = `
+                    <defs>
+                        <marker id="arrow-gold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#F59E0B" />
+                        </marker>
+                        <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#10B981" />
+                        </marker>
+                    </defs>
+                    ${pathsHtml}
+                    ${activePathHtml}
+                    ${particleHtml}
+                    ${nodesHtml}
+                `;
+            },
+            lerp(n1, n2, t) {
+                return {
+                    x: n1.px + (n2.px - n1.px) * t,
+                    y: n1.py + (n2.py - n1.py) * t
+                };
+            },
+
+            // 测验
+            submitQuizAnswer(oIdx) {
+                if (this.quizAnswered) return;
+                this.selectedOptionIdx = oIdx;
+                this.quizAnswered = true;
+                const question = this.quizQuestions[this.currentQuestionIdx];
+                if (oIdx === question.a) {
+                    this.quizFeedback = "🎉 回答正确！" + question.explain;
+                    this.quizFeedbackCorrect = true;
+                } else {
+                    this.quizFeedback = "❌ 回答错误。" + question.explain;
+                    this.quizFeedbackCorrect = false;
+                }
+            },
+            getOptionClass(oIdx) {
+                if (!this.quizAnswered) {
+                    return 'bg-amber-950/20 border-amber-900/40 text-amber-200 hover:bg-amber-900/20 hover:border-amber-500/50';
+                }
+                const question = this.quizQuestions[this.currentQuestionIdx];
+                if (oIdx === question.a) {
+                    return 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
+                }
+                if (oIdx === this.selectedOptionIdx) {
+                    return 'bg-rose-950/40 border-rose-500/50 text-rose-300';
+                }
+                return 'bg-slate-950/20 border-slate-900 text-slate-500 opacity-60';
+            },
+            nextQuestion() {
+                this.selectedOptionIdx = null;
+                this.quizAnswered = false;
+                this.quizFeedback = '';
+                if (this.currentQuestionIdx < this.quizQuestions.length - 1) {
+                    this.currentQuestionIdx++;
+                } else {
+                    this.currentQuestionIdx = 0;
+                }
+            }
+        }
+    });
+
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+</body>
+</html>

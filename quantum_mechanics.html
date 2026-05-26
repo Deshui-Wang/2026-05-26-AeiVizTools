@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量子力学与微观概率空间 3D 可视化 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            blue: '#3B82F6',
+                            cyan: '#22D3EE',
+                            pink: '#EC4899',
+                            rose: '#F43F5E',
+                            purple: '#A855F7',
+                            dark: '#030712', // 极夜微观粒子黑洞底色
+                            navy: '#0b0f19',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #3B82F6 0%, #A855F7 50%, #EC4899 100%);
+            --bg-gradient: linear-gradient(180deg, #030712 0%, #080d1a 60%, #030712 100%);
+            --glass-bg: rgba(8, 13, 26, 0.7);
+            --glass-border: rgba(168, 85, 247, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background: var(--bg-gradient);
+            color: #F3F4F6;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(8, 13, 26, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.35);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(236, 72, 153, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 霓虹发光 */
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.45);
+        }
+        .glow-text-purple {
+            text-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #A855F7 0%, #EC4899 100%);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(168, 85, 247, 0.8);
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-purple-500/30 bg-slate-950/90 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center font-bold text-slate-950 glow-purple">🌌</div>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-300 bg-clip-text text-transparent uppercase tracking-wider">
+                    量子力学动力学空间 <span class="text-xs font-normal text-purple-400/80 normal-case ml-1">Quantum Mechanics Dynamics</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" class="px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-medium hover:bg-purple-500/20 active:scale-95 transition-all">
+                重置状态
+            </button>
+            <button id="btn-random-state" class="px-3 py-1.5 rounded-lg border border-pink-500/30 bg-pink-500/10 text-pink-300 text-xs font-medium hover:bg-pink-500/20 active:scale-95 transition-all">
+                叠加态随机坍缩
+            </button>
+            <button id="btn-fullscreen" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 active:scale-95 transition-all">
+                全屏
+            </button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-purple-500/20 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-purple-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-purple-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-1" class="accent-purple w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-1" class="leading-relaxed">理解微观粒子的波粒二象性及其数学描述薛定谔波动方程。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-purple w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-2" class="leading-relaxed">观察氢原子电子云随量子数 $(n, l, m)$ 变化的对称概率轨道。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-purple w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="leading-relaxed cursor-pointer hover:text-purple-300 transition-colors">领会量子测量对叠加态的影响——观察引起的波函数坍缩效应。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心物理方程 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-purple-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-purple-400 rounded-sm"></span> 量子力学核心公理
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-purple-950 text-center flex flex-col gap-2">
+                    <div id="latex-schrodinger" class="text-[12px] text-purple-300 font-medium"></div>
+                    <div class="border-t border-purple-950 pt-2 mt-1 flex flex-col gap-1.5 text-[10px] text-left text-slate-400">
+                        <div id="latex-debroglie"></div>
+                        <div id="latex-uncertainty"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 原理生动解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-sm font-semibold text-purple-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-purple-400 rounded-sm"></span> 概率波与薛定谔的猫
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-cyan-300 font-semibold">🎲 粒子在哪里？它是一朵概率的云</span>
+                        <p class="mt-1 text-slate-400">在量子力学中，粒子并不是一粒坚硬的小球，而是充斥在空间中的<b>物质波（Probability Wave）</b>。我们在 3D 空间看到的“电子云”，它的疏密代表了电子出现在该处的概率密度。</p>
+                    </div>
+                    <div class="border-t border-purple-950/60 pt-2">
+                        <span class="text-pink-300 font-semibold">👁️ 观测如何摧毁波动性——测量坍缩</span>
+                        <p class="mt-1 text-slate-400">在量子双缝干涉中，只要我们在双缝旁安装“观测器”去偷看粒子到底走哪条缝，微观粒子便会瞬间<b>坍缩 (Collapse)</b> 为确定性的宏观轨道，原本美丽的干涉条纹将被消灭为两道单条纹！</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 扩展说明 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-600">
+                    <span>学科领域：理论物理学</span>
+                    <span>AetherViz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央主交互区域 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D 渲染容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- 数据状态 HUD (左上角) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-purple-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">量子相干态 HUD</h4>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-950/70 p-2 rounded border border-purple-950">
+                            <span class="text-slate-500 block text-[9px]">主量子数 n</span>
+                            <span id="hud-quantum-n" class="font-bold text-cyan-400 text-sm">1</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-2 rounded border border-purple-950">
+                            <span class="text-slate-500 block text-[9px]">角量子数 l</span>
+                            <span id="hud-quantum-l" class="font-bold text-pink-400 text-sm">0</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-2.5 rounded border border-slate-900 col-span-2 text-xs flex flex-col gap-1 text-slate-300">
+                            <div class="flex justify-between items-center">
+                                <span>量子轨域类型:</span>
+                                <span id="hud-orbital-name" class="font-bold text-purple-400 uppercase">1s 轨域 (球对称)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>相干相干度 (Coherence):</span>
+                                <span id="hud-coherence" class="font-bold text-emerald-400">100.0 %</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>波函数坍缩状态:</span>
+                                <span id="hud-collapse-status" class="font-bold text-cyan-300">完全相干概率波</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SVG 2D 薛定谔势阱与干涉条纹 (右侧悬浮) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <!-- 一维深势阱波函数曲线 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-purple-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-purple-400 flex items-center justify-between">
+                        <span>📈 无限深势阱波函数 Ψ(x) 包络</span>
+                        <span class="text-[10px] text-slate-500">定态薛定谔解</span>
+                    </h4>
+                    <!-- SVG 画布 -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-purple-950/40">
+                        <svg id="svg-wave-well" class="w-full h-full"></svg>
+                    </div>
+                </div>
+
+                <!-- 双缝干涉光屏投影 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-pink-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-pink-400 flex items-center justify-between">
+                        <span>🔮 双缝干涉光屏投影 (干涉条纹)</span>
+                        <span class="text-[10px] text-slate-500">波粒二象退相干</span>
+                    </h4>
+                    <!-- SVG 干涉光屏 -->
+                    <div class="h-[100px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-pink-950/40 flex flex-col justify-end p-2 gap-1.5">
+                        <!-- 干涉条纹荧光板 -->
+                        <div id="interference-plate" class="h-8 rounded relative overflow-hidden bg-slate-950 border border-slate-900"></div>
+                        
+                        <div class="flex justify-between items-center text-[9px] text-slate-500 font-mono">
+                            <span>双缝衍射极小值</span>
+                            <span>中央最大值</span>
+                            <span>双缝衍射极小值</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-purple-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-play" class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-slate-950 flex items-center justify-center glow-purple hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg id="icon-play" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon (hidden) -->
+                        <svg id="icon-pause" class="w-5 h-5 fill-current hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="btn-step" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步相位推进">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">量子相位</span>
+                        <span id="txt-status" class="text-amber-400 font-medium">已休眠</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 主量子数 n -->
+                    <div class="flex flex-col gap-1.5 w-32">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-cyan-400 font-semibold">主量子数 n</span>
+                            <span id="val-quantum-n" class="font-mono text-slate-300">1</span>
+                        </div>
+                        <input id="slider-quantum-n" type="range" min="1" max="3" step="1" value="1" class="custom-slider">
+                    </div>
+
+                    <!-- 参数 角量子数 l -->
+                    <div class="flex flex-col gap-1.5 w-32">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-pink-400 font-semibold">角量子数 l</span>
+                            <span id="val-quantum-l" class="font-mono text-slate-300">0</span>
+                        </div>
+                        <input id="slider-quantum-l" type="range" min="0" max="0" step="1" value="0" class="custom-slider">
+                    </div>
+
+                    <!-- 参数 观察测量强度 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-rose-400 font-semibold flex items-center gap-1">🔎 测量观察强度 (Measurement)</span>
+                            <span id="val-observe" class="font-mono text-slate-300 text-rose-400 font-bold">0 % (无退相干)</span>
+                        </div>
+                        <input id="slider-observe" type="range" min="0" max="100" step="1" value="0" class="custom-slider">
+                    </div>
+                </div>
+
+                <!-- 运行相速度 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">演化速率</span>
+                    <select id="select-speed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-purple-500 transition-colors">
+                        <option value="0.5">0.5x 慢速</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-purple-500/30 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                <div class="h-10 border-b border-purple-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-purple-400 flex items-center gap-1.5">
+                        🌌 量子微观小测验
+                    </span>
+                    <button id="btn-quiz-close" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-purple-500 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2">
+                        <!-- 动态生成 -->
+                    </div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-purple-400 text-purple-400 flex items-center justify-center hover:scale-110 glow-purple active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- HTML 结尾 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-500 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>在量子的概率交响诗中，每一次观察，都是一次无声的坍缩，它收束了万千平行的琴键，奏响了现实的一声独鸣。</span>
+        <span class="text-purple-500/80">由 AetherViz Master 为你生成 ❤️</span>
+    </footer>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+    <!-- JS Core Logic -->
+    <script>
+        // --- 1. OrbitControls 内联极简版 ---
+        class MinimalOrbitControls {
+            constructor(object, domElement) {
+                this.object = object;
+                this.domElement = domElement;
+                this.target = new THREE.Vector3(0, 0, 0);
+                this.spherical = new THREE.Spherical().setFromVector3(this.object.position);
+                this.minDistance = 2;
+                this.maxDistance = 40;
+                
+                this.isPointerDown = false;
+                this.pointerStart = new THREE.Vector2();
+                this.pointerEnd = new THREE.Vector2();
+                this.pointerDelta = new THREE.Vector2();
+
+                this.domElement.addEventListener('pointerdown', this.onPointerDown.bind(this), false);
+                this.domElement.addEventListener('pointermove', this.onPointerMove.bind(this), false);
+                this.domElement.addEventListener('pointerup', this.onPointerUp.bind(this), false);
+                this.domElement.addEventListener('wheel', this.onWheel.bind(this), false);
+                this.update();
+            }
+
+            onPointerDown(event) {
+                this.isPointerDown = true;
+                this.pointerStart.set(event.clientX, event.clientY);
+            }
+
+            onPointerMove(event) {
+                if (!this.isPointerDown) return;
+                this.pointerEnd.set(event.clientX, event.clientY);
+                this.pointerDelta.subVectors(this.pointerEnd, this.pointerStart).multiplyScalar(0.005);
+                
+                this.spherical.theta -= this.pointerDelta.x;
+                this.spherical.phi -= this.pointerDelta.y;
+                
+                this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi));
+                
+                this.pointerStart.copy(this.pointerEnd);
+                this.update();
+            }
+
+            onPointerUp() {
+                this.isPointerDown = false;
+            }
+
+            onWheel(event) {
+                event.preventDefault();
+                const zoomScale = 1.05;
+                if (event.deltaY < 0) {
+                    this.spherical.radius /= zoomScale;
+                } else {
+                    this.spherical.radius *= zoomScale;
+                }
+                this.spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this.spherical.radius));
+                this.update();
+            }
+
+            update() {
+                this.object.position.setFromSpherical(this.spherical).add(this.target);
+                this.object.lookAt(this.target);
+            }
+        }
+
+        // --- 2. 系统状态与量子变量 ---
+        const State = {
+            isPlaying: false,
+            // 外部环境控制
+            n: 1, // 主量子数 (1, 2, 3)
+            l: 0, // 角量子数 (0 ~ n-1)
+            observeIntensity: 0.0, // 测量强度 (0% ~ 100%)
+
+            // 演化相位与相位步进
+            phase: 0,
+            phaseStep: 0.05,
+            simSpeed: 1.0
+        };
+
+        // --- 3. 3D 微观电子概率云渲染初始化 ---
+        let scene, camera, renderer, controls;
+        let electronCloud;
+        const particleCount = 3000;
+        let positionsArray, colorsArray;
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x030712, 0.03);
+
+            camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 100);
+            camera.position.set(0, 5, 12);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            controls = new MinimalOrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0, 0);
+            controls.update();
+
+            // 3.1 环境底色光
+            const ambient = new THREE.HemisphereLight(0x0f172a, 0x030712, 1.2);
+            scene.add(ambient);
+
+            // 原子核发光核心
+            const nucleusGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const nucleusMat = new THREE.MeshBasicMaterial({
+                color: 0xec4899,
+                transparent: true,
+                opacity: 0.9
+            });
+            const nucleus = new THREE.Mesh(nucleusGeo, nucleusMat);
+            scene.add(nucleus);
+
+            // 3.2 电子云概率分布系统 (3000个彩色粒子Points)
+            const geometry = new THREE.BufferGeometry();
+            positionsArray = new Float32Array(particleCount * 3);
+            colorsArray = new Float32Array(particleCount * 3);
+
+            // 初始化生成球对称粒子分布 (1s 轨域形态)
+            generateQuantumParticles();
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colorsArray, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 0.11,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending
+            });
+
+            electronCloud = new THREE.Points(geometry, material);
+            scene.add(electronCloud);
+
+            // 3.3 外围量子势阱环 (3D 科技感辅助框)
+            const ringGeo = new THREE.RingGeometry(4.5, 4.6, 64);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0x3b82f6,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.1
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            scene.add(ring);
+        }
+
+        // --- 4. 氢原子真实波函数电子云采样算法 ---
+        // 遵循量子力学波函数解析式 $\Psi_{n,l}(r, \theta)$ 概率密度分布采样
+        function generateQuantumParticles() {
+            const n = State.n;
+            const l = State.l;
+            const obs = State.observeIntensity / 100; // 坍缩强度 0~1
+
+            for (let i = 0; i < particleCount; i++) {
+                let r, theta, phi;
+
+                if (obs > 0.85) {
+                    // 【完全测量坍缩】：电子波函数完全坍缩为确切小粒子轨道，模拟玻尔经典玻尔轨道运转
+                    // 粒子凝聚在一个经典圆形圈附近
+                    const angle = (i / particleCount) * Math.PI * 2 + State.phase;
+                    const bRadius = n * n * 1.8; // 玻尔轨道半径
+                    
+                    r = bRadius + (Math.random() - 0.5) * 0.2;
+                    theta = Math.PI / 2 + (Math.random() - 0.5) * 0.05;
+                    phi = angle;
+                } 
+                else {
+                    // 【概率波叠加态】：严格按照薛定谔方程解析概率密度分布
+                    // 1. 径向概率波采样
+                    r = sampleRadialProbability(n, l);
+
+                    // 2. 球面调和函数 (角量子数 l 决定哑铃形或梅花形)
+                    const angular = sampleAngularProbability(l);
+                    theta = angular.theta;
+                    phi = angular.phi;
+
+                    // 3. 部分坍缩模拟：调大测量值时，波包概率向赤道轨道逐步紧缩
+                    if (obs > 0.05) {
+                        const targetTheta = Math.PI / 2;
+                        theta = theta * (1 - obs) + targetTheta * obs + (Math.random() - 0.5) * obs * 0.1;
+                    }
+                }
+
+                // 从球坐标转换为 3D 直角坐标位置
+                const x = r * Math.sin(theta) * Math.cos(phi);
+                const y = r * Math.cos(theta);
+                const z = r * Math.sin(theta) * Math.sin(phi);
+
+                positionsArray[i * 3] = x;
+                positionsArray[i * 3 + 1] = y;
+                positionsArray[i * 3 + 2] = z;
+
+                // 基于距离与角量子数计算炫彩霓虹色彩过渡
+                // 1s用青色，2p用极光紫，3d带粉红色
+                let color = new THREE.Color();
+                if (l === 0) {
+                    color.setHSL(0.5 + Math.sin(r * 0.3) * 0.1, 0.9, 0.6); // 青蓝
+                } else if (l === 1) {
+                    color.setHSL(0.75 + Math.cos(theta) * 0.1, 0.9, 0.65); // 极光紫
+                } else {
+                    color.setHSL(0.92 + Math.sin(phi) * 0.05, 0.9, 0.7); // 洋红粉
+                }
+
+                colorsArray[i * 3] = color.r;
+                colorsArray[i * 3 + 1] = color.g;
+                colorsArray[i * 3 + 2] = color.b;
+            }
+        }
+
+        // 径向分布概率密度采样简化模型 (以拉盖尔多项式概率密度分布拟合)
+        function sampleRadialProbability(n, l) {
+            // 氢原子轨道有效尺度随 n^2 递增
+            const scale = n * n * 1.5;
+            
+            while(true) {
+                // 蒙特卡洛拒绝采样法
+                const testR = Math.random() * scale * 2.2;
+                let prob = 0.0;
+
+                if (n === 1) {
+                    // 1s 轨域： exp(-r)
+                    prob = Math.exp(-testR * 1.2) * testR * testR;
+                } else if (n === 2) {
+                    if (l === 0) {
+                        // 2s 轨域：带一个节点环
+                        prob = Math.pow((2 - testR * 0.8), 2) * Math.exp(-testR * 0.8) * testR * testR;
+                    } else {
+                        // 2p 轨域：单峰分布
+                        prob = Math.pow(testR, 4) * Math.exp(-testR * 0.8);
+                    }
+                } else { // n === 3
+                    if (l === 0) {
+                        prob = Math.pow((6 - 6*testR*0.4 + testR*testR*0.16), 2) * Math.exp(-testR * 0.5) * testR * testR;
+                    } else if (l === 1) {
+                        prob = Math.pow(testR*(4 - testR*0.4), 2) * Math.exp(-testR * 0.5) * testR * testR;
+                    } else {
+                        prob = Math.pow(testR, 6) * Math.exp(-testR * 0.5);
+                    }
+                }
+
+                // 接受验证
+                if(Math.random() * 5.0 < prob) {
+                    return testR;
+                }
+            }
+        }
+
+        // 角向球面谐振子概率密度采样 (球极坐标)
+        function sampleAngularProbability(l) {
+            while(true) {
+                const theta = Math.random() * Math.PI;
+                const phi = Math.random() * Math.PI * 2;
+                let prob = 0.0;
+
+                if (l === 0) {
+                    // s 轨域：各向同性，完美球体
+                    prob = 1.0;
+                } else if (l === 1) {
+                    // p_z 轨域： cos^2(theta) 哑铃形
+                    prob = Math.pow(Math.cos(theta), 2);
+                } else { // l === 2
+                    // d 轨域： 3cos^2(theta) - 1 复杂梅花花瓣
+                    prob = Math.pow((3 * Math.pow(Math.cos(theta), 2) - 1), 2);
+                }
+
+                if(Math.random() < prob) {
+                    return { theta, phi };
+                }
+            }
+        }
+
+        // --- 5. 2D SVG 势阱曲线与双缝相干条纹 ---
+        function initCharts() {
+            updateCharts();
+            drawInterferenceStripes();
+        }
+
+        function updateCharts() {
+            const svg = document.getElementById('svg-wave-well');
+            if(!svg) return;
+
+            const w = svg.clientWidth || 320;
+            const h = svg.clientHeight || 120;
+            const margin = { top: 15, right: 15, bottom: 20, left: 35 };
+            const chartW = w - margin.left - margin.right;
+            const chartH = h - margin.top - margin.bottom;
+
+            // 势阱围墙
+            let content = `
+                <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${h - margin.bottom}" stroke="#a855f7" stroke-width="2.5" />
+                <line x1="${w - margin.right}" y1="${margin.top}" x2="${w - margin.right}" y2="${h - margin.bottom}" stroke="#a855f7" stroke-width="2.5" />
+                <line x1="${margin.left}" y1="${h - margin.bottom}" x2="${w - margin.right}" y2="${h - margin.bottom}" stroke="#1e293b" stroke-width="1.5" />
+                
+                <text x="${margin.left - 5}" y="${margin.top + 3}" fill="#c084fc" font-size="8" text-anchor="end">Ψ(x)</text>
+                <text x="${w / 2}" y="${h - 5}" fill="#64748b" font-size="8" text-anchor="middle">势阱宽度 L</text>
+            `;
+
+            // 绘制一维势阱定态解：波函数 Ψ_n(x) = sqrt(2/L) * sin(n * pi * x / L)
+            const n = State.n;
+            let wavePoints = [];
+            let probPoints = [];
+
+            for (let i = 0; i <= 100; i++) {
+                const ratio = i / 100;
+                const px = margin.left + ratio * chartW;
+                
+                // 计算随时间演化的相位： sin(n * pi * x) * cos(phase)
+                const phaseAngle = State.phase * State.simSpeed;
+                const amplitude = Math.sin(n * Math.PI * ratio) * Math.sin(phaseAngle);
+                
+                // 波函数高度映射 (中线在 h - bottom - chartH/2)
+                const pyWave = h - margin.bottom - chartH / 2 - amplitude * (chartH / 2.3);
+                
+                // 概率密度曲线 (始终大于0，不受相位演化影响)
+                const prob = Math.pow(Math.sin(n * Math.PI * ratio), 2);
+                const pyProb = h - margin.bottom - prob * (chartH * 0.85);
+
+                wavePoints.push(`${px.toFixed(1)},${pyWave.toFixed(1)}`);
+                probPoints.push(`${px.toFixed(1)},${pyProb.toFixed(1)}`);
+            }
+
+            // 绘制波函数包络线 (亮粉色)
+            content += `<path d="M ${wavePoints.join(' L ')}" fill="none" stroke="#ec4899" stroke-width="2" />`;
+            // 绘制概率密度线 (虚线，霓虹青色)
+            content += `<path d="M ${probPoints.join(' L ')}" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8" />`;
+
+            svg.innerHTML = content;
+        }
+
+        // 绘制量子干涉退相干条纹板
+        function drawInterferenceStripes() {
+            const container = document.getElementById('interference-plate');
+            if(!container) return;
+
+            const w = container.clientWidth || 300;
+            const h = container.clientHeight || 32;
+
+            // 观测强度 (0% ~ 100%)
+            const obs = State.observeIntensity / 100;
+
+            // 用 SVG 创建干涉荧光质感
+            let content = `<svg class="w-full h-full">`;
+
+            // 双缝干涉经典光强分布公式： I = I0 * cos^2(pi * d * sin(theta) / lambda)
+            // 发生观测坍缩时，干涉相消的相干性退化，转为两个单缝衍射强度的宏观简单叠加。
+            for(let x = 0; x < w; x++) {
+                const ratio = (x - w/2) / (w/2); // -1 ~ 1
+                
+                // 1. 经典相干干涉条纹 (波动性)
+                const interference = Math.pow(Math.cos(ratio * Math.PI * 7.5), 2) * Math.exp(-ratio * ratio * 2.5);
+
+                // 2. 测量坍缩后的单缝叠加条纹 (粒子性，双峰分布)
+                const particleLeft = Math.exp(-Math.pow(ratio + 0.35, 2) * 16);
+                const particleRight = Math.exp(-Math.pow(ratio - 0.35, 2) * 16);
+                const particleSum = (particleLeft + particleRight) * 0.7;
+
+                // 3. 基于测量退相干因子的加权混合
+                const finalIntensity = interference * (1 - obs) + particleSum * obs;
+                const brightness = Math.max(0, Math.min(1.0, finalIntensity));
+
+                // 绘制一列发光像素条 (以霓虹紫红混合)
+                content += `
+                    <line x1="${x}" y1="0" x2="${x}" y2="${h}" 
+                          stroke="rgb(${Math.round(brightness * 168)}, ${Math.round(brightness * 85)}, ${Math.round(brightness * 247)})" 
+                          stroke-width="1.2" opacity="${brightness * 0.95 + 0.05}" />
+                `;
+            }
+
+            // 双缝光阑插槽虚线提示
+            content += `
+                <line x1="${w * 0.35}" y1="0" x2="${w * 0.35}" y2="${h}" stroke="#ec4899" stroke-width="1" stroke-dasharray="1,6" opacity="0.3" />
+                <line x1="${w * 0.65}" y1="0" x2="${w * 0.65}" y2="${h}" stroke="#ec4899" stroke-width="1" stroke-dasharray="1,6" opacity="0.3" />
+            </svg>`;
+
+            container.innerHTML = content;
+        }
+
+        // --- 6. 3D 与 2D 双向数据响应式同步 ---
+        function updateVisuals() {
+            if (electronCloud) {
+                // 根据轨道参数和观测重刷粒子数组位置
+                generateQuantumParticles();
+                electronCloud.geometry.attributes.position.needsUpdate = true;
+                electronCloud.geometry.attributes.color.needsUpdate = true;
+
+                // 伴随演化波函数进行微小自旋转
+                electronCloud.rotation.y += 0.001 * State.simSpeed;
+            }
+
+            // 页面文字 HUD 刷新
+            document.getElementById('hud-quantum-n').innerText = State.n;
+            document.getElementById('hud-quantum-l').innerText = State.l;
+
+            // 轨域名称判定
+            const orbitalNames = {
+                "1-0": "1s 轨域 (基态球对称能级)",
+                "2-0": "2s 轨域 (含 1 个径向节面的球壳)",
+                "2-1": "2p 轨域 (双叶哑铃形激发态)",
+                "3-0": "3s 轨域 (含 2 个节面的球对称轨域)",
+                "3-1": "3p 轨域 (含径向节的哑铃形轨道)",
+                "3-2": "3d 轨域 (四叶梅花形高能激发态)"
+            };
+            const nameKey = `${State.n}-${State.l}`;
+            document.getElementById('hud-orbital-name').innerText = orbitalNames[nameKey] || "氢原子能级";
+
+            // 相干相干度
+            const coherence = 100 - State.observeIntensity;
+            document.getElementById('hud-coherence').innerText = `${coherence.toFixed(1)} %`;
+
+            let collapseTxt = "完全相干概率波";
+            let collapseClass = "font-bold text-cyan-300";
+            if (State.observeIntensity > 85) {
+                collapseTxt = "测量：波函数完全坍缩";
+                collapseClass = "font-bold text-rose-400";
+            } else if (State.observeIntensity > 5) {
+                collapseTxt = "退相干：测量干涉衰减中";
+                collapseClass = "font-bold text-amber-400";
+            }
+            document.getElementById('hud-collapse-status').innerText = collapseTxt;
+            document.getElementById('hud-collapse-status').className = collapseClass;
+
+            // 控制面板滑块数值同步
+            document.getElementById('val-quantum-n').innerText = State.n;
+            document.getElementById('val-quantum-l').innerText = State.l;
+
+            let obsText = `${State.observeIntensity.toFixed(0)} %`;
+            if (State.observeIntensity === 0) obsText += " (无退相干，纯波动干涉)";
+            else if (State.observeIntensity === 100) obsText += " (完全坍缩，经典粒子轨迹)";
+            document.getElementById('val-observe').innerText = obsText;
+        }
+
+        // --- 7. KaTeX 公式排版渲染 ---
+        function renderEquations() {
+            const schrodinger = `i\\hbar\\frac{\\partial}{\\partial t}\\Psi(\\mathbf{r},t) = \\hat{H}\\Psi(\\mathbf{r},t)`;
+            const debroglie = `\\text{物质波波长: } \\lambda = \\frac{h}{p}`;
+            const uncertainty = `\\text{不确定性原理: } \\Delta x \\Delta p \\ge \\frac{\\hbar}{2}`;
+
+            katex.render(schrodinger, document.getElementById('latex-schrodinger'), { throwOnError: false });
+            katex.render(debroglie, document.getElementById('latex-debroglie'), { throwOnError: false });
+            katex.render(uncertainty, document.getElementById('latex-uncertainty'), { throwOnError: false });
+        }
+
+        // --- 8. 互动小测验设计 ---
+        const QuizData = [
+            {
+                q: "在双缝干涉实验中，当我们在狭缝旁安装“光子探测器”观察粒子到底走哪条缝时，光屏上的干涉条纹会怎样变化？",
+                options: [
+                    { t: "A. 条纹的明暗对比度会变得更加清晰和高亮", correct: false },
+                    { t: "B. 条纹完全保持不变，证明观察不影响客观现实", correct: false },
+                    { t: "C. 干涉条纹消失，坍缩成类似宏观小球扔过的两道单缝投影", correct: true },
+                    { t: "D. 整个光屏全部变暗，无法检测到任何信号", correct: false }
+                ],
+                explain: "正确答案是 C。根据量子力学测量公理，任何“观测/测量”行为都会与被测系统发生退相干，使概率波函数瞬间**坍缩 (Collapse)** 进确定的本征态，从而剥夺了微观粒子的相干波动性，干涉条纹因此消退退化为两条单缝的宏观累加。"
+            },
+            {
+                q: "海森堡不确定性原理 (Δx·Δp ≥ ℏ/2) 告诉了我们关于微观粒子运动的什么本质规律？",
+                options: [
+                    { t: "A. 我们的测量仪器的精密度不够高，有待开发更尖端的传感器", correct: false },
+                    { t: "B. 我们【无法】同时精确确定微观粒子的位置 (x) 与动量 (p)", correct: true },
+                    { t: "C. 粒子的速度是无限的，无法进行追踪", correct: false },
+                    { t: "D. 电子在原子核周围的轨道是可以被百分之百精确测算和轨迹描绘的", correct: false }
+                ],
+                explain: "正确答案是 B。不确定性原理是微观粒子固有的**波动本质**属性。当限制位置误差 $\\Delta x$ 极小时，物质波包被极大压缩，导致构成它的动量分量 $\\Delta p$ 极其发散；这是数学傅里叶变换与波函数的内禀必然规律，非仪器精度局限所致。"
+            },
+            {
+                q: "经典的『薛定谔的猫』思想实验，主要是为了反驳或展示量子力学中哪一个概念在宏观世界的怪诞延伸？",
+                options: [
+                    { t: "A. 光电效应中光子的能量量子化", correct: false },
+                    { t: "B. 微观粒子所处的“生死/真假叠加态 (Superposition)”与测量坍缩", correct: true },
+                    { t: "C. 原子内部不同电子能级的越迁吸收谱线", correct: false },
+                    { t: "D. 宇宙黑洞中光线弯曲的引力透镜现象", correct: false }
+                ],
+                explain: "正确答案是 B。薛定谔提出该实验，通过把微观粒子的衰变（叠加态）用毒药机关与箱内的猫绑定，得出猫在箱子打开前处于“半死半活的叠加态”的结论。借此展示将微观的量子叠加态和测量坍缩直接放大至宏观世界时所产生的逻辑荒谬性。"
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        function loadQuiz(index) {
+            const quiz = QuizData[index];
+            document.getElementById('quiz-question-num').innerText = `问题 ${index + 1} of ${QuizData.length}`;
+            document.getElementById('quiz-question').innerText = quiz.q;
+            
+            const optsContainer = document.getElementById('quiz-options');
+            optsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2 text-left rounded bg-slate-900 border border-purple-950 text-slate-300 hover:bg-purple-500/10 hover:border-purple-400 transition-colors";
+                btn.innerText = opt.t;
+                btn.onclick = () => checkAnswer(opt.correct, quiz.explain);
+                optsContainer.appendChild(btn);
+            });
+
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            renderMathInElement(document.getElementById('quiz-panel'), {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+        }
+
+        function checkAnswer(isCorrect, explanation) {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden');
+            if (isCorrect) {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-purple-500/10 border-purple-500 text-purple-300 glow-purple";
+                feedback.innerHTML = `🎉 <b>完全正确！</b><br>${explanation}`;
+                setTimeout(() => {
+                    currentQuizIndex = (currentQuizIndex + 1) % QuizData.length;
+                    loadQuiz(currentQuizIndex);
+                }, 4000);
+            } else {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-rose-500/10 border-rose-500 text-rose-300";
+                feedback.innerHTML = `❌ <b>再试一次吧：</b><br>${explanation}`;
+            }
+
+            renderMathInElement(feedback, {
+                delimiters: [
+                    {left: '$', right: '$', display: false}
+                ]
+            });
+        }
+
+        // --- 9. 主演化相位循环与渲染循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                // 推进相位演化
+                State.phase += State.phaseStep * State.simSpeed;
+                
+                updateVisuals();
+                updateCharts();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 10. 事件绑定与 UI 交互控制 ---
+        function bindEvents() {
+            const sliderN = document.getElementById('slider-quantum-n');
+            const sliderL = document.getElementById('slider-quantum-l');
+            const sliderObserve = document.getElementById('slider-observe');
+
+            // 联动调节：限制角量子数 l 必须严格小于主量子数 n (0 <= l < n)
+            function syncQuantumLimits() {
+                const n = parseInt(sliderN.value);
+                State.n = n;
+                
+                // 重置 l 滑动条最大值
+                sliderL.max = n - 1;
+                let l = parseInt(sliderL.value);
+                if (l >= n) {
+                    l = n - 1;
+                    sliderL.value = l;
+                }
+                State.l = l;
+
+                updateVisuals();
+                updateCharts();
+                drawInterferenceStripes();
+            }
+
+            sliderN.oninput = () => {
+                syncQuantumLimits();
+            };
+
+            sliderL.oninput = (e) => {
+                State.l = parseInt(e.target.value);
+                updateVisuals();
+                updateCharts();
+            };
+
+            sliderObserve.oninput = (e) => {
+                State.observeIntensity = parseFloat(e.target.value);
+                updateVisuals();
+                drawInterferenceStripes();
+            };
+
+            // 播放与暂停控制
+            const playBtn = document.getElementById('btn-play');
+            const playIcon = document.getElementById('icon-play');
+            const pauseIcon = document.getElementById('icon-pause');
+            const statusTxt = document.getElementById('txt-status');
+
+            playBtn.onclick = () => {
+                State.isPlaying = !State.isPlaying;
+                if (State.isPlaying) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                    statusTxt.innerText = "正在上演化";
+                    statusTxt.className = "text-emerald-400 font-medium";
+                } else {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    statusTxt.innerText = "已暂停";
+                    statusTxt.className = "text-amber-400 font-medium";
+                }
+            };
+
+            // 单步
+            document.getElementById('btn-step').onclick = () => {
+                State.isPlaying = false;
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                statusTxt.innerText = "单步相位";
+                statusTxt.className = "text-teal-400 font-medium";
+                
+                State.phase += 0.5;
+                updateVisuals();
+                updateCharts();
+                drawInterferenceStripes();
+            };
+
+            // 重置
+            document.getElementById('btn-reset').onclick = () => {
+                State.phase = 0;
+                State.n = 1;
+                State.l = 0;
+                State.observeIntensity = 0;
+                
+                sliderN.value = 1;
+                sliderL.max = 0;
+                sliderL.value = 0;
+                sliderObserve.value = 0;
+
+                updateVisuals();
+                updateCharts();
+                drawInterferenceStripes();
+            };
+
+            // 随机干涉叠加态坍缩
+            document.getElementById('btn-random-state').onclick = () => {
+                const randN = Math.floor(Math.random() * 3) + 1; // 1~3
+                const randL = Math.floor(Math.random() * randN); // 0 < n
+                const randObs = (Math.random() * 100).toFixed(0);
+
+                sliderN.value = randN;
+                sliderL.max = randN - 1;
+                sliderL.value = randL;
+                sliderObserve.value = randObs;
+
+                State.n = randN;
+                State.l = randL;
+                State.observeIntensity = parseFloat(randObs);
+
+                updateVisuals();
+                updateCharts();
+                drawInterferenceStripes();
+            };
+
+            // 全屏
+            document.getElementById('btn-fullscreen').onclick = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            };
+
+            // 倍速
+            document.getElementById('select-speed').onchange = (e) => {
+                State.simSpeed = parseFloat(e.target.value);
+            };
+
+            // 测验面板闭合
+            const quizPanel = document.getElementById('quiz-panel');
+            const quizFab = document.getElementById('btn-quiz-fab');
+            
+            document.getElementById('btn-quiz-close').onclick = () => {
+                quizPanel.classList.add('hidden');
+                quizFab.classList.remove('hidden');
+            };
+
+            quizFab.onclick = () => {
+                quizPanel.classList.remove('hidden');
+                quizFab.classList.add('hidden');
+            };
+
+            // 响应视口变更
+            window.addEventListener('resize', () => {
+                const container = document.getElementById('canvas-container');
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+                updateCharts();
+                drawInterferenceStripes();
+            });
+        }
+
+        // --- 11. 自加载与系统启动 ---
+        window.onload = () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+
+            init3D();
+            initCharts();
+            loadQuiz(currentQuizIndex);
+            bindEvents();
+
+            // 首帧更新
+            updateVisuals();
+            renderEquations();
+
+            // 启动相位自循环
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>

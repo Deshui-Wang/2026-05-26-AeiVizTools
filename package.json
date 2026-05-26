@@ -1,0 +1,14 @@
+{
+  "name": "aetherviz-master",
+  "version": "1.0.0",
+  "description": "Interactive educational visualization builder",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build step required'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

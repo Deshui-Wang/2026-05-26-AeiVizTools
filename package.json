@@ -4,7 +4,7 @@
   "description": "Interactive educational visualization builder",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'No build step required'"
+    "build": "mkdir -p dist && cp *.html *.gif *.js dist/ 2>/dev/null || true"
   },
   "keywords": [],
   "author": "",

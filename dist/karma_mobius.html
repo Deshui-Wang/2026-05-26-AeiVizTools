@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>因果三部曲：莫比乌斯轮回轨 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#22D3EE',
+                            teal: '#14B8A6',
+                            purple: '#A78BFA',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            dark: '#060A14',
+                            navy: '#0F172A',
+                            panel: 'rgba(15, 23, 42, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FB7185 0%, #FBBF24 50%, #A78BFA 100%);
+            --bg-gradient: radial-gradient(circle at top, #160D1E 0%, #060913 75%, #020306 100%);
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(251, 113, 133, 0.2);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.75);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 10, 20, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(251, 113, 133, 0.25);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(251, 113, 133, 0.5);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 发光霓虹 */
+        .glow-rose {
+            box-shadow: 0 0 15px rgba(251, 113, 133, 0.4);
+        }
+        .glow-text-rose {
+            text-shadow: 0 0 8px rgba(251, 113, 133, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #FB7185;
+            cursor: pointer;
+            box-shadow: 0 0 8px #FB7185;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-rose-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-rose-500 to-amber-400 flex items-center justify-center font-bold text-slate-950 glow-rose">🔄</div>
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-rose-400 via-amber-300 to-purple-400 bg-clip-text text-transparent uppercase tracking-wider font-mono">
+                    莫比乌斯轮回轨迹实验室 <span class="text-xs font-normal text-rose-500/60 normal-case ml-1">Karma Möbius Strip Loop</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" onclick="resetSimulator()" class="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs font-medium hover:bg-rose-500/20 active:scale-95 transition-all">
+                重置因果
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-rose-400 text-slate-950 text-xs font-bold hover:bg-rose-300 active:scale-95 transition-all">
+                暂停模拟
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧讲解面板 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-rose-500/15 bg-[#060A14]/90 flex flex-col p-5 overflow-y-auto gap-4 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-rose-500/10">
+                <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                    🎯 灵魂觉悟目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" checked disabled class="mt-0.5 rounded cursor-pointer accent-rose-500">
+                        <span>领悟莫比乌斯几何带上“无内无外，起点即终点”的拓扑轮回本质。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-rose-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-2" class="cursor-pointer hover:text-slate-300 transition-colors">观察灵魂光斑跨越前世今生来世的三色相位连续演变。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-rose-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="cursor-pointer hover:text-slate-300 transition-colors">探究调节“执念牵引速度”与“无常扰动”对因果带面波折的影响。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心拓扑定义与公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-rose-500/10">
+                <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                    📝 轮回轨拓扑公式
+                </h3>
+                <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center">
+                    <div id="latex-formula" class="text-xs text-slate-100 py-1 font-mono"></div>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                    莫比乌斯带是典型的**单侧、无边界**拓扑形体。在参数方程中，$u$ 代表旋转相角，当灵魂绕行一周 ($2\pi$) 时，它会惊奇地发现自己到达了“带子的背面”，只有当它完整跨越两周 ($4\pi$) 后，才能重新回归最初的因。
+                </p>
+            </section>
+
+            <!-- 东方哲学讲解 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 border-rose-500/10">
+                <h3 class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                    💡 东方因果哲学观
+                </h3>
+                <div class="text-[11px] text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">❓ 欲知前世因，今生受者是</span>
+                        <p class="mt-1 text-slate-400">佛教《因果经》云：“欲知前世因，今生受者是；欲知来世果，今生作者是。”在莫比乌斯带上，金黄、翡翠与紫气相缠，当下做出的任何扰动，都会顺着轨迹完全传导并塑造下一相位的未来。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2.5">
+                        <span class="text-purple-300 font-semibold">🔬 执念是轮回的推力</span>
+                        <p class="mt-1 text-slate-400">执念就如同轨道上的“角速度”。执念越深，灵魂绕行的速度就越快，但无论速度多快，若不从带面上破茧而出，便永远被囚禁在这一维度的纠缠线圈之中。</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央渲染画布 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D Canvas 容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- 左上角 HUD 看板 -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[260px]">
+                <!-- 灵魂传感器 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-rose-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">真我灵魂状态传感器</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">宿命相位 (u)</span>
+                            <span id="hud-u" class="font-bold text-slate-200 font-mono">0.00 rad</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">当下转世状态</span>
+                            <span id="hud-state" class="font-bold text-rose-400 font-mono">今生・受果</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500 text-[9px]">灵魂色彩波长 ($\lambda$)</span>
+                        <span id="hud-color-val" class="font-bold text-rose-400 font-mono">520 nm</span>
+                    </div>
+                </div>
+
+                <!-- 轮回几何常数 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-amber-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">因果几何拓扑常数</h4>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">欧拉示性数 ($\chi$)</span>
+                            <span class="font-bold text-slate-300 font-mono">0 (流形)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">流形表面数 (S)</span>
+                            <span class="font-bold text-slate-300 font-mono">1 (单侧面)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">边界曲线数 (B)</span>
+                            <span class="font-bold text-amber-400 font-mono">1 (单闭合)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">因果维度 (D)</span>
+                            <span class="font-bold text-amber-400 font-mono">3D 嵌入</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧命运波动分析仪（右上角） -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[300px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-rose-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-xs font-semibold text-rose-400 flex items-center justify-between">
+                        <span>📈 命运因果线心电图</span>
+                        <span class="text-[9px] text-slate-500 font-mono">Karma Wave</span>
+                    </h4>
+                    <!-- 截面波形图 SVG -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-900">
+                        <svg id="svg-slice-chart" class="w-full h-full"></svg>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        展示灵魂所处物理空间高度 Z 随轮回时间的变化起伏。波峰表示福报显现，波谷表示消业承受。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 底部滑动调整器 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-5 items-center justify-between glass-panel rounded-2xl p-5 border border-rose-500/20 bg-[#060A14]/90 pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block text-[9px] uppercase">轮回动力</span>
+                        <span id="txt-mode" class="text-rose-400 font-medium font-mono">因果牵引状态</span>
+                    </div>
+                </div>
+
+                <!-- 滑动控制 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🔴 执念速度 (soul speed)</span>
+                            <span id="val-slider-1" class="font-mono text-rose-400">1.0</span>
+                        </div>
+                        <input id="slider-1" type="range" min="0.1" max="3.0" step="0.05" value="1.0" class="custom-slider" oninput="handleSliderChange(1, this.value)">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🟢 无常扰动振幅 (chaos amplitude)</span>
+                            <span id="val-slider-2" class="font-mono text-rose-400">0.2</span>
+                        </div>
+                        <input id="slider-2" type="range" min="0.0" max="1.0" step="0.05" value="0.2" class="custom-slider" oninput="handleSliderChange(2, this.value)">
+                    </div>
+                </div>
+
+                <!-- 倍率选择 -->
+                <div class="flex items-center gap-2">
+                    <select id="select-speed" onchange="changeTimeSpeed(this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-rose-500 transition-colors font-mono">
+                        <option value="0.2">0.2x 缓心</option>
+                        <option value="0.5">0.5x 慢修</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 急躁</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 诊断小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[350px] glass-panel border border-rose-500/20 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col bg-[#060A14]/95">
+                <div class="h-10 border-b border-rose-500/15 bg-slate-900/50 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-rose-400 flex items-center gap-1.5">
+                        ⚡ 轮回宿命诊断测验
+                    </span>
+                    <button onclick="toggleQuizPanel()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-rose-400 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2"></div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" onclick="toggleQuizPanel()" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-rose-400 text-rose-400 flex items-center justify-center hover:scale-110 glow-rose active:scale-95 transition-all" title="展开小测验">
+                💡
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 核心逻辑 -->
+    <script>
+        // --- 1. 模拟状态 ---
+        const State = {
+            isPlaying: true,
+            time: 0,
+            speedMultiplier: 1.0,
+            
+            // 莫比乌斯控制参数
+            soulSpeed: 1.0,        // 灵魂游走速度
+            chaosAmp: 0.2,         // 无常扰动振幅
+
+            soulPhase: 0.0,        // 灵魂当前相位角度 u
+            
+            // 测验
+            currentQuizIdx: 0,
+            quizAnswered: false
+        };
+
+        let scene, camera, renderer;
+        let mobiusLineSegments, mobiusPoints; // 莫比乌斯带的 Three.js 表示
+        let soulSphere, soulLight;            // 真我灵魂球体及绑定的点光源
+        let starField;
+        let animationFrameId;
+
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 2. 初始化 ---
+        function init() {
+            // KaTeX 渲染公式
+            katex.render(
+                "\\begin{aligned} x(u,v) &= (R + v \\cos\\frac{u}{2}) \\cos u \\\\ y(u,v) &= (R + v \\cos\\frac{u}{2}) \\sin u \\\\ z(u,v) &= v \\sin\\frac{u}{2} + A \\sin(5u + 4t) \\end{aligned}",
+                document.getElementById('latex-formula'),
+                { throwOnError: false }
+            );
+
+            initWebGL();
+            buildMobiusStrip();
+            initQuiz();
+            animate();
+        }
+
+        // --- 3. WebGL 环境配置 ---
+        function initWebGL() {
+            const w = canvasContainer.clientWidth || 800;
+            const h = canvasContainer.clientHeight || 600;
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, -5, 4.5);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            canvasContainer.appendChild(renderer.domElement);
+
+            // 光源
+            const ambient = new THREE.AmbientLight(0x0a0518, 2.0);
+            scene.add(ambient);
+
+            // 飘浮背景星尘
+            const starGeom = new THREE.BufferGeometry();
+            const starCount = 400;
+            const starPosArr = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount*3; i+=3) {
+                starPosArr[i] = (Math.random() - 0.5) * 15;
+                starPosArr[i+1] = (Math.random() - 0.5) * 15;
+                starPosArr[i+2] = (Math.random() - 0.5) * 15;
+            }
+            starGeom.setAttribute('position', new THREE.BufferAttribute(starPosArr, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0xFB7185,
+                size: 0.035,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending
+            });
+            starField = new THREE.Points(starGeom, starMat);
+            scene.add(starField);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- 4. 莫比乌斯轮回轨网格构建 ---
+        function buildMobiusStrip() {
+            const uSegments = 120;
+            const vSegments = 16;
+            
+            const vertices = [];
+            const lineIndices = [];
+
+            // 4.1 采样计算静态顶点，仅作基本拓扑构建
+            for (let i = 0; i <= uSegments; i++) {
+                const u = (i / uSegments) * 2 * Math.PI; // 单周 0 ~ 2pi
+                for (let j = 0; j <= vSegments; j++) {
+                    const v = -0.45 + (j / vSegments) * 0.9; // 宽度范围 -0.45 ~ 0.45
+                    
+                    // 标准莫比乌斯公式
+                    const R = 1.8;
+                    const x = (R + v * Math.cos(u / 2)) * Math.cos(u);
+                    const y = (R + v * Math.cos(u / 2)) * Math.sin(u);
+                    const z = v * Math.sin(u / 2);
+
+                    vertices.push(x, y, z);
+                }
+            }
+
+            // 4.2 构造连线拓扑索引
+            for (let i = 0; i < uSegments; i++) {
+                for (let j = 0; j <= vSegments; j++) {
+                    const idx1 = i * (vSegments + 1) + j;
+                    const idx2 = (i + 1) * (vSegments + 1) + j;
+                    lineIndices.push(idx1, idx2); // 纵向闭合线
+
+                    if (j < vSegments) {
+                        const idx3 = i * (vSegments + 1) + (j + 1);
+                        lineIndices.push(idx1, idx3); // 横向肋骨线
+                    }
+                }
+            }
+
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            
+            // 发光微尘网格材质
+            const ptsMat = new THREE.PointsMaterial({
+                color: 0xFB7185,
+                size: 0.02,
+                transparent: true,
+                opacity: 0.4,
+                blending: THREE.AdditiveBlending
+            });
+            mobiusPoints = new THREE.Points(geom, ptsMat);
+            scene.add(mobiusPoints);
+
+            // 霓虹带线框
+            const lineGeom = new THREE.BufferGeometry();
+            lineGeom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            lineGeom.setIndex(lineIndices);
+            
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0xFB7185,
+                transparent: true,
+                opacity: 0.25,
+                blending: THREE.AdditiveBlending
+            });
+            mobiusLineSegments = new THREE.LineSegments(lineGeom, lineMat);
+            scene.add(mobiusLineSegments);
+
+            // 4.3 构建灵魂真我发光体 (Sphere)
+            const soulGeom = new THREE.SphereGeometry(0.12, 16, 16);
+            const soulMat = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+            soulSphere = new THREE.Mesh(soulGeom, soulMat);
+            scene.add(soulSphere);
+
+            // 绑定发光点光源以营造耀眼的外发光
+            soulLight = new THREE.PointLight(0xFB7185, 3.5, 8);
+            soulSphere.add(soulLight);
+        }
+
+        // --- 5. 动态物理仿真及因果更新 ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                State.time += 0.015 * State.speedMultiplier;
+                // 更新灵魂游走相角
+                State.soulPhase += 0.012 * State.soulSpeed * State.speedMultiplier;
+            }
+
+            // 5.1 背景星尘缓慢晃动
+            if (starField) {
+                starField.rotation.z = State.time * 0.02;
+            }
+
+            // 5.2 动态形变：根据“无常扰动”滑块，重算莫比乌斯带的全部顶点，表现高维波折流动！
+            if (mobiusLineSegments && mobiusPoints) {
+                const posAttr = mobiusPoints.geometry.attributes.position;
+                const linePosAttr = mobiusLineSegments.geometry.attributes.position;
+                
+                const uSegments = 120;
+                const vSegments = 16;
+                const R = 1.8;
+                const Amp = State.chaosAmp * 0.45; // 扰动强度
+
+                let idx = 0;
+                for (let i = 0; i <= uSegments; i++) {
+                    const u = (i / uSegments) * 2 * Math.PI;
+                    for (let j = 0; j <= vSegments; j++) {
+                        const v = -0.45 + (j / vSegments) * 0.9;
+                        
+                        const x = (R + v * Math.cos(u / 2)) * Math.cos(u);
+                        const y = (R + v * Math.cos(u / 2)) * Math.sin(u);
+                        
+                        // 在 z 轴深度上附加随时间起伏的高斯正弦物理波动
+                        const z = v * Math.sin(u / 2) + Amp * Math.sin(5 * u + State.time * 3);
+
+                        posAttr.setXYZ(idx, x, y, z);
+                        linePosAttr.setXYZ(idx, x, y, z);
+                        idx++;
+                    }
+                }
+                posAttr.needsUpdate = true;
+                linePosAttr.needsUpdate = true;
+            }
+
+            // 5.3 真我灵魂（发光球体）在带面几何上的精准游走及三色转变解算
+            if (soulSphere) {
+                const u = State.soulPhase; // 当前相角，连续递增
+                const v = 0.0;             // 在莫比乌斯带的中轨正中游走
+                const R = 1.8;
+                
+                const x = (R + v * Math.cos(u / 2)) * Math.cos(u);
+                const y = (R + v * Math.cos(u / 2)) * Math.sin(u);
+                const z = v * Math.sin(u / 2) + (State.chaosAmp * 0.45) * Math.sin(5 * u + State.time * 3);
+
+                soulSphere.position.set(x, y, z);
+
+                // 解算代表前世、今生、来世的三色平滑过渡
+                // 带上的一周 (2pi) 有两个面，绕行两周 (4pi) 完成一次完整的超闭合周期
+                const cyclePhase = u % (4 * Math.PI); 
+
+                let colorHex = 0xFB7185; // 默认红色/玫瑰
+                let stateName = "今生・受果";
+                let waveLength = "560 nm";
+
+                // 分割为三段进行平滑过渡
+                if (cyclePhase < (4 * Math.PI / 3)) {
+                    // 第一阶段：金铜色 (前世・因缘)
+                    colorHex = 0xFBBF24; 
+                    stateName = "前世・造因";
+                    waveLength = "590 nm";
+                    // 渐变过渡
+                    const ratio = cyclePhase / (4 * Math.PI / 3);
+                    soulLight.color.setHSL(0.12 + ratio * 0.22, 1.0, 0.6); // 黄到绿
+                    soulSphere.material.color.setHSL(0.12 + ratio * 0.22, 1.0, 0.7);
+                } else if (cyclePhase < (8 * Math.PI / 3)) {
+                    // 第二阶段：翡翠绿 (今生・修行)
+                    colorHex = 0x10B981;
+                    stateName = "今生・修行";
+                    waveLength = "520 nm";
+                    const ratio = (cyclePhase - 4 * Math.PI / 3) / (4 * Math.PI / 3);
+                    soulLight.color.setHSL(0.34 + ratio * 0.36, 1.0, 0.6); // 绿到紫
+                    soulSphere.material.color.setHSL(0.34 + ratio * 0.36, 1.0, 0.7);
+                } else {
+                    // 第三阶段：幽幻紫 (来世・业果)
+                    colorHex = 0x8B5CF6;
+                    stateName = "来世・业报";
+                    waveLength = "410 nm";
+                    const ratio = (cyclePhase - 8 * Math.PI / 3) / (4 * Math.PI / 3);
+                    soulLight.color.setHSL(0.7 + ratio * 0.3, 1.0, 0.6); // 紫到黄
+                    soulSphere.material.color.setHSL(0.7 + ratio * 0.3, 1.0, 0.7);
+                }
+
+                // 5.4 实时同步更新左上角 HUD 看板
+                document.getElementById('hud-u').innerText = `${(cyclePhase).toFixed(2)} rad`;
+                document.getElementById('hud-state').innerText = stateName;
+                document.getElementById('hud-state').style.color = (stateName.startsWith("前世") ? "#FBBF24" : (stateName.startsWith("今生") ? "#10B981" : "#A78BFA"));
+                document.getElementById('hud-color-val').innerText = waveLength;
+                document.getElementById('hud-color-val').style.color = (stateName.startsWith("前世") ? "#FBBF24" : (stateName.startsWith("今生") ? "#10B981" : "#A78BFA"));
+            }
+
+            // 5.5 缓慢自转主视角以增强三维景深空间感
+            if (mobiusLineSegments && mobiusPoints) {
+                mobiusLineSegments.rotation.z = State.time * 0.05;
+                mobiusPoints.rotation.z = State.time * 0.05;
+            }
+
+            // 渲染 WebGL 帧
+            renderer.render(scene, camera);
+
+            // 更新右侧波动走势仪
+            drawKarmicWave();
+        }
+
+        // --- 6. 右侧命运波动走势仪 (Karma Heartbeat) ---
+        function drawKarmicWave() {
+            const svg = document.getElementById('svg-slice-chart');
+            if(!svg) return;
+
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 120;
+
+            const pts = [];
+            const soulSpeed = State.soulSpeed;
+            const chaosAmp = State.chaosAmp;
+
+            // 物理采样灵魂经历的波折
+            for (let i = 0; i <= w; i += 4) {
+                const xVal = i;
+                // 利用简谐公式与无常噪声叠加产生命运波折起伏
+                const tPhase = (State.soulPhase) - (i * 0.06);
+                let zVal = Math.sin(tPhase * 0.5) * 20; // 基础生命力
+                zVal += chaosAmp * 15 * Math.sin(tPhase * 3.5 + State.time); // 附加无常扰动起伏
+                
+                const yVal = h/2 - zVal;
+                pts.push(`${xVal},${yVal}`);
+            }
+
+            const currentSoulY = h/2 - (soulSphere ? soulSphere.position.z * 35 : 0);
+
+            svg.innerHTML = `
+                <!-- 底部半透明阴影填充 -->
+                <path d="M 0,${h} L ${pts.join(' L ')} L ${w},${h} Z" fill="rgba(251,113,133,0.06)" />
+                <!-- 命运起伏线段 -->
+                <path d="M ${pts.join(' L ')}" fill="none" stroke="#FB7185" stroke-width="1.8" />
+                
+                <!-- 实时命运指示点 -->
+                <circle cx="${w - 20}" cy="${currentSoulY}" r="5" fill="#FFF" class="glow-rose" />
+                <circle cx="${w - 20}" cy="${currentSoulY}" r="9" fill="none" stroke="#FB7185" stroke-width="1" class="animate-ping" />
+            `;
+        }
+
+        // --- 7. 交互滑块控制 ---
+        function handleSliderChange(sliderIdx, val) {
+            const parsedVal = parseFloat(val);
+            if (sliderIdx === 1) {
+                document.getElementById('val-slider-1').innerText = parsedVal.toFixed(2);
+                State.soulSpeed = parsedVal;
+            } else {
+                document.getElementById('val-slider-2').innerText = parsedVal.toFixed(2);
+                State.chaosAmp = parsedVal;
+            }
+        }
+
+        function togglePlay() {
+            State.isPlaying = !State.isPlaying;
+            document.getElementById('btn-play').innerText = State.isPlaying ? "暂停模拟" : "开始模拟";
+        }
+
+        function resetSimulator() {
+            State.time = 0;
+            State.soulPhase = 0.0;
+            State.soulSpeed = 1.0;
+            State.chaosAmp = 0.2;
+            document.getElementById('slider-1').value = 1.0;
+            document.getElementById('slider-2').value = 0.2;
+            document.getElementById('val-slider-1').innerText = "1.00";
+            document.getElementById('val-slider-2').innerText = "0.20";
+            initQuiz();
+        }
+
+        function changeTimeSpeed(val) {
+            State.speedMultiplier = parseFloat(val);
+        }
+
+        function onWindowResize() {
+            if(camera && renderer && canvasContainer) {
+                const w = canvasContainer.clientWidth;
+                const h = canvasContainer.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+        }
+
+        // --- 8. 宿命测验模块 ---
+        const QuizQuestions = [
+            {
+                question: "莫比乌斯带（Mobius Strip）在拓扑几何学上最核心的性质是什么？",
+                options: ["它只有一侧面，且没有任何物理边界 (正确答案)", "它是完全对称的三维多面流形", "它有两个完全平行的封闭平面", "它是四维球体在二维平面的投影"],
+                correct: 0,
+                feedback: "👍 回答完全正确！莫比乌斯带是单侧无边界封闭曲面的经典表征。这意味着你在其带面行走，不需要翻越任何边缘，便能走遍带子的“正反两面”。"
+            },
+            {
+                question: "代表真我灵魂的光斑在莫比乌斯带上绕行一周 (2π rad) 后，为什么呈现的状态颠倒了？",
+                options: ["因为灵魂在带的背面，必须绕行两周 (4π rad) 才能返回初始面 (正确答案)", "因为时间发生了逆流", "因为阻尼震荡抵消了相位角", "因为系统总能量在这个周期内衰减了一半"],
+                correct: 0,
+                feedback: "🎉 答对啦！因为带面发生了 180 度翻转，绕行一周时，灵魂处于它的投影对立面，需要完整的两周循环才能重新回到起点因。这隐喻了事物发展往往具有对立与统一的双重周期规律。"
+            },
+            {
+                question: "如果试图将发光的莫比乌斯轮回带沿着最中间的虚线剪开，在几何上会得到什么？",
+                options: ["两个互相嵌套的小莫比乌斯带", "两个完全断开的一维线段", "一条两倍长度、扭曲的单条闭合长环 (正确答案)", "一个完美无缺的平面圆环"],
+                correct: 2,
+                feedback: "💡 恭喜你答对了！剪开莫比乌斯带并不会使其分裂，反而会得到一条两倍长度的、带有四个半扭转角的单条闭合长环，这也极其生动地隐喻了在玄学纠缠中，‘执念越深，羁绊越长，轮回加倍’的深刻佛理。"
+            }
+        ];
+
+        function initQuiz() {
+            State.currentQuizIdx = 0;
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            document.getElementById('quiz-question-num').innerText = `问题 ${State.currentQuizIdx + 1} of ${QuizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-rose-500/10 hover:border-rose-500/30 text-left transition-all hover:scale-[1.01]";
+                btn.innerText = opt;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            State.quizAnswered = false;
+        }
+
+        function submitQuizAnswer(idx) {
+            if (State.quizAnswered) return;
+            State.quizAnswered = true;
+
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.remove('hidden');
+
+            if (idx === quiz.correct) {
+                feedbackBox.className = "p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `${quiz.feedback} <button onclick="nextQuizQuestion()" class="mt-2 block px-2.5 py-1 rounded bg-rose-500 text-slate-950 font-bold text-[10px] hover:scale-105 transition-all">下一题</button>`;
+            } else {
+                feedbackBox.className = "p-2.5 rounded-lg border border-rose-500/30 bg-rose-950/20 text-rose-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `❌ 回答错误，别气馁！结合左侧的莫比乌斯物理常数性质，重新选择一次吧。`;
+                State.quizAnswered = false; // 允许重新选择
+            }
+        }
+
+        function nextQuizQuestion() {
+            State.currentQuizIdx = (State.currentQuizIdx + 1) % QuizQuestions.length;
+            showQuizQuestion();
+        }
+
+        function toggleQuizPanel() {
+            const panel = document.getElementById('quiz-panel');
+            const fab = document.getElementById('btn-quiz-fab');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                fab.classList.add('hidden');
+            } else {
+                panel.classList.add('hidden');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

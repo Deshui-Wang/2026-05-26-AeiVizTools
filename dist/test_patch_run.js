@@ -1,605 +1,23 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeiViz Studio - 互动教育可视化生成器</title>
+const fs = require('fs');
 
-    <!-- Tailwind CSS v3.4+ -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        cyber: {
-                            teal: '#14B8A6',
-                            cyan: '#22D3EE',
-                            emerald: '#34D399',
-                            amber: '#FBBF24',
-                            rose: '#FB7185',
-                            purple: '#A78BFA',
-                            dark: '#070D19',
-                            navy: '#0F172A',
-                            panel: 'rgba(15, 23, 42, 0.65)'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-
-    <!-- Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap"
-        rel="stylesheet">
-
-    <!-- CSS Styles -->
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #06B6D4 50%, #8B5CF6 100%);
-            --bg-gradient: radial-gradient(circle at top, #0C152B 0%, #060913 70%, #020307 100%);
-            --glass-bg: rgba(10, 18, 36, 0.7);
-            --glass-border: rgba(34, 211, 238, 0.15);
-            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.65);
-        }
-
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg-gradient);
-            color: #F8FAFC;
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        /* 滚动条美化 */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(15, 23, 42, 0.2);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(34, 211, 238, 0.25);
-            border-radius: 3px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(34, 211, 238, 0.5);
-        }
-
-        /* 玻璃拟态面板 */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
-        }
-
-        /* 霓虹特效 */
-        .glow-cyan {
-            box-shadow: 0 0 25px rgba(34, 211, 238, 0.35);
-        }
-
-        .glow-purple {
-            box-shadow: 0 0 25px rgba(139, 92, 246, 0.35);
-        }
-
-        .glow-text-cyan {
-            text-shadow: 0 0 8px rgba(34, 211, 238, 0.65);
-        }
-
-        /* 旋转的雷达网格 */
-        @keyframes radar-pulse {
-            0% {
-                transform: scale(0.8) rotate(0deg);
-                opacity: 0.1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
-
-            100% {
-                transform: scale(1.2) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        .radar-ring {
-            animation: radar-pulse 3s infinite linear;
-        }
-
-        @keyframes radar-scan {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .radar-hand {
-            transform-origin: 50% 50%;
-            animation: radar-scan 4s infinite linear;
-        }
-
-        /* 3D 浮动装饰物 */
-        @keyframes floating {
-            0% {
-                transform: translateY(0px) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-10px) rotate(180deg);
-            }
-
-            100% {
-                transform: translateY(0px) rotate(360deg);
-            }
-        }
-
-        .float-sphere {
-            animation: floating 12s infinite linear;
-        }
-
-        /* 页面切换过渡 */
-        .fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    </style>
-</head>
-
-<body class="flex h-screen overflow-hidden select-none">
-
-    <!-- 左侧导航栏 -->
-    <aside
-        class="w-[320px] h-full shrink-0 border-r border-cyan-500/20 bg-[#060A14]/90 flex flex-col p-5 gap-6 z-40 relative">
-        <!-- Logo -->
-        <div class="flex items-center gap-3 border-b border-cyan-500/10 pb-4">
-            <div class="w-9 h-9 rounded-lg overflow-hidden shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.4)] border border-cyan-500/20 flex items-center justify-center">
-                <img src="logo.gif" alt="AI-Viz Logo" class="w-full h-full object-cover scale-[3.35] origin-center">
-            </div>
-            <div>
-                <h1
-                    class="text-base font-bold bg-gradient-to-r from-teal-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent tracking-widest uppercase font-mono">
-                    AI-Viz
-                </h1>
-                <span class="text-[10px] text-cyan-500/60 uppercase tracking-widest block -mt-1">Studio Workbench</span>
-            </div>
-        </div>
-
-        <!-- 侧边栏页签切换 -->
-        <div class="flex bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
-            <button id="tab-sidebar-official" onclick="switchSidebarTab('official')"
-                class="flex-1 py-2 text-center rounded-lg text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 transition-all font-mono">
-                📚 官方精选
-            </button>
-            <button id="tab-sidebar-history" onclick="switchSidebarTab('history')"
-                class="flex-1 py-2 text-center rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition-all font-mono">
-                💾 我的生成
-            </button>
-        </div>
-
-        <!-- 官方精选模板面板 -->
-        <div id="sidebar-official-panel" class="flex flex-col flex-1 min-h-0">
-            <ul class="flex flex-col gap-1.5 overflow-y-auto pr-1">
-                <li>
-                    <button onclick="loadOfficialPage('newton.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-cyan-500/10 bg-cyan-500/5 hover:bg-cyan-500/15 hover:border-cyan-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🍎 牛顿第二定律 3D 互动</span>
-                        <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px]">物理</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('photosynthesis.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-emerald-500/10 bg-emerald-500/5 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🌿 光合作用 3D 沉浸式</span>
-                        <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px]">生物</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('pythagoras.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-amber-500/10 bg-amber-500/5 hover:bg-amber-500/15 hover:border-amber-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">📐 勾股定理 2D 多维证明</span>
-                        <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px]">数学</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('quantum_mechanics.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-indigo-500/10 bg-indigo-500/5 hover:bg-indigo-500/15 hover:border-indigo-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">⚛️ 量子隧穿效应模拟</span>
-                        <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px]">物理</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('ai_workflow.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-purple-500/10 bg-purple-500/5 hover:bg-purple-500/15 hover:border-purple-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🧠 AI 工作流 3D 可视化</span>
-                        <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px]">综合</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('db_struct_ai.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-teal-500/10 bg-teal-500/5 hover:bg-teal-500/15 hover:border-teal-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🧬 AI知识库：数据库与数据结构赋能</span>
-                        <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-400 text-[10px]">信息</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('financial_management.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-amber-500/10 bg-amber-500/5 hover:bg-emerald-500/15 hover:border-amber-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">📊 财务管理：财经商贸流程动力学</span>
-                        <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px]">财经</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('llm_principle.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-purple-500/10 bg-purple-500/5 hover:bg-purple-500/15 hover:border-purple-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🤖 AI大模型：Transformer 工作原理</span>
-                        <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px]">智能</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('dimension_simulation.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-cyan-500/10 bg-cyan-500/5 hover:bg-cyan-500/15 hover:border-cyan-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🌌 多维空间模拟 (1D-5D)</span>
-                        <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px]">空间</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('karma_mobius.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-rose-500/10 bg-rose-500/5 hover:bg-rose-500/15 hover:border-rose-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🔄 因果三部曲：莫比乌斯轮回轨</span>
-                        <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400 text-[10px]">玄学</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('karma_hourglass.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-amber-500/10 bg-amber-500/5 hover:bg-amber-500/15 hover:border-amber-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">⏳ 因果三部曲：业力无常沙漏</span>
-                        <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px]">玄学</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('karma_ripple.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-purple-500/10 bg-purple-500/5 hover:bg-purple-500/15 hover:border-purple-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🪨 因果三部曲：三生石与涟漪</span>
-                        <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px]">玄学</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('flight_globe.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-teal-500/10 bg-teal-500/5 hover:bg-teal-500/15 hover:border-teal-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🗺️ 航空实验室：3D全球航线模拟</span>
-                        <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-400 text-[10px]">地理</span>
-                    </button>
-                </li>
-                <li>
-                    <button onclick="loadOfficialPage('seasons_simulation.html')"
-                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-amber-500/10 bg-amber-500/5 hover:bg-amber-500/15 hover:border-amber-500/30 transition-all text-left text-xs">
-                        <span class="text-slate-200 font-medium">🌞 昼夜早晚与四季更替实验室</span>
-                        <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px]">科学</span>
-                    </button>
-                </li>
-            </ul>
-        </div>
-
-        <!-- 自定义生成历史面板 -->
-        <div id="sidebar-history-panel" class="flex flex-col flex-1 min-h-0 hidden">
-            <div class="px-1 py-1 flex justify-between items-center mb-1 text-[10px] text-slate-500 border-b border-cyan-500/10">
-                <span>历史生成记录数</span>
-                <span id="history-count" class="text-cyan-400 font-bold bg-cyan-950 px-1.5 py-0.5 rounded-full border border-cyan-800/40">0</span>
-            </div>
-            
-            <div id="history-container" class="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 min-h-0">
-                <!-- 历史项目动态插入 -->
-                <div
-                    class="h-full flex flex-col items-center justify-center text-center text-slate-600 p-6 border border-dashed border-slate-800 rounded-xl bg-slate-950/20">
-                    <span class="text-2xl mb-2">⚡</span>
-                    <p class="text-[11px] leading-relaxed">暂无本地生成记录，输入提示词开启全新教学可视化！</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 新建生成按钮 -->
-        <button id="btn-sidebar-new" onclick="showGeneratorPanel()"
-            class="w-full py-3 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/25 text-cyan-400 font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0">
-            <span>✨ 新建课程生成</span>
-        </button>
-    </aside>
-
-    <!-- 右侧主展示区 -->
-    <main class="flex-1 h-full relative overflow-hidden flex flex-col z-10">
-
-        <!-- 3D 浮动背景装饰，仅在主页显示 -->
-        <div id="bg-decoration"
-            class="absolute inset-0 z-0 pointer-events-none overflow-hidden transition-all duration-500">
-            <div
-                class="float-sphere absolute top-[15%] right-[20%] w-[160px] h-[160px] rounded-full bg-gradient-to-tr from-cyan-500/10 to-indigo-500/5 blur-xl">
-            </div>
-            <div class="float-sphere absolute bottom-[20%] left-[30%] w-[240px] h-[240px] rounded-full bg-gradient-to-tr from-purple-500/5 to-teal-500/10 blur-2xl"
-                style="animation-delay: -3s;"></div>
-        </div>
-
-        <!-- 页面A：生成器主仪表盘 -->
-        <section id="panel-generator"
-            class="flex-1 flex items-center justify-center p-8 z-10 transition-all duration-300">
-            <div
-                class="w-full max-w-[680px] glass-panel rounded-2xl p-10 flex flex-col gap-8 transition-all hover:border-cyan-500/30">
-                <!-- 科技标头 -->
-                <div class="text-center flex flex-col gap-2 relative">
-                    <h2
-                        class="text-3xl font-black bg-gradient-to-r from-teal-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent uppercase tracking-wider font-mono glow-text-cyan">
-                        AI 可视化教学生成器
-                    </h2>
-                    <p class="text-slate-400 text-xs font-medium tracking-wide">
-                        基于 Three.js + SVG 的互动教育 3D 可视化自动生成系统
-                    </p>
-                    <div class="h-[1px] w-32 bg-cyan-500/20 mx-auto mt-2"></div>
-                </div>
-
-                <!-- 学科快速标签选择 -->
-                <div class="flex flex-col gap-3">
-                    <span class="text-xs font-semibold text-slate-500 tracking-wider">选择学科主题方向：</span>
-                    <div class="grid grid-cols-3 gap-3">
-                        <button onclick="selectSubject('物理')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-cyan-500/10 hover:border-cyan-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-cyan-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">物理学 (Physics)</span>
-                                <span class="text-[9px] text-slate-500">粒子、力学、天体模拟</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('化学')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">化学 (Chemistry)</span>
-                                <span class="text-[9px] text-slate-500">分子结构、中和反应</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('生物')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-orange-500/10 hover:border-orange-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-orange-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">生物学 (Biology)</span>
-                                <span class="text-[9px] text-slate-500">DNA结构、细胞分裂</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('数学')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-amber-500/10 hover:border-amber-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-amber-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">数学 (Mathematics)</span>
-                                <span class="text-[9px] text-slate-500">几何证明、三角函数</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('天文')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-indigo-500/10 hover:border-indigo-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-indigo-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">天文与宇宙 (Space)</span>
-                                <span class="text-[9px] text-slate-500">引力场、行星轨迹</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('综合')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-purple-500/10 hover:border-purple-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-purple-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">信息技术与前沿 (AI)</span>
-                                <span class="text-[9px] text-slate-500">深度学习、排序算法</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('计算机')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-blue-500/10 hover:border-blue-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-blue-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">💻 计算机科学 (CS)</span>
-                                <span class="text-[9px] text-slate-500">数据结构、网络拓扑</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('金融财经')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-emerald-500/10 hover:border-emerald-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-emerald-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">📈 金融财经 (Finance)</span>
-                                <span class="text-[9px] text-slate-500">期权定价、复利折现</span>
-                            </div>
-                        </button>
-                        <button onclick="selectSubject('商贸物流')"
-                            class="subject-btn group px-4 py-3 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-pink-500/10 hover:border-pink-500/40 text-slate-300 text-xs flex items-center gap-2.5 transition-all text-left">
-                            <span
-                                class="w-2.5 h-2.5 rounded-full bg-pink-500 group-hover:scale-125 transition-transform"></span>
-                            <div class="flex flex-col">
-                                <span class="font-bold text-slate-200">🚛 商贸物流 (Logistics)</span>
-                                <span class="text-[9px] text-slate-500">供应链管理、牛鞭效应</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 提示词输入区 -->
-                <div class="flex flex-col gap-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-slate-500 tracking-wider">输入教学主题提示词：</span>
-                        <span class="text-[10px] text-slate-500">支持任意科学概念或日常定理</span>
-                    </div>
-                    <div class="relative flex items-center">
-                        <input type="text" id="prompt-input" placeholder="例如：双摆混沌模拟、磁阻力电磁感应、黑洞视界引力红移..."
-                            class="w-full px-5 py-4 rounded-2xl bg-slate-950 border border-slate-800 text-slate-200 text-sm font-medium outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(34,211,238,0.2)] transition-all placeholder-slate-600">
-                        <button onclick="startVisualGeneration()"
-                            class="absolute right-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 via-cyan-400 to-indigo-500 text-slate-950 font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-                            一键生成
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 推荐主题快捷方式 -->
-                <div class="flex flex-wrap items-center gap-2 text-xs">
-                    <span class="text-slate-500">热门搜索：</span>
-                    <button onclick="fillPrompt('双摆混沌轨迹模拟', '物理')"
-                        class="px-2.5 py-1 rounded-full border border-slate-800 bg-slate-900/30 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors">🔥
-                        双摆模拟</button>
-                    <button onclick="fillPrompt('电磁感应与磁阻力', '物理')"
-                        class="px-2.5 py-1 rounded-full border border-slate-800 bg-slate-900/30 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/30 transition-colors">⚡
-                        电磁感应</button>
-                    <button onclick="fillPrompt('DNA双螺旋与复制', '生物')"
-                        class="px-2.5 py-1 rounded-full border border-slate-800 bg-slate-900/30 text-slate-400 hover:text-emerald-400 hover:border-emerald-500/30 transition-colors">🧬
-                        DNA复制</button>
-                    <button onclick="fillPrompt('日食与月食光路图', '天文')"
-                        class="px-2.5 py-1 rounded-full border border-slate-800 bg-slate-900/30 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-colors">🌑
-                        日月食</button>
-                    <button onclick="fillPrompt('勾股定理几何证明', '数学')"
-                        class="px-2.5 py-1 rounded-full border border-slate-800 bg-slate-900/30 text-slate-400 hover:text-amber-400 hover:border-amber-500/30 transition-colors">📐
-                        勾股定理</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 页面B：AI 智能生成中（加载遮罩） -->
-        <section id="panel-generating"
-            class="hidden absolute inset-0 bg-[#060A14]/90 backdrop-blur-xl z-30 flex flex-col items-center justify-center p-8 gap-8">
-            <!-- 炫酷雷达扫描环 -->
-            <div class="relative w-36 h-36 flex items-center justify-center select-none pointer-events-none">
-                <!-- SVG 雷达盘 -->
-                <svg class="absolute w-full h-full text-cyan-500/30" viewBox="0 0 100 100">
-                    <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" stroke-width="0.5"
-                        stroke-dasharray="2,2" />
-                    <circle cx="50" cy="50" r="35" fill="none" stroke="currentColor" stroke-width="0.5" />
-                    <circle cx="50" cy="50" r="22" fill="none" stroke="currentColor" stroke-width="0.5"
-                        stroke-dasharray="4,4" />
-                    <!-- 指标刻度 -->
-                    <line x1="50" y1="2" x2="50" y2="8" stroke="currentColor" stroke-width="1" />
-                    <line x1="50" y1="92" x2="50" y2="98" stroke="currentColor" stroke-width="1" />
-                    <line x1="2" y1="50" x2="8" y2="50" stroke="currentColor" stroke-width="1" />
-                    <line x1="92" y1="50" x2="98" y2="50" stroke="currentColor" stroke-width="1" />
-                    <!-- 扫面针 -->
-                    <line x1="50" y1="50" x2="50" y2="4" stroke="#22d3ee" stroke-width="1.5" class="radar-hand" />
-                </svg>
-                <div class="radar-ring absolute w-[90%] h-[90%] border border-cyan-500 rounded-full"></div>
-                <div class="radar-ring absolute w-[50%] h-[50%] border border-indigo-500 rounded-full"
-                    style="animation-delay: -1.5s;"></div>
-                <!-- 核心字眼 -->
-                <span class="font-mono text-xs font-bold text-cyan-400 tracking-wider uppercase glow-text-cyan">AI
-                    Core</span>
-            </div>
-
-            <!-- 加载文字提示 -->
-            <div class="text-center flex flex-col gap-2 max-w-[450px]">
-                <h3 class="text-lg font-bold text-slate-100 uppercase tracking-widest font-mono">
-                    正在构建互动式 WebGL 可视化场景
-                </h3>
-                <div
-                    class="w-64 h-1 bg-slate-900 rounded-full mx-auto overflow-hidden relative border border-slate-800">
-                    <div class="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 absolute left-0 rounded-full transition-all duration-300"
-                        id="gen-progressbar" style="width: 5%;"></div>
-                </div>
-                <!-- 跑马灯状态 -->
-                <p id="gen-status-text" class="text-xs text-cyan-400 font-mono italic mt-1">
-                    [System] 正在初始化神经编译管道...
-                </p>
-            </div>
-
-            <!-- 控制台日志面板 -->
-            <div
-                class="w-full max-w-[500px] h-[160px] bg-slate-950 border border-slate-800/80 rounded-xl p-4 flex flex-col font-mono text-[10px] text-slate-500 gap-1.5 overflow-hidden shadow-2xl relative">
-                <!-- 光圈微发光 -->
-                <div
-                    class="absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-cyan-500/5 to-transparent pointer-events-none">
-                </div>
-                <div class="flex-1 overflow-y-auto flex flex-col gap-1 pr-1" id="console-logs">
-                    <!-- 日志动态输出 -->
-                </div>
-            </div>
-        </section>
-
-        <!-- 页面C：课程预览画板（含顶栏 HUD 与 iframe） -->
-        <section id="panel-preview" class="hidden flex-1 flex flex-col h-full z-10">
-            <!-- 顶部 HUD 工具栏 -->
-            <header
-                class="h-16 shrink-0 border-b border-cyan-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-30">
-                <!-- 课程主题名称 -->
-                <div class="flex items-center gap-3">
-                    <div
-                        class="flex items-center gap-1.5 px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase tracking-wider">
-                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                        <span>Preview</span>
-                    </div>
-                    <div>
-                        <h2 id="preview-title" class="text-sm font-bold text-slate-100 uppercase tracking-wide">
-                            未知课程主题
-                        </h2>
-                        <span id="preview-subtitle"
-                            class="text-[10px] text-slate-500 tracking-wider block">物理学交互实验室</span>
-                    </div>
-                </div>
-
-                <!-- 交互动作组 -->
-                <div class="flex items-center gap-3">
-                    <!-- 保存到历史 -->
-                    <button id="btn-save-history" onclick="saveCurrentToHistory()"
-                        class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs tracking-wider flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(52,211,153,0.2)]">
-                        <span>💾 保存课程至历史</span>
-                    </button>
-                    <!-- 导出本地 HTML -->
-                    <button onclick="exportCurrentHTML()"
-                        class="px-4 py-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 font-bold text-xs tracking-wider flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
-                        <span>📥 导出 HTML 独立文件</span>
-                    </button>
-                    <!-- 分割线 -->
-                    <span class="w-[1px] h-6 bg-slate-800"></span>
-                    <!-- 放弃并关闭 -->
-                    <button onclick="closePreview()"
-                        class="w-9 h-9 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 hover:border-rose-500/50 text-rose-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-                        title="关闭预览并返回首页">
-                        ✕
-                    </button>
-                </div>
-            </header>
-
-            <!-- iframe 容器 -->
-            <div class="flex-1 w-full h-full relative bg-slate-950 z-20">
-                <iframe id="preview-iframe" class="w-full h-full border-none" src="about:blank"></iframe>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- 巨型静态模板容器：使用 text/plain 避免 HTML 解析器嵌套解析，杜绝 </script> 提前闭合 -->
-    <script type="text/plain" id="course-template">
+const window = {
+    addEventListener: () => {}
+};
+const localStorage = {
+    getItem: () => {},
+    setItem: () => {}
+};
+const document = {
+    getElementById: (id) => {
+        if (id === 'course-template') {
+            return { textContent: `
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{TITLE}} 3D 可视化教学 - AI可视化教学生成器</title>
+    <title>{{TITLE}} 3D 可视化教学 - AetherViz</title>
     
     <!-- Tailwind CSS -->
     [[SCRIPT_TAILWIND]]
@@ -848,10 +266,13 @@
     [[SCRIPT_MAIN_LOGIC]]
 </body>
 </html>
-    </script>
+    ` };
+        }
+        return { textContent: '', style: {}, classList: { add:()=>{}, remove:()=>{} } };
+    }
+};
 
-    <!-- 主入口 JS 核心逻辑 -->
-    <script>
+
         // 全局状态管理
         const AppState = {
             currentSubject: '物理',    // 当前所选学科
@@ -871,7 +292,7 @@
         // ==========================================
         // 1. 学科选择与交互
         // ==========================================
-
+        
         function initSubjectStyles() {
             selectSubject('物理');
         }
@@ -969,39 +390,6 @@
                 '绑定参数控制器：可调控网络层数、学习率、数据集复杂程度...',
                 '编写机器学习和信息工程前沿互动式选择小测验！',
                 '编译完成！神经网络与拓扑流动沙盒初始化完成。'
-            ],
-            '计算机': [
-                '识别计算机科学与算法主题。成功匹配拓扑图及红黑树渲染模式。',
-                '初始化 Three.js (r134) 拓扑算法仿真及内存渲染环境...',
-                '构建三维树状节点 (Node/Branch) 及寻路连线骨架...',
-                '注入二叉搜索树、红黑树自平衡旋转平衡及三次握手网络拓扑计算...',
-                '实时编译网络往返时延（RTT）平滑估算与香农定理 KaTeX 格式...',
-                '绘制网络数据吞吐量、算法时间复杂度 O(log n) SVG 曲线图...',
-                '配置 HUD 信息板：网络包丢包率、递归深度与数据吞吐速率监测器...',
-                '设计并注入计算机网络可靠通信与数据结构优化选择测验题！',
-                '网络仿真系统装配完毕！60fps 三维寻路逻辑流畅启动。'
-            ],
-            '金融财经': [
-                '识别数理金融财经主题。成功匹配三维网格定价波动面渲染模式。',
-                '初始化 WebGL 连续时间资产定价仿真环境...',
-                '构建三维布莱克-舒尔斯（Black-Scholes）期权价值波动网格面...',
-                '注入无风险套利推导与常微分方程，生成美观的期权希腊字母矩阵...',
-                '生成 KaTeX 格式期权费和现金流折现（DCF）贴现推导公式...',
-                '绘制期权公允价值变动、复利时间价值贴现趋势 SVG 关系走势图表...',
-                '配置财经实操 HUD 板块：实时标的股票价格、期权费、Delta 与 Gamma 控制台...',
-                '整合证券期权交易、无风险利率及资金时间价值互动小测验试题！',
-                '金融沙盒组装完毕！期权价值波动网格抗锯齿渲染就绪。'
-            ],
-            '商贸物流': [
-                '识别商贸物流与供应链主题。成功匹配多级漏斗级联粒子模式。',
-                '搭建供应链流动动力学渲染环境，配置级联漏斗粒子源...',
-                '基于提前期（Lead Time）延迟动力学构建供应链“牛鞭效应”波动模型...',
-                '计算零售商、批发商与制造商的需求变动放大与安全库存安全指数...',
-                '绘制供应链多节点需求放大震荡、库存持有成本 SVG 能量变化走势...',
-                '设置现代商贸实训 HUD 看板：平均库存周转率、安全库存量、运送延迟延迟看板...',
-                '编写排队论模型及安全库存安全量 KaTeX 精准公式...',
-                '针对牛鞭效应、物流延迟控制与排队决策装配诊断测验！',
-                '装配完毕！开启三维供应链粒子高速流动，牛鞭动力学模型就绪。'
             ]
         };
 
@@ -1034,10 +422,10 @@
                 if (currentLogIndex < totalSteps) {
                     const logText = logs[currentLogIndex];
                     const progressPercent = Math.min(95, Math.floor(((currentLogIndex + 1) / totalSteps) * 100));
-
+                    
                     const logElement = document.createElement('div');
                     logElement.className = 'fade-in flex gap-2';
-
+                    
                     let icon = '⚡';
                     let color = 'text-cyan-500';
                     if (logText.includes('编译') || logText.includes('初始化')) {
@@ -1064,15 +452,15 @@
                     currentLogIndex++;
                 } else {
                     clearInterval(intervalId);
-
+                    
                     setTimeout(() => {
                         progressbar.style.width = '100%';
                         document.getElementById('gen-status-text').textContent = '✅ 生成完毕！正在加载 iframe 可视化...';
-
+                        
                         setTimeout(() => {
                             try {
                                 const generatedData = assembleHTMLPage(prompt, subject);
-
+                                
                                 AppState.generatedCode = generatedData.html;
                                 AppState.generatedTitle = generatedData.title;
                                 AppState.generatedSubject = generatedData.subject;
@@ -1108,14 +496,14 @@
         // ==========================================
         // 3. 核心功能：前端 HTML 代码拼装引擎
         // ==========================================
-
+        
         function stringToHash(str) {
             let hash = 0;
             if (str.length === 0) return hash;
             for (let i = 0; i < str.length; i++) {
                 const chr = str.charCodeAt(i);
                 hash = ((hash << 5) - hash) + chr;
-                hash |= 0;
+                hash |= 0; 
             }
             return Math.abs(hash);
         }
@@ -1123,162 +511,111 @@
         function assembleHTMLPage(promptTitle, subjectName) {
             const cleanTitle = promptTitle.trim();
             const hashVal = stringToHash(cleanTitle);
-            const varIdx = hashVal % 3;
-
-            let subjectColor = '#22D3EE';
+            const varIdx = hashVal % 3; 
+            
+            let subjectColor = '#22D3EE'; 
             let colorGradient = 'linear-gradient(135deg, #14B8A6 0%, #06B6D4 50%, #22D3EE 100%)';
             let bgGradient = 'linear-gradient(180deg, #0F172A 0%, #0B1E26 60%, #082F3E 100%)';
             let hudColorClass = 'border-l-cyan-400';
-
+            
             if (subjectName === '物理') {
                 if (varIdx === 0) {
-                    subjectColor = '#22D3EE';
+                    subjectColor = '#22D3EE'; 
                     colorGradient = 'linear-gradient(135deg, #14B8A6 0%, #06B6D4 50%, #22D3EE 100%)';
                     bgGradient = 'linear-gradient(180deg, #0F172A 0%, #0B1E26 60%, #082F3E 100%)';
                     hudColorClass = 'border-l-cyan-400';
                 } else if (varIdx === 1) {
-                    subjectColor = '#F43F5E';
+                    subjectColor = '#F43F5E'; 
                     colorGradient = 'linear-gradient(135deg, #BE123C 0%, #E11D48 50%, #F43F5E 100%)';
                     bgGradient = 'linear-gradient(180deg, #1C0A0E 0%, #310D16 60%, #4C0519 100%)';
                     hudColorClass = 'border-l-rose-400';
                 } else {
-                    subjectColor = '#3B82F6';
+                    subjectColor = '#3B82F6'; 
                     colorGradient = 'linear-gradient(135deg, #1D4ED8 0%, #2563EB 50%, #3B82F6 100%)';
                     bgGradient = 'linear-gradient(180deg, #0A0F1E 0%, #0D1B3E 60%, #0E255F 100%)';
                     hudColorClass = 'border-l-blue-400';
                 }
             } else if (subjectName === '化学') {
                 if (varIdx === 0) {
-                    subjectColor = '#34D399';
+                    subjectColor = '#34D399'; 
                     colorGradient = 'linear-gradient(135deg, #059669 0%, #10B981 50%, #34D399 100%)';
                     bgGradient = 'linear-gradient(180deg, #070F0C 0%, #081C14 60%, #022B1E 100%)';
                     hudColorClass = 'border-l-emerald-400';
                 } else if (varIdx === 1) {
-                    subjectColor = '#10B981';
+                    subjectColor = '#10B981'; 
                     colorGradient = 'linear-gradient(135deg, #047857 0%, #059669 50%, #10B981 100%)';
                     bgGradient = 'linear-gradient(180deg, #050E0A 0%, #0C2117 60%, #063923 100%)';
                     hudColorClass = 'border-l-teal-400';
                 } else {
-                    subjectColor = '#A7F3D0';
+                    subjectColor = '#A7F3D0'; 
                     colorGradient = 'linear-gradient(135deg, #065F46 0%, #047857 50%, #6EE7B7 100%)';
                     bgGradient = 'linear-gradient(180deg, #040A07 0%, #092015 60%, #0F3A26 100%)';
                     hudColorClass = 'border-l-emerald-200';
                 }
             } else if (subjectName === '生物') {
                 if (varIdx === 0) {
-                    subjectColor = '#F97316';
+                    subjectColor = '#F97316'; 
                     colorGradient = 'linear-gradient(135deg, #EA580C 0%, #F97316 50%, #FB923C 100%)';
                     bgGradient = 'linear-gradient(180deg, #0F0B09 0%, #211209 60%, #3B1B0E 100%)';
                     hudColorClass = 'border-l-orange-400';
                 } else if (varIdx === 1) {
-                    subjectColor = '#EF4444';
+                    subjectColor = '#EF4444'; 
                     colorGradient = 'linear-gradient(135deg, #B91C1C 0%, #DC2626 50%, #EF4444 100%)';
                     bgGradient = 'linear-gradient(180deg, #140808 0%, #290F0F 60%, #450E0E 100%)';
                     hudColorClass = 'border-l-red-400';
                 } else {
-                    subjectColor = '#F59E0B';
+                    subjectColor = '#F59E0B'; 
                     colorGradient = 'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%)';
                     bgGradient = 'linear-gradient(180deg, #120E05 0%, #251B08 60%, #3D2B09 100%)';
                     hudColorClass = 'border-l-amber-400';
                 }
             } else if (subjectName === '数学') {
                 if (varIdx === 0) {
-                    subjectColor = '#FBBF24';
+                    subjectColor = '#FBBF24'; 
                     colorGradient = 'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%)';
                     bgGradient = 'linear-gradient(180deg, #0F100A 0%, #1F1E0C 60%, #302E09 100%)';
                     hudColorClass = 'border-l-amber-400';
                 } else if (varIdx === 1) {
-                    subjectColor = '#84CC16';
+                    subjectColor = '#84CC16'; 
                     colorGradient = 'linear-gradient(135deg, #4D7C0F 0%, #65A30D 50%, #84CC16 100%)';
                     bgGradient = 'linear-gradient(180deg, #090B05 0%, #141B0A 60%, #202E0E 100%)';
                     hudColorClass = 'border-l-lime-400';
                 } else {
-                    subjectColor = '#10B981';
+                    subjectColor = '#10B981'; 
                     colorGradient = 'linear-gradient(135deg, #047857 0%, #059669 50%, #10B981 100%)';
                     bgGradient = 'linear-gradient(180deg, #040906 0%, #0B1E13 60%, #10321F 100%)';
                     hudColorClass = 'border-l-emerald-400';
                 }
             } else if (subjectName === '天文') {
                 if (varIdx === 0) {
-                    subjectColor = '#8B5CF6';
+                    subjectColor = '#8B5CF6'; 
                     colorGradient = 'linear-gradient(135deg, #6D28D9 0%, #8B5CF6 50%, #A78BFA 100%)';
                     bgGradient = 'linear-gradient(180deg, #0B0A12 0%, #120D26 60%, #1D0F40 100%)';
                     hudColorClass = 'border-l-purple-400';
                 } else if (varIdx === 1) {
-                    subjectColor = '#EC4899';
+                    subjectColor = '#EC4899'; 
                     colorGradient = 'linear-gradient(135deg, #C2185B 0%, #E91E63 50%, #F48FB1 100%)';
                     bgGradient = 'linear-gradient(180deg, #0F080C 0%, #240C1A 60%, #3C0A29 100%)';
                     hudColorClass = 'border-l-pink-400';
                 } else {
-                    subjectColor = '#6366F1';
+                    subjectColor = '#6366F1'; 
                     colorGradient = 'linear-gradient(135deg, #4338CA 0%, #4F46E5 50%, #818CF8 100%)';
                     bgGradient = 'linear-gradient(180deg, #060714 0%, #0C0F28 60%, #141743 100%)';
                     hudColorClass = 'border-l-indigo-400';
                 }
-            } else if (subjectName === '计算机') {
-                if (varIdx === 0) {
-                    subjectColor = '#3B82F6';
-                    colorGradient = 'linear-gradient(135deg, #2563EB 0%, #3B82F6 50%, #60A5FA 100%)';
-                    bgGradient = 'linear-gradient(180deg, #080D1A 0%, #0C1838 60%, #10245E 100%)';
-                    hudColorClass = 'border-l-blue-400';
-                } else if (varIdx === 1) {
-                    subjectColor = '#00D2FF';
-                    colorGradient = 'linear-gradient(135deg, #00A8CC 0%, #00D2FF 50%, #80F3FF 100%)';
-                    bgGradient = 'linear-gradient(180deg, #040E14 0%, #091E2C 60%, #0F344F 100%)';
-                    hudColorClass = 'border-l-cyan-400';
-                } else {
-                    subjectColor = '#6366F1';
-                    colorGradient = 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #818CF8 100%)';
-                    bgGradient = 'linear-gradient(180deg, #060714 0%, #0C0F28 60%, #141743 100%)';
-                    hudColorClass = 'border-l-indigo-400';
-                }
-            } else if (subjectName === '金融财经') {
-                if (varIdx === 0) {
-                    subjectColor = '#10B981';
-                    colorGradient = 'linear-gradient(135deg, #059669 0%, #10B981 50%, #34D399 100%)';
-                    bgGradient = 'linear-gradient(180deg, #040906 0%, #0B1E13 60%, #10321F 100%)';
-                    hudColorClass = 'border-l-emerald-400';
-                } else if (varIdx === 1) {
-                    subjectColor = '#F59E0B';
-                    colorGradient = 'linear-gradient(135deg, #D97706 0%, #F59E0B 50%, #FBBF24 100%)';
-                    bgGradient = 'linear-gradient(180deg, #120E05 0%, #251B08 60%, #3D2B09 100%)';
-                    hudColorClass = 'border-l-amber-400';
-                } else {
-                    subjectColor = '#84CC16';
-                    colorGradient = 'linear-gradient(135deg, #65A30D 0%, #84CC16 50%, #A3E635 100%)';
-                    bgGradient = 'linear-gradient(180deg, #090B05 0%, #141B0A 60%, #202E0E 100%)';
-                    hudColorClass = 'border-l-lime-400';
-                }
-            } else if (subjectName === '商贸物流') {
-                if (varIdx === 0) {
-                    subjectColor = '#EC4899';
-                    colorGradient = 'linear-gradient(135deg, #DB2777 0%, #EC4899 50%, #F472B6 100%)';
-                    bgGradient = 'linear-gradient(180deg, #0F090E 0%, #210A19 60%, #3B0E2B 100%)';
-                    hudColorClass = 'border-l-pink-400';
-                } else if (varIdx === 1) {
-                    subjectColor = '#F97316';
-                    colorGradient = 'linear-gradient(135deg, #EA580C 0%, #F97316 50%, #FB923C 100%)';
-                    bgGradient = 'linear-gradient(180deg, #0F0B09 0%, #211209 60%, #3B1B0E 100%)';
-                    hudColorClass = 'border-l-orange-400';
-                } else {
-                    subjectColor = '#EF4444';
-                    colorGradient = 'linear-gradient(135deg, #B91C1C 0%, #DC2626 50%, #EF4444 100%)';
-                    bgGradient = 'linear-gradient(180deg, #140808 0%, #290F0F 60%, #450E0E 100%)';
-                    hudColorClass = 'border-l-red-400';
-                }
             } else {
                 if (varIdx === 0) {
-                    subjectColor = '#EC4899';
+                    subjectColor = '#EC4899'; 
                     colorGradient = 'linear-gradient(135deg, #DB2777 0%, #EC4899 50%, #F472B6 100%)';
                     bgGradient = 'linear-gradient(180deg, #0F090E 0%, #210A19 60%, #3B0E2B 100%)';
                     hudColorClass = 'border-l-pink-400';
                 } else if (varIdx === 1) {
-                    subjectColor = '#A855F7';
+                    subjectColor = '#A855F7'; 
                     colorGradient = 'linear-gradient(135deg, #7E22CE 0%, #9333EA 50%, #C084FC 100%)';
                     bgGradient = 'linear-gradient(180deg, #0B0712 0%, #170E28 60%, #2D144A 100%)';
                     hudColorClass = 'border-l-purple-300';
                 } else {
-                    subjectColor = '#06B6D4';
+                    subjectColor = '#06B6D4'; 
                     colorGradient = 'linear-gradient(135deg, #0891B2 0%, #06B6D4 50%, #22D3EE 100%)';
                     bgGradient = 'linear-gradient(180deg, #040B12 0%, #091D2E 60%, #083354 100%)';
                     hudColorClass = 'border-l-cyan-300';
@@ -1288,7 +625,7 @@
             let meta = generateTopicDetails(cleanTitle, subjectName);
 
             let template = document.getElementById('course-template').textContent;
-
+            
             let html = template
                 .replaceAll('{{TITLE}}', () => cleanTitle)
                 .replaceAll('{{SUBJECT}}', () => subjectName)
@@ -1301,7 +638,7 @@
                 .replaceAll('{{METAPHOR}}', () => meta.metaphor)
                 .replaceAll('{{PRINCIPLE}}', () => meta.principle)
                 .replaceAll('{{QUIZ_DATA}}', () => JSON.stringify(meta.quizzes));
-
+                
             // 采用拼接方式注入子页面脚本和主 JS 动力学逻辑，彻底打通 iframe 通路
             html = html
                 .replaceAll('[[SCRIPT_TAILWIND]]', () => '<script src="https://cdn.tailwindcss.com"></' + 'script>')
@@ -1310,7 +647,7 @@
                 .replaceAll('[[SCRIPT_KATEX_AUTO_RENDER]]', () => '<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></' + 'script>')
                 .replaceAll('[[SCRIPT_THREE]]', () => '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></' + 'script>')
                 .replaceAll('[[SCRIPT_MAIN_LOGIC]]', () => '<script>' + assembleSubPageScript(cleanTitle, subjectName, subjectColor, meta.quizzes, meta.formula, hashVal) + '</' + 'script>');
-
+                
             return {
                 html: html,
                 title: cleanTitle,
@@ -1533,100 +870,6 @@
                     symbols = 'F_G - 【' + title + '】系统的万有引力大小；G - 引力常数；m_1, m_2 - 双天体质量；r - 中心点间距';
                     principle = '行星绕恒星运行受万有引力场规约。恒星的巨大质量弯曲了周围的时空，行星在重力的势能井中作向心加速的圆周或椭圆坠落轨道运动。';
                     metaphor = '想象一张蹦紧的蹦床。如果你在中间放一个沉重保龄球（恒星），蹦床会陷下去一个漏斗。你扔出一个小玻璃弹珠，它就会沿着漏斗的坡度永远打转。';
-                }
-            }
-            else if (subject === '计算机') {
-                if (title.includes('红黑树') || title.includes('二叉树') || title.includes('平衡树') || title.includes('树')) {
-                    formula = 'T(n) = 2T(n/2) + O(n) \\Rightarrow O(n \\log n)';
-                    symbols = 'n - 节点数据规模；O(n \\log n) - 平均/最差时间复杂度；T(n) - 递归时间开销';
-                    principle = '红黑树是一种自平衡的二叉查找树。其通过定义节点颜色属性（红/黑）及特定的平衡规则（如根节点为黑色、红节点的子节点必须为黑等），在进行插入和删除操作时通过“左旋”、“右旋”与“变色”来自适应调节深度，确保最坏情况下的查找时间复杂度稳定在 O(log n)。';
-                    metaphor = '就像一棵具有自平衡机关的盆景。每当我们在某一侧挂上太重的红灯笼（新节点），花盆底部的滑轨就会自动“旋转”树干，让左右两边重新保持重心稳定与对称平衡。';
-                    quizzes = [
-                        {
-                            question: '红黑树自平衡旋转的核心作用是？',
-                            options: ['A) 减少树的物理内存占用', 'B) 限制树的最大高度，防止查找退化为 O(n) 的链表线性搜索', 'C) 让节点的颜色更好看'],
-                            correct: 1,
-                            explanation: '自平衡保证了即使在极端升序插入时，查找依然保持超高速率！'
-                        },
-                        {
-                            question: '在 3D 界面中增大“自平衡旋转速率”滑块，会导致？',
-                            options: ['A) 树的节点在空间中随自平衡规则加速进行左右旋位移动画', 'B) 树的节点颜色全部变为黑色', 'C) 3D 画布彻底卡死'],
-                            correct: 0,
-                            explanation: '调节速率滑块会直接为三维节点的自平衡运动注入高频时间步长，加快左右旋转的动作演化！'
-                        }
-                    ];
-                } else if (title.includes('握手') || title.includes('网络') || title.includes('协议') || title.includes('TCP')) {
-                    formula = '\\text{RTT} = \\alpha \\cdot \\text{Old\\_RTT} + (1-\\alpha) \\cdot \\text{Sample\\_RTT}';
-                    symbols = 'RTT - 往返时延（Round-Trip Time）；\\alpha - 历史平滑权重因子（通常取0.875）';
-                    principle = 'TCP/IP 协议中的“三次握手”是建立可靠传输的基础。通过 SYN、SYN-ACK、ACK 报文段的发送与回执，通信双端确认彼此的接收与发送能力均完好，进而估算网络当前的往返时延（RTT）以动态调整重传时间与流控。';
-                    metaphor = '就像两人隔空喊话。甲喊：“听得到吗？”（SYN）；乙听到并回喊：“听到了！你能听到我吗？”（SYN-ACK）；甲又回：“我也听到了！”（ACK）。三步都完成，双方才确认信道畅通，敢正式说话。';
-                    quizzes = [
-                        {
-                            question: '为什么可靠连接必须是“三次握手”，而两次不够？',
-                            options: ['A) 因为两次握手无法避免已失效的连接请求突然传送回服务器导致误建立连接', 'B) 只是因为网络标准强制单数', 'C) 两次握手无法传输任何数据'],
-                            correct: 0,
-                            explanation: '如果是两次握手，服务器收到早已过期的延迟连接请求就会直接单方面建立死连接，白白浪费服务器大块内存资源！'
-                        }
-                    ];
-                } else {
-                    formula = 'C = W \\log_2(1 + S/N)';
-                    symbols = 'C - 信道最大容量（比特/秒）；W - 信道带宽（赫兹）；S/N - 信噪比';
-                    principle = '香农定理指出，在有随机热噪声干扰的信道中，最大传输速率受限于信噪比和信道带宽。这是计算机网络物理层传输理论的终极基石。';
-                    metaphor = '就像在一个嘈杂的聚会厅里聊天。大厅的宽敞程度（带宽）决定了声音流通空间，而你说话的嗓门和背景噪音的比值（信噪比）决定了对方能听得多清楚。';
-                }
-            }
-            else if (subject === '金融财经') {
-                if (title.includes('期权') || title.includes('定价') || title.includes('金融') || title.includes('舒尔斯')) {
-                    formula = 'd_1 = \\frac{\\ln(S_0/K) + (r + \\sigma^2/2)T}{\\sigma \\sqrt{T}}, \\quad C = S_0 N(d_1) - K e^{-r T} N(d_2)';
-                    symbols = 'S_0 - 标的股票现价；K - 行权价；r - 无风险年利率；\\sigma - 股票收益波动率；T - 距离到期时间';
-                    principle = '布莱克-舒尔斯（Black-Scholes）期权定价模型是现代数理金融学的基石。它通过无风险套利原理，动态推导出了欧式期权在连续时间内的公允价值曲面。随着波动率和利率的增加，期权的期权费曲面呈现显著的弯曲变形与翘起（“波动率微笑”）。';
-                    metaphor = '买期权就像买一件未来的“最低保障合同”。如果股票市场（S）越是狂风暴雨上下暴震（波动率大），这张合同锁定利润的保障价值（期权费）就随之越贵。';
-                    quizzes = [
-                        {
-                            question: '在布莱克-舒尔斯定价模型中，如果“资产波动率（滑块1）”急剧增大，期权的公允价值会？',
-                            options: ['A) 线性下跌', 'B) 显著增加', 'C) 保持绝对归零'],
-                            correct: 1,
-                            explanation: '波动率越大，股票在未来突破行权价并产生暴利的空间就越广阔，而下行亏损已由期权锁死，因此期权费显著暴涨！'
-                        },
-                        {
-                            question: '如果我们拉大滑块中的“无风险利率（滑块2）”，看涨期权价格会？',
-                            options: ['A) 上升（因为未来行权价的现值折现减小）', 'B) 下降', 'C) 不变'],
-                            correct: 0,
-                            explanation: '利率增加会导致期权行权价格的折现现值变小，因此看涨期权的当前买入价值会随之走高！'
-                        }
-                    ];
-                } else {
-                    formula = '\\text{PV} = \\frac{\\text{CF}}{(1 + r)^t}';
-                    symbols = 'PV - 现值（Present Value）；CF - 未来现金流；r - 折现贴现率；t - 时间期数';
-                    principle = '货币时间价值是财务管理的第一原则。今天的 1 元钱价值大于明天的 1 元钱。通过贴现率将未来的资金现金流折合到现在，是投资决策（如 NPV 计算）的基本手段。';
-                    metaphor = '就像一棵在阳光下慢慢缩水的水果。明年的 10 斤大西瓜，如果放在今年来看，因为存放的损耗与利息折现（贴现率），在现在可能只值 8 斤重。';
-                }
-            }
-            else if (subject === '商贸物流') {
-                if (title.includes('供应链') || title.includes('牛鞭') || title.includes('周转') || title.includes('库存')) {
-                    formula = '\\text{Safety\\_Stock} = Z \\cdot \\sqrt{L \\cdot \\sigma_D^2 + D^2 \\cdot \\sigma_L^2}';
-                    symbols = 'Safety\\_Stock - 安全库存量；Z - 服务水平系数；L - 提前期（Lead Time）；\\sigma_D - 需求波动偏差';
-                    principle = '供应链管理中的“牛鞭效应”是典型的需求扭曲放大现象。由于供应链成员间信息在传递时的滞后与信息黑盒预测，零售商微小的需求波动（微弱正弦波）传递至上游分销商、制造商时，会被成倍放大为剧烈的库存积压或断货振荡。';
-                    metaphor = '就像你手里握着一根长皮鞭。你的手腕在最下端只是轻轻地抖动了 1 厘米（消费者微调需求），而整根牛鞭的鞭梢（最上游制造商）却会在空中爆发出几米宽的疯狂大抽打。';
-                    quizzes = [
-                        {
-                            question: '缓解“牛鞭效应”最科学、最根本的手段是？',
-                            options: ['A) 盲目扩建大仓库积压备货', 'B) 畅通双端信息流，共享实时销售终端数据 (POS) 以打破层级阻隔', 'C) 彻底关停生产线'],
-                            correct: 1,
-                            explanation: '消除牛鞭效应的关键在于“共享销售端真实需求，消灭多级传递的时间延迟”！'
-                        },
-                        {
-                            question: '拖大滑块 1 中的“提前期（延迟时间）”，制造端的“牛鞭振荡”会？',
-                            options: ['A) 显著加剧，物理圆锥发生更大幅度、更滞后的晃动', 'B) 瞬间趋向平稳', 'C) 频率变小，振幅变归零'],
-                            correct: 0,
-                            explanation: '提前期越长，延迟信息传递累积的库存牛鞭效应就越恶劣，最上游的生产端晃动也就更滞后且剧烈！'
-                        }
-                    ];
-                } else {
-                    formula = 'W_s = \\frac{\\lambda}{\\mu(\\mu - \\lambda)}';
-                    symbols = 'W_s - 顾客在系统中的平均等待时间；\\lambda - 顾客到达率；\\mu - 窗口服务率';
-                    principle = '排队论（随机服务系统理论）描述了商贸中心窗口、港口装卸、客服排队的等候机制。通过优化服务率，可以在客户满意度与企业运营成本之间取得平衡。';
-                    metaphor = '像超市的结账收银台。如果来结账的人（到达率）比收银员扫码（服务率）还要快，收银台前的长龙就会呈指数级迅速蔓延，导致怨声载道。';
                 }
             }
 
@@ -1934,126 +1177,6 @@
                 const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2 }));
                 ring.rotation.x = Math.PI/2;
                 scene.add(ring);
-            } else if (currentTopic.includes('红黑树') || currentTopic.includes('二叉树') || currentTopic.includes('平衡树') || currentTopic.includes('树')) {
-                const treeGroup = new THREE.Group();
-                treeGroup.name = 'tree_group';
-                
-                const sphereGeo = new THREE.SphereGeometry(0.5, 24, 24);
-                const redMat = new THREE.MeshStandardMaterial({ color: 0xff3355, roughness: 0.1, metalness: 0.1 });
-                const blackMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.1, metalness: 0.1 });
-                
-                const nodes = [
-                    { name: 'root', pos: new THREE.Vector3(0, 3, 0), color: 'black' },
-                    { name: 'left_1', pos: new THREE.Vector3(-2.8, 1, 0), color: 'red' },
-                    { name: 'right_1', pos: new THREE.Vector3(2.8, 1, 0), color: 'black' },
-                    { name: 'left_2_1', pos: new THREE.Vector3(-4.2, -1, 0), color: 'red' },
-                    { name: 'left_2_2', pos: new THREE.Vector3(-1.4, -1, 0), color: 'red' }
-                ];
-                
-                nodes.forEach(n => {
-                    const mesh = new THREE.Mesh(sphereGeo, n.color === 'red' ? redMat : blackMat);
-                    mesh.position.copy(n.pos);
-                    mesh.name = n.name;
-                    treeGroup.add(mesh);
-                });
-                
-                const lineGeo = new THREE.BufferGeometry();
-                const linePositions = new Float32Array([
-                    0, 3, 0,  -2.8, 1, 0,
-                    0, 3, 0,   2.8, 1, 0,
-                    -2.8, 1, 0, -4.2, -1, 0,
-                    -2.8, 1, 0, -1.4, -1, 0
-                ]);
-                lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
-                const lineMat = new THREE.LineBasicMaterial({ color: 0x475569 });
-                const treeLines = new THREE.LineSegments(lineGeo, lineMat);
-                treeLines.name = 'tree_lines';
-                treeGroup.add(treeLines);
-                
-                animatedGroup.add(treeGroup);
-            } else if (currentTopic.includes('握手') || currentTopic.includes('网络') || currentTopic.includes('协议') || currentTopic.includes('TCP')) {
-                const netGroup = new THREE.Group();
-                netGroup.name = 'network_group';
-                
-                const compGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
-                const clientMat = new THREE.MeshPhysicalMaterial({ color: 0x00d2ff, roughness: 0.1 });
-                const serverMat = new THREE.MeshPhysicalMaterial({ color: 0xff3355, roughness: 0.1 });
-                
-                const client = new THREE.Mesh(compGeo, clientMat);
-                client.position.set(-6, 0, 0);
-                client.name = 'client';
-                
-                const server = new THREE.Mesh(compGeo, serverMat);
-                server.position.set(6, 0, 0);
-                server.name = 'server';
-                
-                netGroup.add(client, server);
-                
-                const pathGeo = new THREE.TorusGeometry(6, 0.03, 8, 100);
-                pathGeo.rotation.x = Math.PI / 2;
-                const pathLine = new THREE.Mesh(pathGeo, new THREE.MeshBasicMaterial({ color: 0x475569, transparent: true, opacity: 0.3 }));
-                netGroup.add(pathLine);
-                
-                const signalGeo = new THREE.SphereGeometry(0.18, 16, 16);
-                const signalMat = new THREE.MeshBasicMaterial({ color: 0xffbb00 });
-                const signal = new THREE.Mesh(signalGeo, signalMat);
-                signal.position.set(-6, 0, 0);
-                signal.name = 'signal';
-                netGroup.add(signal);
-                
-                animatedGroup.add(netGroup);
-            } else if (currentTopic.includes('期权') || currentTopic.includes('定价') || currentSubject === '金融财经') {
-                const widthSeg = 30;
-                const heightSeg = 30;
-                const surfGeo = new THREE.PlaneGeometry(12, 12, widthSeg, heightSeg);
-                surfGeo.rotateX(-Math.PI / 2); 
-                
-                const surfMat = new THREE.MeshPhysicalMaterial({
-                    color: ${accentColor.replace('#', '0x')},
-                    roughness: 0.15,
-                    metalness: 0.1,
-                    wireframe: true, 
-                    transparent: true,
-                    opacity: 0.75
-                });
-                const mathSurface = new THREE.Mesh(surfGeo, surfMat);
-                mathSurface.name = 'bs_surface';
-                animatedGroup.add(mathSurface);
-            } else if (currentTopic.includes('供应链') || currentTopic.includes('牛鞭') || currentSubject === '商贸物流') {
-                const supplyGroup = new THREE.Group();
-                supplyGroup.name = 'supply_group';
-                
-                const coneGeo = new THREE.ConeGeometry(0.7, 1.6, 4);
-                const retailMat = new THREE.MeshStandardMaterial({ color: 0x34d399, roughness: 0.2 });
-                const wholesaleMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.2 });
-                const factoryMat = new THREE.MeshStandardMaterial({ color: 0xf87171, roughness: 0.2 });
-                
-                const c1 = new THREE.Mesh(coneGeo, retailMat); c1.position.set(-5, 0, 0); c1.name = 'retailer';
-                const c2 = new THREE.Mesh(coneGeo, wholesaleMat); c2.position.set(0, 0, 0); c2.name = 'wholesaler';
-                const c3 = new THREE.Mesh(coneGeo, factoryMat); c3.position.set(5, 0, 0); c3.name = 'factory';
-                
-                supplyGroup.add(c1, c2, c3);
-                
-                const flowCount = 50;
-                const flowGeo = new THREE.BufferGeometry();
-                const flowPositions = new Float32Array(flowCount * 3);
-                for(let i=0; i<flowCount; i++) {
-                    flowPositions[i*3] = -5 + Math.random() * 10;
-                    flowPositions[i*3+1] = (Math.random()-0.5)*0.4;
-                    flowPositions[i*3+2] = (Math.random()-0.5)*0.4;
-                }
-                flowGeo.setAttribute('position', new THREE.BufferAttribute(flowPositions, 3));
-                const flowMat = new THREE.PointsMaterial({
-                    color: 0x22d3ee,
-                    size: 0.12,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                const supplyParticles = new THREE.Points(flowGeo, flowMat);
-                supplyParticles.name = 'supply_particles';
-                supplyGroup.add(supplyParticles);
-                
-                animatedGroup.add(supplyGroup);
             } else {
                 let mainGeo;
                 if (currentHash % 4 === 0) {
@@ -2261,89 +1384,6 @@
                         document.getElementById('hud-energy').textContent = gravity.toFixed(3) + ' m/s²';
                         State.history.push({ t: State.time, val: gravity * 8.0 * (1.0 + 0.1 * Math.sin(State.time * 4)) });
                     }
-                } else if (currentTopic.includes('红黑树') || currentTopic.includes('二叉树') || currentTopic.includes('平衡树') || currentTopic.includes('树')) {
-                    const tree = animatedGroup.getObjectByName('tree_group');
-                    if (tree) {
-                        const root = tree.getObjectByName('root');
-                        const left1 = tree.getObjectByName('left_1');
-                        const right1 = tree.getObjectByName('right_1');
-                        if (root && left1 && right1) {
-                            left1.position.x = -2.8 - 0.8 * Math.sin(State.time * State.val1 * 1.5);
-                            right1.position.x = 2.8 + 0.8 * Math.cos(State.time * State.val1 * 1.5);
-                        }
-                    }
-                    const compCost = 1.44 * Math.log2(State.val1 * 100 + 1);
-                    document.getElementById('hud-var1').textContent = (State.val1 * 1000).toFixed(0) + ' IPS'; 
-                    document.getElementById('hud-var2').textContent = compCost.toFixed(2) + ' 层深度';
-                    document.getElementById('hud-energy').textContent = (compCost * 12).toFixed(2) + ' ns 耗时';
-                    State.history.push({ t: State.time, val: compCost * 3.5 });
-                } else if (currentTopic.includes('握手') || currentTopic.includes('网络') || currentTopic.includes('协议') || currentTopic.includes('TCP')) {
-                    const net = animatedGroup.getObjectByName('network_group');
-                    if (net) {
-                        const signal = net.getObjectByName('signal');
-                        if (signal) {
-                            const delay = State.val1 * 3.0; 
-                            const angle = (State.time * 2.0 / (delay || 0.1)) % (Math.PI * 2);
-                            signal.position.x = 6.0 * Math.cos(angle);
-                            signal.position.y = 1.2 * Math.sin(angle * 2.0);
-                        }
-                    }
-                    const rtt = State.val1 * 120 + 10;
-                    const loss = State.val2 * 100;
-                    document.getElementById('hud-var1').textContent = rtt.toFixed(0) + ' ms';
-                    document.getElementById('hud-var2').textContent = loss.toFixed(1) + ' %';
-                    document.getElementById('hud-energy').textContent = (rtt * (1.0 + loss * 0.05)).toFixed(1) + ' ms RTO';
-                    State.history.push({ t: State.time, val: rtt * 0.15 });
-                } else if (currentTopic.includes('期权') || currentTopic.includes('定价') || currentSubject === '金融财经') {
-                    const surface = animatedGroup.getObjectByName('bs_surface');
-                    if (surface) {
-                        const pos = surface.geometry.attributes.position.array;
-                        const len = pos.length / 3;
-                        const vol = State.val1; 
-                        const rate = State.val2; 
-                        for (let i = 0; i < len; i++) {
-                            const x = pos[i*3];
-                            const z = pos[i*3+2];
-                            const optionVal = 2.8 * Math.exp(-rate * 0.1) * (1.0 + Math.sin(x * 0.4 + State.time * 2.0)) * (1.0 + vol * z * 0.3);
-                            pos[i*3+1] = optionVal - 2.0; 
-                        }
-                        surface.geometry.attributes.position.needsUpdate = true;
-                    }
-                    const optPrice = 8.5 * State.val1 * (1.0 + 0.25 * Math.sin(State.time));
-                    document.getElementById('hud-var1').textContent = (State.val1 * 0.72).toFixed(3) + ' Delta';
-                    document.getElementById('hud-var2').textContent = (State.val2 * 0.18).toFixed(3) + ' Gamma';
-                    document.getElementById('hud-energy').textContent = optPrice.toFixed(2) + ' 元/股';
-                    State.history.push({ t: State.time, val: optPrice * 2.0 });
-                } else if (currentTopic.includes('供应链') || currentTopic.includes('牛鞭') || currentSubject === '商贸物流') {
-                    const group = animatedGroup.getObjectByName('supply_group');
-                    if (group) {
-                        const c1 = group.getObjectByName('retailer');
-                        const c2 = group.getObjectByName('wholesaler');
-                        const c3 = group.getObjectByName('factory');
-                        const delay = State.val1 * 4.0;
-                        const demand = 0.5 * Math.sin(State.time * 2.5);
-                        if (c1 && c2 && c3) {
-                            c1.position.y = demand;
-                            c2.position.y = 1.8 * Math.sin((State.time - delay * 0.2) * 2.5);
-                            const factoryShock = 4.2 * Math.sin((State.time - delay * 0.5) * 2.5);
-                            c3.position.y = factoryShock;
-                            c3.rotation.z = factoryShock * 0.15;
-                        }
-                        const particles = group.getObjectByName('supply_particles');
-                        if (particles) {
-                            const pos = particles.geometry.attributes.position.array;
-                            for(let i=0; i<pos.length/3; i++) {
-                                pos[i*3] += 0.06 * State.val2;
-                                if(pos[i*3] > 5) pos[i*3] = -5;
-                            }
-                            particles.geometry.attributes.position.needsUpdate = true;
-                        }
-                        const inventoryLoss = (1.0 + delay) * 15.0;
-                        document.getElementById('hud-var1').textContent = (12.0 / (1.0 + State.val1)).toFixed(1) + ' 次/年';
-                        document.getElementById('hud-var2').textContent = (delay * 24).toFixed(0) + ' 小时提前期';
-                        document.getElementById('hud-energy').textContent = inventoryLoss.toFixed(2) + ' 万元/天';
-                        State.history.push({ t: State.time, val: inventoryLoss * 0.8 });
-                    }
                 } else {
                     const poly = animatedGroup.getObjectByName('main_poly');
                     const orbit = animatedGroup.getObjectByName('orbit');
@@ -2470,9 +1510,7 @@
             window.addEventListener('DOMContentLoaded', startSimulationSafe);
         }
             `;
-        }
-
-        // ==========================================
+        }\n\n        // ==========================================
         // 6. 个人历史列表状态管理 (localStorage)
         // ==========================================
 
@@ -2481,7 +1519,7 @@
             if (raw) {
                 try {
                     AppState.history = JSON.parse(raw);
-                } catch (e) {
+                } catch(e) {
                     AppState.history = [];
                 }
             }
@@ -2491,9 +1529,9 @@
         function renderHistoryList() {
             const container = document.getElementById('history-container');
             const countBadge = document.getElementById('history-count');
-
+            
             countBadge.textContent = AppState.history.length;
-
+            
             if (AppState.history.length === 0) {
                 container.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-center text-slate-600 p-6 border border-dashed border-slate-800 rounded-xl bg-slate-950/20">
@@ -2505,13 +1543,13 @@
             }
 
             container.innerHTML = '';
-
+            
             const sorted = [...AppState.history].reverse();
-
+            
             sorted.forEach(item => {
                 const div = document.createElement('div');
                 div.className = "flex items-center justify-between p-2.5 rounded-lg border border-slate-800/80 bg-slate-950/40 hover:bg-slate-900/60 hover:border-cyan-500/20 transition-all text-xs group relative";
-
+                
                 let tagColor = 'bg-cyan-500/20 text-cyan-400';
                 if (item.subject === '化学') tagColor = 'bg-emerald-500/20 text-emerald-400';
                 else if (item.subject === '生物') tagColor = 'bg-orange-500/20 text-orange-400';
@@ -2550,7 +1588,7 @@
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             const dateStr = new Date().toLocaleDateString([], { month: '2-digit', day: '2-digit' });
-
+            
             const newItem = {
                 id: 'id_' + Date.now(),
                 title: AppState.generatedTitle,
@@ -2578,7 +1616,7 @@
 
             AppState.history = AppState.history.filter(item => item.id !== id);
             localStorage.setItem('aetherviz_history', JSON.stringify(AppState.history));
-
+            
             renderHistoryList();
         }
 
@@ -2598,7 +1636,7 @@
         function downloadHTMLFile(filename, content) {
             const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
             const url = URL.createObjectURL(blob);
-
+            
             const a = document.createElement('a');
             a.href = url;
             a.download = `AetherViz_${filename.replace(/\s+/g, '_')}.html`;
@@ -2638,33 +1676,6 @@
             } else if (fileName === 'ai_workflow.html') {
                 officialTitle = '🧠 AI 工作流 3D 可视化';
                 officialSubtitle = '学科方向：信息科学计算网络模型';
-            } else if (fileName === 'db_struct_ai.html') {
-                officialTitle = '🧬 AI知识库：数据库与数据结构赋能';
-                officialSubtitle = '学科方向：信息科学高维向量检索';
-            } else if (fileName === 'financial_management.html') {
-                officialTitle = '📊 财务管理：财经商贸流程动力学';
-                officialSubtitle = '学科方向：财经商贸资金链管理';
-            } else if (fileName === 'llm_principle.html') {
-                officialTitle = '🤖 AI大模型：Transformer 工作原理';
-                officialSubtitle = '学科方向：信息科学计算智能模型';
-            } else if (fileName === 'dimension_simulation.html') {
-                officialTitle = '🌌 多维空间模拟 (1D-5D)';
-                officialSubtitle = '学科方向：空间拓扑维度投影演示';
-            } else if (fileName === 'karma_mobius.html') {
-                officialTitle = '🔄 因果三部曲：莫比乌斯轮回轨';
-                officialSubtitle = '学科方向：东方哲学拓扑轮回模拟';
-            } else if (fileName === 'karma_hourglass.html') {
-                officialTitle = '⏳ 因果三部曲：业力无常沙漏';
-                officialSubtitle = '学科方向：东方哲学时间守恒物理模拟';
-            } else if (fileName === 'karma_ripple.html') {
-                officialTitle = '🪨 因果三部曲：三生石与涟漪';
-                officialSubtitle = '学科方向：东方哲学因果波动传播模拟';
-            } else if (fileName === 'flight_globe.html') {
-                officialTitle = '🗺️ 航空实验室：3D全球航线模拟';
-                officialSubtitle = '学科方向：地球物理大圆航线模拟';
-            } else if (fileName === 'seasons_simulation.html') {
-                officialTitle = '🌞 昼夜早晚与四季更替实验室';
-                officialSubtitle = '学科方向：天体物理黄赤交角自转模拟';
             }
 
             document.getElementById('preview-title').textContent = officialTitle;
@@ -2713,7 +1724,7 @@
             document.getElementById('panel-generating').classList.add('hidden');
             document.getElementById('panel-generator').classList.remove('hidden');
             document.getElementById('bg-decoration').classList.remove('opacity-10');
-
+            
             document.getElementById('preview-iframe').src = 'about:blank';
         }
 
@@ -2725,26 +1736,19 @@
             }
             showGeneratorPanel();
         }
+    
 
-        function switchSidebarTab(tabName) {
-            const officialTab = document.getElementById('tab-sidebar-official');
-            const historyTab = document.getElementById('tab-sidebar-history');
-            const officialPanel = document.getElementById('sidebar-official-panel');
-            const historyPanel = document.getElementById('sidebar-history-panel');
+// 测试 1：黑洞吸积
+const r1 = assembleHTMLPage('黑洞事件视界吸积盘', '天文');
+fs.writeFileSync('temp_blackhole.html', r1.html);
+console.log('Test 1: black hole HTML generated.');
 
-            if (tabName === 'official') {
-                officialTab.className = "flex-1 py-2 text-center rounded-lg text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 transition-all font-mono";
-                historyTab.className = "flex-1 py-2 text-center rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition-all font-mono";
-                officialPanel.classList.remove('hidden');
-                historyPanel.classList.add('hidden');
-            } else {
-                historyTab.className = "flex-1 py-2 text-center rounded-lg text-xs font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 transition-all font-mono";
-                officialTab.className = "flex-1 py-2 text-center rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition-all font-mono";
-                officialPanel.classList.add('hidden');
-                historyPanel.classList.remove('hidden');
-            }
-        }
-    </script>
-</body>
+// 测试 2：气体分子碰撞
+const r2 = assembleHTMLPage('理想气体分子热运动碰撞', '物理');
+fs.writeFileSync('temp_gas.html', r2.html);
+console.log('Test 2: gas thermal HTML generated.');
 
-</html>
+// 测试 3：兜底泛化 - 火山喷发
+const r3 = assembleHTMLPage('火山喷发能量地壳活动', '物理');
+fs.writeFileSync('temp_volcano.html', r3.html);
+console.log('Test 3: volcano default HTML generated.');

@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>牛顿第二定律 3D 互动可视化教学 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            teal: '#14B8A6',
+                            cyan: '#22D3EE',
+                            emerald: '#34D399',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            orange: '#FB923C',
+                            dark: '#0F172A',
+                            navy: '#1E293B',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #06B6D4 50%, #22D3EE 100%);
+            --bg-gradient: linear-gradient(180deg, #0F172A 0%, #0B1E26 60%, #082F3E 100%);
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-border: rgba(34, 211, 238, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.4);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 霓虹发光 */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+        }
+        .glow-text-cyan {
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+        }
+
+        /* 隐藏输入框原生样式，自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #2DD4BF 0%, #22D3EE 100%);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* 3D-2D 元素过渡 */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-cyan-500/30 bg-slate-950/80 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 glow-cyan">F</div>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-teal-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+                    牛顿第二定律 <span class="text-xs font-normal text-cyan-500/80 normal-case ml-1">Newton's Second Law</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" class="px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-medium hover:bg-cyan-500/20 active:scale-95 transition-all">
+                重置实验
+            </button>
+            <button id="btn-random" class="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-medium hover:bg-emerald-500/20 active:scale-95 transition-all">
+                随机物理参数
+            </button>
+            <button id="btn-fullscreen" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 active:scale-95 transition-all">
+                全屏
+            </button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 (30%宽度，高信息密度讲解) -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-cyan-500/20 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-1" class="accent-cyan w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-1" class="leading-relaxed">理解质量 $m$、外力 $F$ 和加速度 $a$ 的定量关系。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-cyan w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-2" class="leading-relaxed">掌握受摩擦力影响时的合力与运动规律。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-cyan w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="leading-relaxed cursor-pointer hover:text-cyan-300 transition-colors">利用 $v-t$ 图像的斜率计算出真实的物理加速度。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 核心概念与推导
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-slate-800 text-center flex flex-col gap-2">
+                    <div id="latex-formula" class="text-base text-teal-300"></div>
+                    <div id="latex-friction" class="text-xs text-slate-400 border-t border-slate-800/80 pt-2 mt-1"></div>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    物体的加速度与所受的合外力成正比，与其质量成反比。加速度的方向与合外力的方向相同。
+                </p>
+            </section>
+
+            <!-- 原理生动解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 生动原理讲解
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-teal-300 font-semibold">❓ 为什么大卡车比小轿车更难刹车和起步？</span>
+                        <p class="mt-1 text-slate-400">大卡车的质量 $m$ 极大。根据关系式 $a = F/m$，在施加相同大小的力时，质量越大，产生的加速度 $a$ 就越小。这意味着物体的<b>惯性（即抵抗运动状态改变的本领）</b>越大。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2">
+                        <span class="text-amber-300 font-semibold">💡 摩擦力的羁绊</span>
+                        <p class="mt-1 text-slate-400">在真实世界中，接触面会产生阻碍滑块运动的滑动摩擦力 $f = \mu m g$。只有当外拉力 $F$ 大于最大静摩擦力时，物体才会起步。一旦运动，合力即为：$F_{合} = F - f$。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 扩展应用 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-500">
+                    <span>学科领域：物理 (力学)</span>
+                    <span>AetherViz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 右侧/中央 3D 画布 + 数据看板 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D 渲染容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- SVG 2D 数据叠加面板 (右上角，HUD 科技风格) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none">
+                <!-- 实时状态 HUD -->
+                <div class="glass-panel rounded-xl p-4 w-[280px] pointer-events-auto border-l-4 border-l-cyan-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">实时物理状态 HUD</h4>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-900/60 p-2 rounded border border-slate-800/60">
+                            <span class="text-slate-500 block text-[10px]">施加外力 F</span>
+                            <span id="hud-force" class="font-semibold text-rose-400 text-sm">0.00 N</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded border border-slate-800/60">
+                            <span class="text-slate-500 block text-[10px]">滑动摩擦力 f</span>
+                            <span id="hud-friction" class="font-semibold text-amber-400 text-sm">0.00 N</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded border border-slate-800/60">
+                            <span class="text-slate-500 block text-[10px]">合外力 F_合</span>
+                            <span id="hud-netforce" class="font-semibold text-cyan-400 text-sm">0.00 N</span>
+                        </div>
+                        <div class="bg-slate-900/60 p-2 rounded border border-slate-800/60">
+                            <span class="text-slate-500 block text-[10px]">产生加速度 a</span>
+                            <span id="hud-acceleration" class="font-semibold text-emerald-400 text-sm">0.00 m/s²</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/60 p-2 rounded border border-slate-800/60 flex justify-between items-center text-xs">
+                        <span class="text-slate-500 text-[10px]">当前速度 v</span>
+                        <span id="hud-velocity" class="font-mono font-bold text-blue-400">0.00 m/s</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SVG 2D 实时绘图面板 (右侧悬浮，v-t 与 a-t 坐标轴) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-cyan-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-cyan-400 flex items-center justify-between">
+                        <span>📈 速度-时间 (v-t) 图像</span>
+                        <span class="text-[10px] text-slate-500">实时绘制</span>
+                    </h4>
+                    <!-- SVG 画布 -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-800">
+                        <svg id="svg-vt-chart" class="w-full h-full"></svg>
+                    </div>
+                </div>
+
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-emerald-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-emerald-400 flex items-center justify-between">
+                        <span>📈 加速度-时间 (a-t) 图像</span>
+                        <span class="text-[10px] text-slate-500">实时合力状态</span>
+                    </h4>
+                    <!-- SVG 画布 -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-800">
+                        <svg id="svg-at-chart" class="w-full h-full"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-cyan-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-play" class="w-12 h-12 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 flex items-center justify-center glow-cyan hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg id="icon-play" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon (hidden) -->
+                        <svg id="icon-pause" class="w-5 h-5 fill-current hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="btn-step" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步模拟">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">系统状态</span>
+                        <span id="txt-status" class="text-amber-400 font-medium">已暂停</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 F -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-rose-400 font-semibold flex items-center gap-1">🔴 外力 $F$</span>
+                            <span id="val-force" class="font-mono text-slate-300">20.0 N</span>
+                        </div>
+                        <input id="slider-force" type="range" min="0" max="50" step="0.5" value="20" class="custom-slider">
+                    </div>
+
+                    <!-- 参数 m -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-teal-400 font-semibold flex items-center gap-1">🟢 质量 $m$</span>
+                            <span id="val-mass" class="font-mono text-slate-300">2.0 kg</span>
+                        </div>
+                        <input id="slider-mass" type="range" min="0.5" max="10" step="0.1" value="2" class="custom-slider">
+                    </div>
+
+                    <!-- 参数 μ -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-amber-400 font-semibold flex items-center gap-1">🟡 摩擦系数 $\mu$</span>
+                            <span id="val-friction" class="font-mono text-slate-300">0.20</span>
+                        </div>
+                        <input id="slider-friction" type="range" min="0" max="0.8" step="0.05" value="0.2" class="custom-slider">
+                    </div>
+                </div>
+
+                <!-- 速度控制 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">运行速度</span>
+                    <select id="select-speed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-cyan-500 transition-colors">
+                        <option value="0.5">0.5x 慢速</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-cyan-500/30 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                <div class="h-10 border-b border-cyan-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-cyan-400 flex items-center gap-1.5">
+                        ⚡ 牛顿力学小测验
+                    </span>
+                    <button id="btn-quiz-close" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-cyan-500 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2">
+                        <!-- 选项将通过 JS 动态生成 -->
+                    </div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-cyan-400 text-cyan-400 flex items-center justify-center hover:scale-110 glow-cyan active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- HTML 结尾 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-500 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>在物理的天空里，力是改变运动状态的画笔。每一处轻推，都在重构着速度的旋律。</span>
+        <span class="text-cyan-500/80">由 AetherViz Master 为你生成 ❤️</span>
+    </footer>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+    <!-- JS Core Logic -->
+    <script>
+        // --- 1. OrbitControls 内联极简版 ---
+        class MinimalOrbitControls {
+            constructor(object, domElement) {
+                this.object = object;
+                this.domElement = domElement;
+                this.target = new THREE.Vector3(0, 0, 0);
+                this.spherical = new THREE.Spherical().setFromVector3(this.object.position);
+                this.minDistance = 2;
+                this.maxDistance = 50;
+                
+                this.isPointerDown = false;
+                this.pointerStart = new THREE.Vector2();
+                this.pointerEnd = new THREE.Vector2();
+                this.pointerDelta = new THREE.Vector2();
+
+                this.domElement.addEventListener('pointerdown', this.onPointerDown.bind(this), false);
+                this.domElement.addEventListener('pointermove', this.onPointerMove.bind(this), false);
+                this.domElement.addEventListener('pointerup', this.onPointerUp.bind(this), false);
+                this.domElement.addEventListener('wheel', this.onWheel.bind(this), false);
+                this.update();
+            }
+
+            onPointerDown(event) {
+                this.isPointerDown = true;
+                this.pointerStart.set(event.clientX, event.clientY);
+            }
+
+            onPointerMove(event) {
+                if (!this.isPointerDown) return;
+                this.pointerEnd.set(event.clientX, event.clientY);
+                this.pointerDelta.subVectors(this.pointerEnd, this.pointerStart).multiplyScalar(0.005);
+                
+                this.spherical.theta -= this.pointerDelta.x;
+                this.spherical.phi -= this.pointerDelta.y;
+                
+                // 限制俯仰角度以防极点翻转
+                this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi));
+                
+                this.pointerStart.copy(this.pointerEnd);
+                this.update();
+            }
+
+            onPointerUp() {
+                this.isPointerDown = false;
+            }
+
+            onWheel(event) {
+                event.preventDefault();
+                const zoomScale = 1.05;
+                if (event.deltaY < 0) {
+                    this.spherical.radius /= zoomScale;
+                } else {
+                    this.spherical.radius *= zoomScale;
+                }
+                this.spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this.spherical.radius));
+                this.update();
+            }
+
+            update() {
+                this.object.position.setFromSpherical(this.spherical).add(this.target);
+                this.object.lookAt(this.target);
+            }
+        }
+
+        // --- 2. 物理与渲染参数管理 ---
+        const State = {
+            isPlaying: false,
+            // 物理常量/参数
+            F: 20.0,         // 外力 (N)
+            m: 2.0,          // 质量 (kg)
+            mu: 0.2,         // 动摩擦系数
+            g: 9.8,          // 重力加速度 (m/s^2)
+            
+            // 运动状态
+            x: -12.0,        // 水平位移 (初始在最左侧轨道)
+            v: 0.0,          // 速度 (m/s)
+            a: 0.0,          // 加速度 (m/s^2)
+            f: 0.0,          // 滑动摩擦力 (N)
+
+            // 轨道边界限制
+            trackStart: -12.0,
+            trackEnd: 12.0,
+
+            // 系统时间
+            time: 0,
+            timeStep: 0.016, // 约 60fps 单帧时长
+            simSpeed: 1.0,   // 运行倍率
+
+            // 图像绘制缓冲区 (最大记录 150 帧)
+            historyMax: 150,
+            history: [] // [{t, v, a}]
+        };
+
+        // --- 3. 初始化 Three.js 3D 物理场景 ---
+        let scene, camera, renderer, controls;
+        let blockMesh, wheels = [], forceArrow, frictionArrow, accelArrow, trackMesh;
+        let particleSystem;
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // 场景
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x0a1e26, 0.015);
+
+            // 相机
+            camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+            camera.position.set(0, 5, 18);
+
+            // 渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // 极简控制器
+            controls = new MinimalOrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0, 0);
+            controls.update();
+
+            // 灯光
+            const ambientLight = new THREE.HemisphereLight(0x1e293b, 0x0f172a, 0.8);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0x22d3ee, 1.2);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            dirLight.shadow.bias = -0.001;
+            scene.add(dirLight);
+
+            const floorLight = new THREE.DirectionalLight(0x14b8a6, 0.5);
+            floorLight.position.set(-10, -20, -10);
+            scene.add(floorLight);
+
+            // 水平轨道
+            const trackGeo = new THREE.BoxGeometry(26, 0.4, 2);
+            const trackMat = new THREE.MeshStandardMaterial({
+                color: 0x1e293b,
+                roughness: 0.7,
+                metalness: 0.8
+            });
+            trackMesh = new THREE.Mesh(trackGeo, trackMat);
+            trackMesh.position.y = -0.2;
+            trackMesh.receiveShadow = true;
+            scene.add(trackMesh);
+
+            // 轨道网格刻度 (刻度线)
+            for(let i = -12; i <= 12; i += 2) {
+                const tickGeo = new THREE.BoxGeometry(0.08, 0.42, 2.1);
+                const tickMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+                const tick = new THREE.Mesh(tickGeo, tickMat);
+                tick.position.set(i, -0.2, 0);
+                scene.add(tick);
+            }
+
+            // 地面网格效果 (发光网格)
+            const gridHelper = new THREE.GridHelper(50, 50, 0x14b8a6, 0x0f172a);
+            gridHelper.position.y = -0.41;
+            scene.add(gridHelper);
+
+            // 物理小车
+            const blockGroup = new THREE.Group();
+            blockGroup.position.set(State.x, 0.5, 0);
+            scene.add(blockGroup);
+            blockMesh = blockGroup;
+
+            // 车身 (玻璃质感发光质量块)
+            const carBodyGeo = new THREE.BoxGeometry(2, 0.8, 1.2);
+            const carBodyMat = new THREE.MeshPhysicalMaterial({
+                color: 0x14b8a6,
+                roughness: 0.1,
+                transmission: 0.6,
+                thickness: 0.8,
+                transparent: true,
+                opacity: 0.95
+            });
+            const carBody = new THREE.Mesh(carBodyGeo, carBodyMat);
+            carBody.castShadow = true;
+            carBody.receiveShadow = true;
+            blockGroup.add(carBody);
+
+            // 内部发光能量核心 (表示质量)
+            const coreGeo = new THREE.SphereGeometry(0.3, 16, 16);
+            const coreMat = new THREE.MeshBasicMaterial({ color: 0x34d399 });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            core.name = "core";
+            blockGroup.add(core);
+
+            // 车轮
+            const wheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.9 });
+            const wheelPositions = [
+                [-0.7, -0.4, 0.6], [0.7, -0.4, 0.6],
+                [-0.7, -0.4, -0.6], [0.7, -0.4, -0.6]
+            ];
+            wheelPositions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                wheel.rotation.x = Math.PI / 2;
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                wheel.castShadow = true;
+                blockGroup.add(wheel);
+                wheels.push(wheel);
+            });
+
+            // 矢量力箭头
+            // 力 F 箭头：红色 (指向右)
+            forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(1.1, 0, 0), 1, 0xfb7185, 0.3, 0.15);
+            blockGroup.add(forceArrow);
+
+            // 阻力/静摩擦力 f 箭头：黄色 (指向左)
+            frictionArrow = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(-1.1, 0, 0), 1, 0xfbbf24, 0.3, 0.15);
+            blockGroup.add(frictionArrow);
+
+            // 加速度 a 箭头：绿色 (位于上方)
+            accelArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0.8, 0), 1, 0x34d399, 0.3, 0.15);
+            blockGroup.add(accelArrow);
+
+            // 粒子系统，给滑动带来速度科技感
+            const particleCount = 200;
+            const particleGeo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+
+            for(let i = 0; i < particleCount; i++) {
+                // 分布在轨道两侧
+                positions[i*3] = (Math.random() - 0.5) * 26;
+                positions[i*3+1] = Math.random() * 0.5;
+                positions[i*3+2] = (Math.random() - 0.5) * 5;
+                velocities.push((Math.random() - 0.5) * 0.05);
+            }
+
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const particleMat = new THREE.PointsMaterial({
+                color: 0x22d3ee,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.4
+            });
+
+            particleSystem = new THREE.Points(particleGeo, particleMat);
+            scene.add(particleSystem);
+        }
+
+        // --- 4. 2D SVG 实时画图逻辑 ---
+        function initCharts() {
+            updateCharts();
+        }
+
+        function updateCharts() {
+            const vtSvg = document.getElementById('svg-vt-chart');
+            const atSvg = document.getElementById('svg-at-chart');
+            if (!vtSvg || !atSvg) return;
+
+            const w = vtSvg.clientWidth || 320;
+            const h = vtSvg.clientHeight || 120;
+
+            const margin = { top: 10, right: 10, bottom: 20, left: 35 };
+            const chartW = w - margin.left - margin.right;
+            const chartW_Adjust = chartW > 0 ? chartW : 1;
+            const chartH = h - margin.top - margin.bottom;
+
+            const history = State.history;
+
+            // 4.1 绘制 v-t 图像
+            let vtContent = `
+                <!-- 刻度与背景网格 -->
+                <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${h - margin.bottom}" stroke="#334155" stroke-width="1.5" />
+                <line x1="${margin.left}" y1="${h - margin.bottom}" x2="${w - margin.right}" y2="${h - margin.bottom}" stroke="#334155" stroke-width="1.5" />
+                <!-- 刻度线与标注 -->
+                <text x="${margin.left - 5}" y="${margin.top + 5}" fill="#94a3b8" font-size="9" text-anchor="end">v (m/s)</text>
+                <text x="${w - margin.right}" y="${h - margin.bottom + 14}" fill="#94a3b8" font-size="9" text-anchor="end">时间 t</text>
+            `;
+
+            // 计算时间与速度的最大范围
+            const maxT = history.length > 0 ? history[history.length - 1].t : 10;
+            const minT = Math.max(0, maxT - 6); // 始终保留最近6秒的趋势
+            
+            // 速度上限设定，动态范围
+            let maxV = 8;
+            history.forEach(d => { if (d.v > maxV) maxV = d.v; });
+            
+            // 比例映射函数
+            const mapX = (t) => margin.left + ((t - minT) / (maxT - minT || 1)) * chartW_Adjust;
+            const mapY_V = (v) => h - margin.bottom - (v / maxV) * chartH;
+
+            // 绘制 v 轴刻度
+            for (let val = 0; val <= maxV; val += Math.ceil(maxV / 4)) {
+                const yPos = mapY_V(val);
+                vtContent += `
+                    <line x1="${margin.left - 3}" y1="${yPos}" x2="${margin.left}" y2="${yPos}" stroke="#475569" />
+                    <text x="${margin.left - 6}" y="${yPos + 3}" fill="#64748b" font-size="8" text-anchor="end">${val.toFixed(0)}</text>
+                `;
+            }
+
+            // 拟合折线路径
+            if (history.length > 1) {
+                let pathPoints = [];
+                history.forEach(d => {
+                    if (d.t >= minT) {
+                        pathPoints.push(`${mapX(d.t).toFixed(1)},${mapY_V(d.v).toFixed(1)}`);
+                    }
+                });
+                if (pathPoints.length > 0) {
+                    vtContent += `
+                        <path d="M ${pathPoints.join(' L ')}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="${mapX(history[history.length - 1].t)}" cy="${mapY_V(history[history.length - 1].v)}" r="3" fill="#60a5fa" class="glow-cyan" />
+                    `;
+                }
+            }
+            vtSvg.innerHTML = vtContent;
+
+
+            // 4.2 绘制 a-t 图像
+            let atContent = `
+                <!-- 刻度与背景网格 -->
+                <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${h - margin.bottom}" stroke="#334155" stroke-width="1.5" />
+                <line x1="${margin.left}" y1="${h - margin.bottom}" x2="${w - margin.right}" y2="${h - margin.bottom}" stroke="#334155" stroke-width="1.5" />
+                <!-- 刻度线与标注 -->
+                <text x="${margin.left - 5}" y="${margin.top + 5}" fill="#94a3b8" font-size="9" text-anchor="end">a (m/s²)</text>
+                <text x="${w - margin.right}" y="${h - margin.bottom + 14}" fill="#94a3b8" font-size="9" text-anchor="end">时间 t</text>
+            `;
+
+            let maxA = 10;
+            history.forEach(d => { if (Math.abs(d.a) > maxA) maxA = Math.abs(d.a); });
+            const mapY_A = (a) => h - margin.bottom - (a / maxA) * chartH;
+
+            // 绘制 a 轴刻度
+            for (let val = 0; val <= maxA; val += Math.ceil(maxA / 4)) {
+                const yPos = mapY_A(val);
+                atContent += `
+                    <line x1="${margin.left - 3}" y1="${yPos}" x2="${margin.left}" y2="${yPos}" stroke="#475569" />
+                    <text x="${margin.left - 6}" y="${yPos + 3}" fill="#64748b" font-size="8" text-anchor="end">${val.toFixed(0)}</text>
+                `;
+            }
+
+            if (history.length > 1) {
+                let pathPoints = [];
+                history.forEach(d => {
+                    if (d.t >= minT) {
+                        pathPoints.push(`${mapX(d.t).toFixed(1)},${mapY_A(d.a).toFixed(1)}`);
+                    }
+                });
+                if (pathPoints.length > 0) {
+                    atContent += `
+                        <path d="M ${pathPoints.join(' L ')}" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <circle cx="${mapX(history[history.length - 1].t)}" cy="${mapY_A(history[history.length - 1].a)}" r="3" fill="#34d399" />
+                    `;
+                }
+            }
+            atSvg.innerHTML = atContent;
+        }
+
+        // --- 5. 核心物理计算动力学引擎 ---
+        function runPhysicsStep() {
+            // 滑动摩擦力大小 (f = mu * m * g)
+            // 在水平面上，正压力 N = m * g
+            State.f = State.mu * State.m * State.g;
+
+            // 牛顿第二定律核心数学模型：
+            // 当 F > f 时：合力 F_net = F - f；加速度 a = F_net / m
+            // 当 F <= f 且 v == 0 时：物体保持静止状态 (静摩擦力平衡外力)，a = 0, f_静 = F
+            // 当 v > 0 且阻力反向阻碍时：F_net = F - f
+            let netForce = 0;
+            
+            if (Math.abs(State.v) < 0.001) {
+                // 静止状态
+                if (State.F > State.f) {
+                    netForce = State.F - State.f;
+                    State.a = netForce / State.m;
+                } else {
+                    netForce = 0;
+                    State.a = 0;
+                    State.f = State.F; // 静摩擦力等于外拉力
+                }
+            } else if (State.v > 0) {
+                // 正在向右运动，受到滑动摩擦力阻碍
+                netForce = State.F - State.f;
+                State.a = netForce / State.m;
+            } else {
+                // 异常向左运动（基本不发生）
+                netForce = State.F + State.f;
+                State.a = netForce / State.m;
+            }
+
+            // 计算时间步长与倍速关系
+            const dt = State.timeStep * State.simSpeed;
+
+            // 速度 Euler 积分式：v_next = v + a * dt
+            State.v += State.a * dt;
+            if (State.v < 0) State.v = 0; // 单向推拉限制
+
+            // 位移积分式：x_next = x + v * dt
+            State.x += State.v * dt;
+
+            // 轨道两端刚性碰撞与阻挡限制
+            if (State.x >= State.trackEnd) {
+                State.x = State.trackEnd;
+                State.v = 0; // 到达终点撞墙静止
+                State.a = 0;
+            } else if (State.x <= State.trackStart) {
+                State.x = State.trackStart;
+                State.v = 0;
+                State.a = 0;
+            }
+
+            // 系统计时
+            State.time += dt;
+
+            // 将状态数据推入历史缓存，用于实时 SVG 绘图
+            State.history.push({
+                t: State.time,
+                v: State.v,
+                a: State.a
+            });
+
+            if (State.history.length > State.historyMax) {
+                State.history.shift(); // 限制内存
+            }
+        }
+
+        // --- 6. 同步 3D 视觉元素与数值更新 ---
+        function updateVisuals() {
+            // 6.1 更新滑块 3D 位置与核心发光球大小 (核心缩放模拟质量改变)
+            if (blockMesh) {
+                blockMesh.position.x = State.x;
+                
+                // 质量越大，核心球体越大
+                const core = blockMesh.getObjectByName("core");
+                if (core) {
+                    const coreScale = 0.5 + (State.m / 10) * 0.8;
+                    core.scale.set(coreScale, coreScale, coreScale);
+                }
+
+                // 车轮旋转动画 (根据位移模拟旋转)
+                wheels.forEach(wheel => {
+                    wheel.rotation.y = -State.x * 2.5;
+                });
+            }
+
+            // 6.2 动态更新 3D 矢量箭头长度与可见性
+            if (forceArrow) {
+                // 红色拉力箭头：拉力越大，箭头越长
+                const forceLength = State.F > 0 ? 0.5 + (State.F / 50) * 2.5 : 0.001;
+                forceArrow.setLength(forceLength, Math.min(forceLength * 0.3, 0.4), 0.12);
+                forceArrow.visible = State.F > 0;
+            }
+
+            if (frictionArrow) {
+                // 黄色摩擦力箭头：长度与滑动/静摩擦力大小正相关
+                const fricVal = State.v > 0 || State.F > 0 ? State.f : 0;
+                const fricLength = fricVal > 0 ? 0.5 + (fricVal / 50) * 2.5 : 0.001;
+                frictionArrow.setLength(fricLength, Math.min(fricLength * 0.3, 0.4), 0.12);
+                frictionArrow.visible = fricVal > 0;
+            }
+
+            if (accelArrow) {
+                // 绿色加速度箭头：拉长倍率
+                const accelLength = State.a > 0 ? 0.5 + (State.a / 25) * 2.5 : 0.001;
+                accelArrow.setLength(accelLength, Math.min(accelLength * 0.3, 0.4), 0.12);
+                accelArrow.visible = State.a > 0;
+            }
+
+            // 6.3 粒子轨道流动跟随
+            if (particleSystem) {
+                const positions = particleSystem.geometry.attributes.position.array;
+                const particleCount = positions.length / 3;
+                
+                // 速度极快时粒子流发散，科技流动特效
+                for(let i = 0; i < particleCount; i++) {
+                    positions[i*3] -= State.v * 0.02 + 0.005; // 粒子往左反向流
+                    if (positions[i*3] < -13) {
+                        positions[i*3] = 13;
+                    }
+                }
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // 6.4 更新 DOM HUD 看板文本
+            document.getElementById('hud-force').innerText = `${State.F.toFixed(2)} N`;
+            document.getElementById('hud-friction').innerText = `${State.f.toFixed(2)} N`;
+            const net = Math.max(0, State.F - State.f);
+            document.getElementById('hud-netforce').innerText = `${(State.v > 0 || State.F > State.f ? net : 0).toFixed(2)} N`;
+            document.getElementById('hud-acceleration').innerText = `${State.a.toFixed(2)} m/s²`;
+            document.getElementById('hud-velocity').innerText = `${State.v.toFixed(2)} m/s`;
+
+            // 更新控制面板上滑块当前对应的数值
+            document.getElementById('val-force').innerText = `${State.F.toFixed(1)} N`;
+            document.getElementById('val-mass').innerText = `${State.m.toFixed(1)} kg`;
+            document.getElementById('val-friction').innerText = `${State.mu.toFixed(2)}`;
+
+            // 6.5 公式内容更新
+            renderFormulas();
+        }
+
+        // --- 7. KaTeX 数学公式渲染 ---
+        function renderFormulas() {
+            const f_formula = `F_{\\text{合}} = F - f = m \\cdot a`;
+            const friction_formula = `f = \\mu \\cdot F_N = \\mu \\cdot m \\cdot g`;
+            
+            katex.render(f_formula, document.getElementById('latex-formula'), { throwOnError: false });
+            
+            // 展示实时合力与阻力推导过程
+            const netF = Math.max(0, State.F - (State.mu * State.m * State.g));
+            const calculatedA = netF / State.m;
+            let explanation = `阻力: ${State.mu.toFixed(2)} \\times ${State.m.toFixed(1)} \\text{kg} \\times 9.8 = ${State.f.toFixed(1)} \\text{N}`;
+            
+            if (State.F <= State.f && State.v <= 0) {
+                explanation += ` \\quad (F \\le f, \\text{静止}, a=0)`;
+            } else {
+                explanation += ` \\\\ a = \\frac{${State.F.toFixed(1)} - ${State.f.toFixed(1)}}{${State.m.toFixed(1)}} = ${calculatedA.toFixed(2)} \\text{m/s}^2`;
+            }
+            katex.render(explanation, document.getElementById('latex-friction'), { throwOnError: false });
+        }
+
+        // --- 8. 互动小测验设计 ---
+        const QuizData = [
+            {
+                q: "当小车质量增加 1 倍，而外拉力保持不变，小车的加速度将如何变化？(假设接触面光滑)",
+                options: [
+                    { t: "A. 加速度增加 1 倍", correct: false },
+                    { t: "B. 加速度减小为原来的 1/2", correct: true },
+                    { t: "C. 加速度保持不变", correct: false },
+                    { t: "D. 无法确定", correct: false }
+                ],
+                explain: "正确答案是 B。根据牛顿第二定律公式 $a = F/m$，在合外力 $F$ 不变的情况下，加速度 $a$ 与质量 $m$ 成反比。质量翻倍，加速度变为原来的 1/2。"
+            },
+            {
+                q: "若当前拉力 F 为 15 N，摩擦系数 μ = 0.50，质量 m = 2.0 kg，重力 g = 9.8 m/s²。小车的运动状态是？",
+                options: [
+                    { t: "A. 保持静止，加速度 a = 0", correct: false },
+                    { t: "B. 向右匀加速运动", correct: true },
+                    { t: "C. 匀速直线运动", correct: false },
+                    { t: "D. 向左加速运动", correct: false }
+                ],
+                explain: "正确答案是 B。滑动摩擦力 $f = \\mu m g = 0.5 \\times 2.0 \\times 9.8 = 9.8$ N。拉力 $F = 15$ N 大于滑动摩擦力 $9.8$ N，因此合力向右，小车做向右匀加速运动。"
+            },
+            {
+                q: "在一个完全失重(重力 g = 0)的太空中，相同的拉力作用在相同质量的小车上，其加速度大小相比地面？",
+                options: [
+                    { t: "A. 比地面大，因为没有摩擦阻力", correct: true },
+                    { t: "B. 比地面小", correct: false },
+                    { t: "C. 与地面完全相同", correct: false },
+                    { t: "D. 变为零", correct: false }
+                ],
+                explain: "正确答案是 A。完全失重导致正压力 $F_N = 0$，接触面摩擦阻力 $f = \\mu F_N$ 降为零。故合外力直接等于拉力 $F$。由 $a = F/m$ 知，加速度将大于在地面上有阻力时的加速度。"
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        function loadQuiz(index) {
+            const quiz = QuizData[index];
+            document.getElementById('quiz-question-num').innerText = `问题 ${index + 1} of ${QuizData.length}`;
+            document.getElementById('quiz-question').innerText = quiz.q;
+            
+            // 选项渲染
+            const optsContainer = document.getElementById('quiz-options');
+            optsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2 text-left rounded bg-slate-900 border border-slate-800 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-400 transition-colors";
+                btn.innerText = opt.t;
+                btn.onclick = () => checkAnswer(opt.correct, quiz.explain);
+                optsContainer.appendChild(btn);
+            });
+
+            // 隐藏上一次的反馈
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            // 重新渲染小测验中的 LaTeX
+            renderMathInElement(document.getElementById('quiz-panel'), {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+        }
+
+        function checkAnswer(isCorrect, explanation) {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden');
+            if (isCorrect) {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-emerald-500/10 border-emerald-500 text-emerald-300 glow-cyan";
+                feedback.innerHTML = `🎉 <b>完全正确！</b><br>${explanation}`;
+                // 1.5秒后切入下一题
+                setTimeout(() => {
+                    currentQuizIndex = (currentQuizIndex + 1) % QuizData.length;
+                    loadQuiz(currentQuizIndex);
+                }, 4000);
+            } else {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-rose-500/10 border-rose-500 text-rose-300";
+                feedback.innerHTML = `❌ <b>再试一次吧：</b><br>${explanation}`;
+            }
+
+            // 渲染反馈中的公式
+            renderMathInElement(feedback, {
+                delimiters: [
+                    {left: '$', right: '$', display: false}
+                ]
+            });
+        }
+
+        // --- 9. 主逻辑循环与帧率驱动 ---
+        let lastTime = 0;
+        function animate(timestamp) {
+            requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                runPhysicsStep();
+                updateVisuals();
+                updateCharts();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 10. 事件绑定与 UI 交互控制 ---
+        function bindEvents() {
+            // 滑块控制
+            const fSlider = document.getElementById('slider-force');
+            const mSlider = document.getElementById('slider-mass');
+            const muSlider = document.getElementById('slider-friction');
+
+            fSlider.oninput = (e) => {
+                State.F = parseFloat(e.target.value);
+                updateVisuals();
+            };
+            mSlider.oninput = (e) => {
+                State.m = parseFloat(e.target.value);
+                updateVisuals();
+            };
+            muSlider.oninput = (e) => {
+                State.mu = parseFloat(e.target.value);
+                updateVisuals();
+            };
+
+            // 播放/暂停控制
+            const playBtn = document.getElementById('btn-play');
+            const playIcon = document.getElementById('icon-play');
+            const pauseIcon = document.getElementById('icon-pause');
+            const statusTxt = document.getElementById('txt-status');
+
+            playBtn.onclick = () => {
+                State.isPlaying = !State.isPlaying;
+                if (State.isPlaying) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                    statusTxt.innerText = "正在模拟";
+                    statusTxt.className = "text-emerald-400 font-medium";
+                } else {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    statusTxt.innerText = "已暂停";
+                    statusTxt.className = "text-amber-400 font-medium";
+                }
+            };
+
+            // 单步模拟
+            document.getElementById('btn-step').onclick = () => {
+                State.isPlaying = false;
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                statusTxt.innerText = "单步调试";
+                statusTxt.className = "text-cyan-400 font-medium";
+                
+                runPhysicsStep();
+                updateVisuals();
+                updateCharts();
+            };
+
+            // 重置实验
+            document.getElementById('btn-reset').onclick = () => {
+                State.x = State.trackStart;
+                State.v = 0;
+                State.a = 0;
+                State.time = 0;
+                State.history = [{t: 0, v: 0, a: 0}];
+                
+                updateVisuals();
+                updateCharts();
+            };
+
+            // 随机物理参数
+            document.getElementById('btn-random').onclick = () => {
+                const randF = (Math.random() * 40 + 5).toFixed(1);
+                const randM = (Math.random() * 8 + 1).toFixed(1);
+                const randMu = (Math.random() * 0.6 + 0.05).toFixed(2);
+
+                fSlider.value = randF;
+                State.F = parseFloat(randF);
+
+                mSlider.value = randM;
+                State.m = parseFloat(randM);
+
+                muSlider.value = randMu;
+                State.mu = parseFloat(randMu);
+
+                updateVisuals();
+                updateCharts();
+            };
+
+            // 全屏控制
+            document.getElementById('btn-fullscreen').onclick = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            };
+
+            // 小测验折叠面板逻辑
+            const quizPanel = document.getElementById('quiz-panel');
+            const quizFab = document.getElementById('btn-quiz-fab');
+            
+            document.getElementById('btn-quiz-close').onclick = () => {
+                quizPanel.classList.add('hidden');
+                quizFab.classList.remove('hidden');
+            };
+
+            quizFab.onclick = () => {
+                quizPanel.classList.remove('hidden');
+                quizFab.classList.add('hidden');
+            };
+
+            // 运行速度下拉选择
+            document.getElementById('select-speed').onchange = (e) => {
+                State.simSpeed = parseFloat(e.target.value);
+            };
+
+            // 响应窗口尺寸变化
+            window.addEventListener('resize', () => {
+                const container = document.getElementById('canvas-container');
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+                updateCharts();
+            });
+        }
+
+        // --- 11. 页面自初始化与启动 ---
+        window.onload = () => {
+            // 解析 KaTeX 公式 (静态部分)
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+
+            // 初始化各模块
+            init3D();
+            initCharts();
+            loadQuiz(currentQuizIndex);
+            
+            // 绑定全部物理和交互UI事件
+            bindEvents();
+
+            // 预更新一次视图与同步数据
+            updateVisuals();
+
+            // 启动渲染循环
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>

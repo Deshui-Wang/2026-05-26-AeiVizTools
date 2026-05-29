@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光合作用 3D 微观互动教学 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            teal: '#14B8A6',
+                            cyan: '#22D3EE',
+                            emerald: '#10B981',
+                            green: '#22C55E',
+                            amber: '#F59E0B',
+                            orange: '#F97316',
+                            rose: '#F43F5E',
+                            dark: '#022C22', // 暗绿底色
+                            navy: '#064E3B',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #10B981 0%, #14B8A6 50%, #22D3EE 100%);
+            --bg-gradient: linear-gradient(180deg, #022C22 0%, #064E3B 60%, #022C22 100%);
+            --glass-bg: rgba(2, 44, 34, 0.7);
+            --glass-border: rgba(16, 185, 129, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background: var(--bg-gradient);
+            color: #F0FDF4;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(2, 44, 34, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.4);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 霓虹发光 */
+        .glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.45);
+        }
+        .glow-text-emerald {
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #34D399 0%, #22D3EE 100%);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-emerald-500/30 bg-emerald-950/80 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-bold text-slate-950 glow-emerald">🌿</div>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent uppercase tracking-wider">
+                    光合作用动力学 <span class="text-xs font-normal text-teal-400/80 normal-case ml-1">Photosynthesis Kinetics</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" class="px-3 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-medium hover:bg-emerald-500/20 active:scale-95 transition-all">
+                重置反应
+            </button>
+            <button id="btn-random" class="px-3 py-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-medium hover:bg-teal-500/20 active:scale-95 transition-all">
+                随机气象环境
+            </button>
+            <button id="btn-fullscreen" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 active:scale-95 transition-all">
+                全屏
+            </button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-emerald-500/20 bg-emerald-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-emerald-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-1" class="accent-emerald w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-1" class="leading-relaxed">掌握光反应与暗反应的场所、原料及能量转化过程。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-emerald w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-2" class="leading-relaxed">理解温度、光强与二氧化碳浓度对光合速率的交互影响规律。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-emerald w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="leading-relaxed cursor-pointer hover:text-emerald-300 transition-colors">解析卡尔文循环（C3/C5的流转与还原过程）。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心化学反应式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-emerald-400 rounded-sm"></span> 核心化学方程式
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-emerald-950 text-center flex flex-col gap-2">
+                    <div id="latex-total" class="text-[13px] text-emerald-300 font-medium"></div>
+                    <div class="border-t border-emerald-900 pt-2 mt-1 flex flex-col gap-1.5 text-[11px] text-left text-slate-400">
+                        <div id="latex-light-phase"></div>
+                        <div id="latex-dark-phase"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 精彩微观原理解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-emerald-400 rounded-sm"></span> 太阳能发电机与糖组装线
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-teal-300 font-semibold">⚡ 第一阶段：光反应 (类囊体薄膜)</span>
+                        <p class="mt-1 text-slate-400">当光子撞击类囊体上的叶绿素色素时，会激发高能电子。水分子在此处被裂解为质子和氧气($O_2$)，同时产生用于第二阶段的能量载体 ATP 与强还原剂 $[H]$ (NADPH)。</p>
+                    </div>
+                    <div class="border-t border-emerald-900/60 pt-2">
+                        <span class="text-amber-300 font-semibold">🔄 第二阶段：暗反应 / 卡尔文循环 (基质)</span>
+                        <p class="mt-1 text-slate-400">在叶绿体的液体基质中进行。二氧化碳 ($CO_2$) 被五碳化合物 ($C_5$) 固定成三碳化合物 ($C_3$)。在 ATP 和 $[H]$ 提供的能量支持下，$C_3$ 被还原并合成为葡萄糖等高能有机物。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 扩展应用 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-500">
+                    <span>学科领域：生物学 (微观细胞学)</span>
+                    <span>AetherViz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央 3D 画布 + 数据看板 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D 渲染容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- SVG 2D 实时效率曲线 HUD (右上角，HUD 科技风格) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                <!-- 实时状态 HUD -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-emerald-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">光合作用运行 HUD</h4>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-950/70 p-2 rounded border border-emerald-950">
+                            <span class="text-slate-500 block text-[10px]">光反应速率</span>
+                            <span id="hud-light-rate" class="font-semibold text-teal-400 text-sm">0.00 %</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-2 rounded border border-emerald-950">
+                            <span class="text-slate-500 block text-[10px]">暗反应速率</span>
+                            <span id="hud-dark-rate" class="font-semibold text-amber-400 text-sm">0.00 %</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-2 rounded border border-emerald-950 col-span-2">
+                            <span class="text-slate-500 block text-[10px]">净光合效率 (P_net)</span>
+                            <div class="flex items-center justify-between">
+                                <span id="hud-total-rate" class="font-bold text-emerald-400 text-base">0.00 μmol/(m²·s)</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950/70 p-2 rounded border border-emerald-950">
+                            <span class="text-slate-500 block text-[10px]">氧气释放量</span>
+                            <span id="hud-o2" class="font-mono text-cyan-300">0 ml</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-2 rounded border border-emerald-950">
+                            <span class="text-slate-500 block text-[10px]">葡萄糖生成量</span>
+                            <span id="hud-sugar" class="font-mono text-yellow-300">0.00 mg</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SVG 2D 卡尔文能量循环流与实时曲线图表 (右侧悬浮，卡尔文+速率曲线) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <!-- 光合效率动态曲线 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-emerald-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-emerald-400 flex items-center justify-between">
+                        <span>📈 光合作用效率-光强曲线</span>
+                        <span class="text-[10px] text-slate-500">酶活性限制</span>
+                    </h4>
+                    <!-- SVG 画布 -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-emerald-950/40">
+                        <svg id="svg-rate-chart" class="w-full h-full"></svg>
+                    </div>
+                </div>
+
+                <!-- 卡尔文碳循环路径流 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-teal-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-teal-400 flex items-center justify-between">
+                        <span>🔄 卡尔文循环微观物质流 (CO₂固定)</span>
+                        <span class="text-[10px] text-slate-500">Stroma 基质中</span>
+                    </h4>
+                    <!-- 2D 互动示意图 -->
+                    <div class="h-[130px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-teal-950/40">
+                        <svg id="svg-calvin-cycle" class="w-full h-full"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-emerald-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-play" class="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 flex items-center justify-center glow-emerald hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg id="icon-play" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon (hidden) -->
+                        <svg id="icon-pause" class="w-5 h-5 fill-current hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="btn-step" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步反应">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">细胞活性</span>
+                        <span id="txt-status" class="text-amber-400 font-medium">已休眠</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 光照强度 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-amber-400 font-semibold flex items-center gap-1">☀️ 光照强度</span>
+                            <span id="val-light" class="font-mono text-slate-300">50 %</span>
+                        </div>
+                        <input id="slider-light" type="range" min="0" max="100" step="1" value="50" class="custom-slider">
+                    </div>
+
+                    <!-- 参数 CO2浓度 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-teal-400 font-semibold flex items-center gap-1">💨 CO₂浓度</span>
+                            <span id="val-co2" class="font-mono text-slate-300">380 ppm</span>
+                        </div>
+                        <input id="slider-co2" type="range" min="0" max="1200" step="10" value="380" class="custom-slider">
+                    </div>
+
+                    <!-- 参数 温度 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-rose-400 font-semibold flex items-center gap-1">🌡️ 环境温度</span>
+                            <span id="val-temp" class="font-mono text-slate-300">25.0 °C</span>
+                        </div>
+                        <input id="slider-temp" type="range" min="0" max="50" step="0.5" value="25" class="custom-slider">
+                    </div>
+                </div>
+
+                <!-- 运行速度 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">模拟速度</span>
+                    <select id="select-speed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-emerald-500 transition-colors">
+                        <option value="0.5">0.5x 慢速</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-emerald-500/30 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                <div class="h-10 border-b border-emerald-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                        🧬 生物能量小测验
+                    </span>
+                    <button id="btn-quiz-close" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-emerald-500 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2">
+                        <!-- 选项动态生成 -->
+                    </div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-emerald-400 text-emerald-400 flex items-center justify-center hover:scale-110 glow-emerald active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- HTML 结尾 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-500 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>绿叶里流转的卡尔文循环，是一场阳光与二氧化碳的美妙约会，为生命编织出最纯粹的甘甜。</span>
+        <span class="text-emerald-500/80">由 AetherViz Master 为你生成 ❤️</span>
+    </footer>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+    <!-- JS Core Logic -->
+    <script>
+        // --- 1. OrbitControls 内联极简版 ---
+        class MinimalOrbitControls {
+            constructor(object, domElement) {
+                this.object = object;
+                this.domElement = domElement;
+                this.target = new THREE.Vector3(0, 0, 0);
+                this.spherical = new THREE.Spherical().setFromVector3(this.object.position);
+                this.minDistance = 2;
+                this.maxDistance = 40;
+                
+                this.isPointerDown = false;
+                this.pointerStart = new THREE.Vector2();
+                this.pointerEnd = new THREE.Vector2();
+                this.pointerDelta = new THREE.Vector2();
+
+                this.domElement.addEventListener('pointerdown', this.onPointerDown.bind(this), false);
+                this.domElement.addEventListener('pointermove', this.onPointerMove.bind(this), false);
+                this.domElement.addEventListener('pointerup', this.onPointerUp.bind(this), false);
+                this.domElement.addEventListener('wheel', this.onWheel.bind(this), false);
+                this.update();
+            }
+
+            onPointerDown(event) {
+                this.isPointerDown = true;
+                this.pointerStart.set(event.clientX, event.clientY);
+            }
+
+            onPointerMove(event) {
+                if (!this.isPointerDown) return;
+                this.pointerEnd.set(event.clientX, event.clientY);
+                this.pointerDelta.subVectors(this.pointerEnd, this.pointerStart).multiplyScalar(0.005);
+                
+                this.spherical.theta -= this.pointerDelta.x;
+                this.spherical.phi -= this.pointerDelta.y;
+                
+                this.spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, this.spherical.phi));
+                
+                this.pointerStart.copy(this.pointerEnd);
+                this.update();
+            }
+
+            onPointerUp() {
+                this.isPointerDown = false;
+            }
+
+            onWheel(event) {
+                event.preventDefault();
+                const zoomScale = 1.05;
+                if (event.deltaY < 0) {
+                    this.spherical.radius /= zoomScale;
+                } else {
+                    this.spherical.radius *= zoomScale;
+                }
+                this.spherical.radius = Math.max(this.minDistance, Math.min(this.maxDistance, this.spherical.radius));
+                this.update();
+            }
+
+            update() {
+                this.object.position.setFromSpherical(this.spherical).add(this.target);
+                this.object.lookAt(this.target);
+            }
+        }
+
+        // --- 2. 状态机制与物理变量 ---
+        const State = {
+            isPlaying: false,
+            // 外部环境控制
+            lightIntensity: 50.0,  // 光照强度 (0~100)
+            co2Concentration: 380.0, // CO2 浓度 (0~1200 ppm)
+            temperature: 25.0,      // 温度 (0~50 °C)
+
+            // 实时微观反应速率
+            lightReactionRate: 0.0, // 光反应效率 (0~1)
+            darkReactionRate: 0.0,  // 暗反应/卡尔文循环效率 (0~1)
+            totalRate: 0.0,         // 最终光合效率
+
+            // 累积生成物
+            o2Released: 0.0,        // 氧气释放 (ml)
+            sugarGenerated: 0.0,    // 糖分生成 (mg)
+
+            // 时间控制
+            time: 0,
+            timeStep: 0.016,
+            simSpeed: 1.0,
+
+            // 碳固定流转计数器
+            calvinPhase: 0 // 循环流动动画阶段计数器
+        };
+
+        // --- 3. 3D 微观场景初始化 ---
+        let scene, camera, renderer, controls;
+        let chloroplastBody, chloroplastShell;
+        let thylakoidGroup;
+        let photonParticles, waterParticles, o2Particles, co2Particles, sugarParticles;
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x022c22, 0.025);
+
+            camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+            camera.position.set(0, 7, 16);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            controls = new MinimalOrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 0, 0);
+            controls.update();
+
+            // 光源
+            const ambient = new THREE.HemisphereLight(0x064e3b, 0x022c22, 1.0);
+            scene.add(ambient);
+
+            // 太阳射入光
+            const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.5);
+            sunLight.position.set(5, 15, 5);
+            scene.add(sunLight);
+
+            // 细胞液荧光
+            const fluorLight = new THREE.PointLight(0x10b981, 2, 20);
+            fluorLight.position.set(0, 0, 0);
+            scene.add(fluorLight);
+
+            // 3.1 叶绿体外壳 (磨砂半透双层膜)
+            const shellGeo = new THREE.SphereGeometry(4.5, 32, 24);
+            // 挤压成椭球体
+            shellGeo.scale(1.3, 0.7, 1.0);
+            
+            // 外壳用线框和极高透明度材质融合，展现微观切片感
+            const shellMat = new THREE.MeshPhysicalMaterial({
+                color: 0x10b981,
+                roughness: 0.1,
+                metalness: 0.1,
+                transmission: 0.85,
+                thickness: 0.5,
+                transparent: true,
+                opacity: 0.25,
+                side: THREE.DoubleSide
+            });
+            chloroplastBody = new THREE.Mesh(shellGeo, shellMat);
+            scene.add(chloroplastBody);
+
+            // 叶绿体边界光晕轮廓
+            const shellWireMat = new THREE.MeshBasicMaterial({
+                color: 0x34d399,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.05
+            });
+            const shellWire = new THREE.Mesh(shellGeo, shellWireMat);
+            scene.add(shellWire);
+
+            // 3.2 类囊体基粒 (Granum) - 光反应场所
+            // 由一片片绿色盘状物（类囊体）堆叠而成柱状
+            thylakoidGroup = new THREE.Group();
+            scene.add(thylakoidGroup);
+
+            const granumPositions = [
+                [-2.5, 0, -1], [-1.5, 0.2, 1.5], [0, -0.2, -1.8],
+                [1.8, 0, 1.2], [2.8, 0.1, -1.2]
+            ];
+
+            const granumMat = new THREE.MeshStandardMaterial({
+                color: 0x047857,
+                roughness: 0.4,
+                metalness: 0.6,
+                bumpScale: 0.05
+            });
+
+            granumPositions.forEach(pos => {
+                const stackCount = Math.floor(Math.random() * 4) + 4; // 堆叠4~7片
+                for(let h = 0; h < stackCount; h++) {
+                    const thylakoidGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.12, 16);
+                    const singleThylakoid = new THREE.Mesh(thylakoidGeo, granumMat);
+                    singleThylakoid.position.set(pos[0], pos[1] - 0.5 + h * 0.18, pos[2]);
+                    thylakoidGroup.add(singleThylakoid);
+                }
+            });
+
+            // 3.3 粒子流动流动系统
+            // 3.3.1 光子粒子 (模拟从上方射入)
+            const photonCount = 100;
+            const photonGeo = new THREE.BufferGeometry();
+            const photonPos = new Float32Array(photonCount * 3);
+            for(let i=0; i<photonCount; i++) {
+                photonPos[i*3] = (Math.random() - 0.5) * 12;
+                photonPos[i*3+1] = 6 + Math.random() * 5;
+                photonPos[i*3+2] = (Math.random() - 0.5) * 8;
+            }
+            photonGeo.setAttribute('position', new THREE.BufferAttribute(photonPos, 3));
+            const photonMat = new THREE.PointsMaterial({
+                color: 0xf59e0b, // 金黄高亮
+                size: 0.12,
+                transparent: true,
+                opacity: 0.8
+            });
+            photonParticles = new THREE.Points(photonGeo, photonMat);
+            scene.add(photonParticles);
+
+            // 3.3.2 水分子流动粒子 ($H_2O$，蓝色，从外部进入类囊体)
+            const h2oCount = 80;
+            const h2oGeo = new THREE.BufferGeometry();
+            const h2oPos = new Float32Array(h2oCount * 3);
+            for(let i=0; i<h2oCount; i++) {
+                h2oPos[i*3] = (Math.random() - 0.5) * 15;
+                h2oPos[i*3+1] = -4 - Math.random() * 2;
+                h2oPos[i*3+2] = (Math.random() - 0.5) * 10;
+            }
+            h2oGeo.setAttribute('position', new THREE.BufferAttribute(h2oPos, 3));
+            const h2oMat = new THREE.PointsMaterial({
+                color: 0x3b82f6, // 亮蓝
+                size: 0.1,
+                transparent: true,
+                opacity: 0.7
+            });
+            waterParticles = new THREE.Points(h2oGeo, h2oMat);
+            scene.add(waterParticles);
+
+            // 3.3.3 氧气分子飘逸气泡 ($O_2$，浅蓝色，从类囊体飘出外层)
+            const o2Count = 100;
+            const o2Geo = new THREE.BufferGeometry();
+            const o2Pos = new Float32Array(o2Count * 3);
+            for(let i=0; i<o2Count; i++) {
+                // 初始堆在类囊体位置附近
+                const targetG = granumPositions[Math.floor(Math.random() * granumPositions.length)];
+                o2Pos[i*3] = targetG[0] + (Math.random() - 0.5);
+                o2Pos[i*3+1] = targetG[1] + (Math.random() - 0.5);
+                o2Pos[i*3+2] = targetG[2] + (Math.random() - 0.5);
+            }
+            o2Geo.setAttribute('position', new THREE.BufferAttribute(o2Pos, 3));
+            const o2Mat = new THREE.PointsMaterial({
+                color: 0x22d3ee, // 亮青发光
+                size: 0.11,
+                transparent: true,
+                opacity: 0.0 // 随速率显示
+            });
+            o2Particles = new THREE.Points(o2Geo, o2Mat);
+            scene.add(o2Particles);
+
+            // 3.3.4 二氧化碳分子 ($CO_2$，亮橙色，在基质流动)
+            const co2Count = 100;
+            const co2Geo = new THREE.BufferGeometry();
+            const co2Pos = new Float32Array(co2Count * 3);
+            for(let i=0; i<co2Count; i++) {
+                co2Pos[i*3] = (Math.random() - 0.5) * 14;
+                co2Pos[i*3+1] = (Math.random() - 0.5) * 4;
+                co2Pos[i*3+2] = (Math.random() - 0.5) * 10;
+            }
+            co2Geo.setAttribute('position', new THREE.BufferAttribute(co2Pos, 3));
+            const co2Mat = new THREE.PointsMaterial({
+                color: 0xf97316, // 琥珀橙
+                size: 0.1,
+                transparent: true,
+                opacity: 0.5
+            });
+            co2Particles = new THREE.Points(co2Geo, co2Mat);
+            scene.add(co2Particles);
+
+            // 3.3.5 葡萄糖分子 (金色六边形，在暗反应基质处生成下沉)
+            const sugarCount = 50;
+            const sugarGeo = new THREE.BufferGeometry();
+            const sugarPos = new Float32Array(sugarCount * 3);
+            for(let i=0; i<sugarCount; i++) {
+                sugarPos[i*3] = (Math.random() - 0.5) * 8;
+                sugarPos[i*3+1] = (Math.random() - 0.5) * 3;
+                sugarPos[i*3+2] = (Math.random() - 0.5) * 6;
+            }
+            sugarGeo.setAttribute('position', new THREE.BufferAttribute(sugarPos, 3));
+            const sugarMat = new THREE.PointsMaterial({
+                color: 0xfbbf24, // 尊贵金
+                size: 0.14,
+                transparent: true,
+                opacity: 0.0
+            });
+            sugarParticles = new THREE.Points(sugarGeo, sugarMat);
+            scene.add(sugarParticles);
+        }
+
+        // --- 4. 2D SVG 卡尔文循环与效率曲线图表 ---
+        function initCharts() {
+            updateCharts();
+            drawCalvinCycle();
+        }
+
+        function updateCharts() {
+            const rateSvg = document.getElementById('svg-rate-chart');
+            if(!rateSvg) return;
+
+            const w = rateSvg.clientWidth || 320;
+            const h = rateSvg.clientHeight || 120;
+            const margin = { top: 15, right: 15, bottom: 20, left: 35 };
+            const chartW = w - margin.left - margin.right;
+            const chartH = h - margin.top - margin.bottom;
+
+            // 绘制静态坐标系
+            let content = `
+                <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${h - margin.bottom}" stroke="#064e3b" stroke-width="1.5" />
+                <line x1="${margin.left}" y1="${h - margin.bottom}" x2="${w - margin.right}" y2="${h - margin.bottom}" stroke="#064e3b" stroke-width="1.5" />
+                <text x="${margin.left - 5}" y="${margin.top + 3}" fill="#6ee7b7" font-size="8" text-anchor="end">效率 P</text>
+                <text x="${w - margin.right}" y="${h - margin.bottom + 12}" fill="#6ee7b7" font-size="8" text-anchor="end">光照 I</text>
+            `;
+
+            // 根据当前 CO2 浓度与温度计算对应理论光强效率曲线
+            const tempFactor = calcTempFactor(State.temperature);
+            const co2Factor = State.co2Concentration / (State.co2Concentration + 300); // 饱和吸附公式
+
+            let points = [];
+            for (let i = 0; i <= 100; i += 5) {
+                // 光强反应速率： Michaelis-Menten 动力学
+                const baseRate = (i / (i + 25)) * 35; // 最大速率35
+                const realRate = baseRate * tempFactor * co2Factor;
+                
+                const px = margin.left + (i / 100) * chartW;
+                const py = h - margin.bottom - (realRate / 35) * chartH;
+                points.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+            }
+
+            // 绘制拟合光合作用曲线 (绿色)
+            content += `<path d="M ${points.join(' L ')}" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" />`;
+
+            // 绘制当前工作点红斑
+            const curBaseRate = (State.lightIntensity / (State.lightIntensity + 25)) * 35;
+            const curRateVal = curBaseRate * tempFactor * co2Factor;
+            const curX = margin.left + (State.lightIntensity / 100) * chartW;
+            const curY = h - margin.bottom - (curRateVal / 35) * chartH;
+
+            content += `
+                <circle cx="${curX}" cy="${curY}" r="4" fill="#fb7185" />
+                <circle cx="${curX}" cy="${curY}" r="8" fill="none" stroke="#fb7185" stroke-width="1" opacity="0.6" />
+                <line x1="${curX}" y1="${curY}" x2="${margin.left}" y2="${curY}" stroke="#f43f5e" stroke-dasharray="2,2" opacity="0.5" />
+                <line x1="${curX}" y1="${curY}" x2="${curX}" y2="${h - margin.bottom}" stroke="#f43f5e" stroke-dasharray="2,2" opacity="0.5" />
+            `;
+
+            rateSvg.innerHTML = content;
+        }
+
+        // 绘制卡尔文循环 2D 原理流
+        function drawCalvinCycle() {
+            const svg = document.getElementById('svg-calvin-cycle');
+            if(!svg) return;
+
+            const w = svg.clientWidth || 320;
+            const h = svg.clientHeight || 130;
+            
+            // 环形参数
+            const cx = w / 2;
+            const cy = h / 2 + 5;
+            const r = 38;
+
+            // 循环三个核心阶段的坐标：
+            // 1. CO2 固定阶段 (上方)
+            // 2. C3 还原阶段 (右下)
+            // 3. C5 再生阶段 (左下)
+            const angle1 = -Math.PI / 2; // 上
+            const angle2 = Math.PI / 6;  // 右下
+            const angle3 = 5 * Math.PI / 6; // 左下
+
+            const p1 = { x: cx + r * Math.cos(angle1), y: cy + r * Math.sin(angle1) };
+            const p2 = { x: cx + r * Math.cos(angle2), y: cy + r * Math.sin(angle2) };
+            const p3 = { x: cx + r * Math.cos(angle3), y: cy + r * Math.sin(angle3) };
+
+            // 动态流动的能量路径光斑
+            let flowDotOffset = (State.calvinPhase % 100) / 100;
+            let dotAngle = angle1 + flowDotOffset * Math.PI * 2;
+            let dotX = cx + r * Math.cos(dotAngle);
+            let dotY = cy + r * Math.sin(dotAngle);
+
+            let content = `
+                <!-- 循环圆弧线 -->
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#115e59" stroke-width="1.5" />
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-dasharray="8, 20" />
+                
+                <!-- 运动碳流动光点 -->
+                <circle cx="${dotX}" cy="${dotY}" r="3.5" fill="#fbbf24" class="glow-emerald" />
+
+                <!-- 二氧化碳飘入箭头 -->
+                <path d="M ${cx},5 L ${cx},${cy - r - 4}" fill="none" stroke="#f97316" stroke-width="1.5" marker-end="url(#arrow)" />
+                <text x="${cx + 6}" y="12" fill="#f97316" font-size="8" font-weight="bold">CO₂ 飘入</text>
+
+                <!-- 糖类合成流出箭头 -->
+                <path d="M ${p2.x},${p2.y} L ${w - 15},${p2.y}" fill="none" stroke="#fbbf24" stroke-width="1.5" />
+                <text x="${w - 12}" y="${p2.y + 3}" fill="#fbbf24" font-size="8" font-weight="bold" text-anchor="end">糖分 (Glucose)</text>
+
+                <!-- 光反应提供 [H]/ATP 的能量流入线 -->
+                <path d="M 12,${cy + 10} Q ${cx - 30},${cy + 25} ${p2.x - 10},${p2.y + 10}" fill="none" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3,3" />
+                <text x="12" y="${cy + 20}" fill="#22d3ee" font-size="7">ATP + [H] 能量流入</text>
+
+                <!-- 核心分子文字标签 -->
+                <g>
+                    <!-- CO2固定点 (C5) -->
+                    <circle cx="${p1.x}" cy="${p1.y}" r="11" fill="#042f2e" stroke="#2dd4bf" stroke-width="1.5" />
+                    <text x="${p1.x}" y="${p1.y + 3}" fill="#2dd4bf" font-size="8" font-weight="bold" text-anchor="middle">C₅</text>
+
+                    <!-- 三碳化合物 (C3) -->
+                    <circle cx="${p2.x}" cy="${p2.y}" r="11" fill="#042f2e" stroke="#f59e0b" stroke-width="1.5" />
+                    <text x="${p2.x}" y="${p2.y + 3}" fill="#f59e0b" font-size="8" font-weight="bold" text-anchor="middle">C₃</text>
+
+                    <!-- 卡尔文再生 -->
+                    <circle cx="${p3.x}" cy="${p3.y}" r="11" fill="#042f2e" stroke="#0d9488" stroke-width="1.5" />
+                    <text x="${p3.x}" y="${p3.y + 3}" fill="#0d9488" font-size="8" font-weight="bold" text-anchor="middle">循环</text>
+                </g>
+
+                <!-- 定义 SVG 箭头标记 -->
+                <defs>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f97316" />
+                    </marker>
+                </defs>
+            `;
+
+            svg.innerHTML = content;
+        }
+
+        // --- 5. 核心光合作用生物数学模型 ---
+        function calcTempFactor(t) {
+            // 温度对酶活性影响一般是抛物线：最适温度 30°C
+            // y = 1 - 0.0016 * (t - 30)^2
+            let factor = 1 - 0.0016 * Math.pow((t - 30), 2);
+            return Math.max(0.01, factor); // 哪怕极端高低温也要有微弱活性
+        }
+
+        function runBioPhysics() {
+            // 5.1 光反应速率 (与光强直接关联，满足饱合吸附公式)
+            State.lightReactionRate = State.lightIntensity / (State.lightIntensity + 20);
+
+            // 5.2 温度因素
+            const tempFactor = calcTempFactor(State.temperature);
+
+            // 5.3 暗反应速率 (受 CO2 浓度制约，且需要光反应提供的 [H]/ATP 支持)
+            const co2Factor = State.co2Concentration / (State.co2Concentration + 250);
+            
+            // 暗反应取决于 CO2 的固定，并且受到光反应生成的 ATP/还原氢的协同上限限制
+            State.darkReactionRate = Math.min(State.lightReactionRate * 1.2, co2Factor) * tempFactor;
+
+            // 5.4 最终综合光合作用速率
+            State.totalRate = State.darkReactionRate * 25.0; // 换算为常用生理学单位
+
+            const dt = State.timeStep * State.simSpeed;
+
+            if (State.isPlaying && State.totalRate > 0.05) {
+                // 累计累积产物
+                // 氧气释放量：取决于光反应阶段裂解水分子
+                State.o2Released += State.lightReactionRate * 0.15 * dt * State.simSpeed;
+
+                // 葡萄糖合成量：取决于卡尔文循环暗反应
+                State.sugarGenerated += State.darkReactionRate * 0.02 * dt * State.simSpeed;
+
+                // 卡尔文循环动画阶段累进
+                State.calvinPhase += State.totalRate * 0.2 * State.simSpeed;
+            }
+        }
+
+        // --- 6. 同步 3D 微观结构与粒子系统 ---
+        function updateVisuals() {
+            // 6.1 光反应活性对类囊体 (Granum) 的发光和自转动画影响
+            if (thylakoidGroup) {
+                thylakoidGroup.rotation.y += (State.totalRate * 0.005 + 0.002);
+            }
+
+            const dt = State.timeStep * State.simSpeed;
+
+            // 6.2 移动与渲染各个分子粒子流
+            // 6.2.1 光子：从天而降，照射类囊体
+            if (photonParticles) {
+                const positions = photonParticles.geometry.attributes.position.array;
+                const count = positions.length / 3;
+                const speed = State.lightIntensity * 0.003 + 0.01;
+
+                for(let i=0; i<count; i++) {
+                    positions[i*3+1] -= speed; // 向下坠落
+                    if(positions[i*3+1] < -2) {
+                        // 坠落到底部后重回上方
+                        positions[i*3] = (Math.random() - 0.5) * 12;
+                        positions[i*3+1] = 6 + Math.random() * 4;
+                        positions[i*3+2] = (Math.random() - 0.5) * 8;
+                    }
+                }
+                photonParticles.geometry.attributes.position.needsUpdate = true;
+                
+                // 光强为0时隐藏光子
+                photonParticles.material.opacity = State.lightIntensity / 100 * 0.8;
+            }
+
+            // 6.2.2 水分子 ($H_2O$)：由外界渗入，并在基粒处裂解
+            if (waterParticles) {
+                const positions = waterParticles.geometry.attributes.position.array;
+                const count = positions.length / 3;
+                const speed = State.lightReactionRate * 0.05 + 0.01;
+
+                for(let i=0; i<count; i++) {
+                    // 朝着类囊体方向涌动 (大致向y中心靠拢)
+                    positions[i*3+1] += speed; 
+                    if(positions[i*3+1] > 2) {
+                        // 渗入并被光解后，在下方重生
+                        positions[i*3] = (Math.random() - 0.5) * 15;
+                        positions[i*3+1] = -4 - Math.random() * 2;
+                        positions[i*3+2] = (Math.random() - 0.5) * 10;
+                    }
+                }
+                waterParticles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // 6.2.3 氧气分子 ($O_2$)：气泡向上冒出
+            if (o2Particles) {
+                const positions = o2Particles.geometry.attributes.position.array;
+                const count = positions.length / 3;
+                const speed = State.lightReactionRate * 0.04 + 0.005;
+
+                for(let i=0; i<count; i++) {
+                    positions[i*3+1] += speed; // 气泡向上飘
+                    positions[i*3] += (Math.random() - 0.5) * 0.02; // 微弱晃动
+
+                    if(positions[i*3+1] > 5) {
+                        // 飘出边界，重新由基粒处释放
+                        positions[i*3] = (Math.random() - 0.5) * 5;
+                        positions[i*3+1] = -1 + Math.random() * 2;
+                        positions[i*3+2] = (Math.random() - 0.5) * 4;
+                    }
+                }
+                o2Particles.geometry.attributes.position.needsUpdate = true;
+                
+                // 光反应越强，氧气气泡越凝实可见
+                o2Particles.material.opacity = Math.min(0.8, State.lightReactionRate * 0.9);
+            }
+
+            // 6.2.4 二氧化碳分子 ($CO_2$)：在基质中扩散，用于碳固定
+            if (co2Particles) {
+                const positions = co2Particles.geometry.attributes.position.array;
+                const count = positions.length / 3;
+                
+                // 根据暗反应速率向核心基质靠拢
+                for(let i=0; i<count; i++) {
+                    positions[i*3] += (Math.random() - 0.5) * 0.04;
+                    positions[i*3+1] += (Math.random() - 0.5) * 0.04;
+                    positions[i*3+2] += (Math.random() - 0.5) * 0.04;
+
+                    // 离开范围的在边界重聚
+                    const dist = Math.sqrt(positions[i*3]*positions[i*3] + positions[i*3+1]*positions[i*3+1] + positions[i*3+2]*positions[i*3+2]);
+                    if(dist > 7) {
+                        positions[i*3] = (Math.random() - 0.5) * 12;
+                        positions[i*3+1] = (Math.random() - 0.5) * 4;
+                        positions[i*3+2] = (Math.random() - 0.5) * 8;
+                    }
+                }
+                co2Particles.geometry.attributes.position.needsUpdate = true;
+                co2Particles.material.opacity = State.co2Concentration / 1200 * 0.6;
+            }
+
+            // 6.2.5 葡萄糖分子 (Sugar)：金色闪烁沉淀
+            if (sugarParticles) {
+                const positions = sugarParticles.geometry.attributes.position.array;
+                const count = positions.length / 3;
+                const speed = State.darkReactionRate * 0.02 + 0.005;
+
+                for(let i=0; i<count; i++) {
+                    positions[i*3+1] -= speed; // 淀粉下沉积累
+                    if(positions[i*3+1] < -3) {
+                        // 重生在基质中
+                        positions[i*3] = (Math.random() - 0.5) * 6;
+                        positions[i*3+1] = -1 + Math.random() * 2;
+                        positions[i*3+2] = (Math.random() - 0.5) * 5;
+                    }
+                }
+                sugarParticles.geometry.attributes.position.needsUpdate = true;
+                sugarParticles.material.opacity = Math.min(0.9, State.darkReactionRate * 1.2);
+            }
+
+            // 6.3 页面 HUD 标签更新
+            document.getElementById('hud-light-rate').innerText = `${(State.lightReactionRate * 100).toFixed(1)} %`;
+            document.getElementById('hud-dark-rate').innerText = `${(State.darkReactionRate * 100).toFixed(1)} %`;
+            document.getElementById('hud-total-rate').innerText = `${State.totalRate.toFixed(2)} μmol/(m²·s)`;
+            document.getElementById('hud-o2').innerText = `${State.o2Released.toFixed(1)} ml`;
+            document.getElementById('hud-sugar').innerText = `${State.sugarGenerated.toFixed(3)} mg`;
+
+            // 更新滑动数值提示
+            document.getElementById('val-light').innerText = `${State.lightIntensity.toFixed(0)} %`;
+            document.getElementById('val-co2').innerText = `${State.co2Concentration.toFixed(0)} ppm`;
+            document.getElementById('val-temp').innerText = `${State.temperature.toFixed(1)} °C`;
+        }
+
+        // --- 7. KaTeX 公式排版渲染 ---
+        function renderEquations() {
+            const total = `6CO_2 + 12H_2O \\xrightarrow[\\text{叶绿体}]{\\text{光能}} C_6H_{12}O_6 + 6O_2 + 6H_2O`;
+            const light = `\\text{光反应: } 2H_2O \\xrightarrow{\\text{光, 色素}} 4[H] + O_2 \\uparrow \\quad (\\text{生成 ATP})`;
+            const dark = `\\text{暗反应: } CO_2 + C_5 \\xrightarrow{\\text{酶}} 2C_3 \\xrightarrow{\\text{ATP, }[H]} C_6H_{12}O_6`;
+
+            katex.render(total, document.getElementById('latex-total'), { throwOnError: false });
+            katex.render(light, document.getElementById('latex-light-phase'), { throwOnError: false });
+            katex.render(dark, document.getElementById('latex-dark-phase'), { throwOnError: false });
+        }
+
+        // --- 8. 互动小测验设计 ---
+        const QuizData = [
+            {
+                q: "光合作用光反应阶段产生的 [H] (NADPH) 和 ATP，将在暗反应阶段中起到什么作用？",
+                options: [
+                    { t: "A. 用于固定二氧化碳成 C3", correct: false },
+                    { t: "B. 充当催化酶，提高暗反应反应速率", correct: false },
+                    { t: "C. 为三碳化合物 (C3) 的还原提供强还原剂与能量", correct: true },
+                    { t: "D. 转化为叶绿体外膜的构成材料", correct: false }
+                ],
+                explain: "正确答案是 C。光反应中水光解产生的 $[H]$ (NADPH) 作为强还原剂，光反应产生的 ATP 提供化学能，两者共同用于暗反应中三碳化合物 ($C_3$) 的还原过程，最终合成有机葡萄糖。"
+            },
+            {
+                q: "若将绿色植物从光照充足的室外突然移入完全黑暗的密室中，短时间内叶绿体内 C3 和 C5 的含量变化是？",
+                options: [
+                    { t: "A. C3 减少，C5 增多", correct: false },
+                    { t: "B. C3 增多，C5 减少", correct: true },
+                    { t: "C. C3 与 C5 均增多", correct: false },
+                    { t: "D. C3 与 C5 均减少", correct: false }
+                ],
+                explain: "正确答案是 B。突然失去光照，光反应断绝，导致用于还原 $C_3$ 的 $[H]$ 和 ATP 匮乏，因此 $C_3$ 还原受阻而积累（$C_3$ 增多）；同时，由于 $C_3$ 无法被还原再生为 $C_5$，而 $C_5$ 仍在固定二氧化碳被消耗，导致 $C_5$ 锐减（$C_5$ 减少）。"
+            },
+            {
+                q: "大棚蔬菜种植中，以下哪种组合在保证适宜温度下能最大化提高蔬菜产量？",
+                options: [
+                    { t: "A. 白天适当提高二氧化碳浓度与光强，夜晚适当降低棚内温度", correct: true },
+                    { t: "B. 白天与夜晚均维持高温大水高浓度 CO2", correct: false },
+                    { t: "C. 白天和夜晚均保持低温以防植物水分蒸发", correct: false },
+                    { t: "D. 使用绿光灯泡进行 24 小时持续照射", correct: false }
+                ],
+                explain: "正确答案是 A。白天提高光强与 $CO_2$ 浓度可以极大地提升光合作用速率，积累大量有机物；夜晚适当降低温度，能够降低细胞呼吸作用强度，减少有机物的呼吸消耗，从而让植物净积累量达到最高。"
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        function loadQuiz(index) {
+            const quiz = QuizData[index];
+            document.getElementById('quiz-question-num').innerText = `问题 ${index + 1} of ${QuizData.length}`;
+            document.getElementById('quiz-question').innerText = quiz.q;
+            
+            const optsContainer = document.getElementById('quiz-options');
+            optsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2 text-left rounded bg-slate-900 border border-emerald-900 text-slate-300 hover:bg-emerald-500/10 hover:border-emerald-400 transition-colors";
+                btn.innerText = opt.t;
+                btn.onclick = () => checkAnswer(opt.correct, quiz.explain);
+                optsContainer.appendChild(btn);
+            });
+
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            renderMathInElement(document.getElementById('quiz-panel'), {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+        }
+
+        function checkAnswer(isCorrect, explanation) {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden');
+            if (isCorrect) {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-emerald-500/10 border-emerald-500 text-emerald-300 glow-emerald";
+                feedback.innerHTML = `🎉 <b>完全正确！</b><br>${explanation}`;
+                setTimeout(() => {
+                    currentQuizIndex = (currentQuizIndex + 1) % QuizData.length;
+                    loadQuiz(currentQuizIndex);
+                }, 4000);
+            } else {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-rose-500/10 border-rose-500 text-rose-300";
+                feedback.innerHTML = `❌ <b>再试一次吧：</b><br>${explanation}`;
+            }
+
+            renderMathInElement(feedback, {
+                delimiters: [
+                    {left: '$', right: '$', display: false}
+                ]
+            });
+        }
+
+        // --- 9. 主物理循环与渲染循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                runBioPhysics();
+                updateVisuals();
+                updateCharts();
+                drawCalvinCycle();
+            }
+
+            // 自转动画
+            if (chloroplastBody) {
+                chloroplastBody.rotation.y += 0.0006;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 10. 事件绑定与 UI 控制 ---
+        function bindEvents() {
+            // 滑块控制
+            const lightSlider = document.getElementById('slider-light');
+            const co2Slider = document.getElementById('slider-co2');
+            const tempSlider = document.getElementById('slider-temp');
+
+            lightSlider.oninput = (e) => {
+                State.lightIntensity = parseFloat(e.target.value);
+                updateVisuals();
+                updateCharts();
+            };
+            co2Slider.oninput = (e) => {
+                State.co2Concentration = parseFloat(e.target.value);
+                updateVisuals();
+                updateCharts();
+            };
+            tempSlider.oninput = (e) => {
+                State.temperature = parseFloat(e.target.value);
+                updateVisuals();
+                updateCharts();
+            };
+
+            // 播放/暂停控制
+            const playBtn = document.getElementById('btn-play');
+            const playIcon = document.getElementById('icon-play');
+            const pauseIcon = document.getElementById('icon-pause');
+            const statusTxt = document.getElementById('txt-status');
+
+            playBtn.onclick = () => {
+                State.isPlaying = !State.isPlaying;
+                if (State.isPlaying) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                    statusTxt.innerText = "细胞活跃";
+                    statusTxt.className = "text-emerald-400 font-medium";
+                } else {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    statusTxt.innerText = "已休眠";
+                    statusTxt.className = "text-amber-400 font-medium";
+                }
+            };
+
+            // 单步
+            document.getElementById('btn-step').onclick = () => {
+                State.isPlaying = false;
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                statusTxt.innerText = "单步激活";
+                statusTxt.className = "text-teal-400 font-medium";
+                
+                runBioPhysics();
+                updateVisuals();
+                updateCharts();
+                drawCalvinCycle();
+            };
+
+            // 重置
+            document.getElementById('btn-reset').onclick = () => {
+                State.time = 0;
+                State.o2Released = 0;
+                State.sugarGenerated = 0;
+                State.calvinPhase = 0;
+                
+                updateVisuals();
+                updateCharts();
+                drawCalvinCycle();
+            };
+
+            // 随机气象
+            document.getElementById('btn-random').onclick = () => {
+                const randLight = (Math.random() * 95 + 5).toFixed(0);
+                const randCO2 = (Math.random() * 1100 + 100).toFixed(0);
+                const randTemp = (Math.random() * 45 + 5).toFixed(1);
+
+                lightSlider.value = randLight;
+                State.lightIntensity = parseFloat(randLight);
+
+                co2Slider.value = randCO2;
+                State.co2Concentration = parseFloat(randCO2);
+
+                tempSlider.value = randTemp;
+                State.temperature = parseFloat(randTemp);
+
+                updateVisuals();
+                updateCharts();
+                drawCalvinCycle();
+            };
+
+            // 全屏
+            document.getElementById('btn-fullscreen').onclick = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            };
+
+            // 小测验折叠面板
+            const quizPanel = document.getElementById('quiz-panel');
+            const quizFab = document.getElementById('btn-quiz-fab');
+            
+            document.getElementById('btn-quiz-close').onclick = () => {
+                quizPanel.classList.add('hidden');
+                quizFab.classList.remove('hidden');
+            };
+
+            quizFab.onclick = () => {
+                quizPanel.classList.remove('hidden');
+                quizFab.classList.add('hidden');
+            };
+
+            // 速度选择
+            document.getElementById('select-speed').onchange = (e) => {
+                State.simSpeed = parseFloat(e.target.value);
+            };
+
+            // 响应尺寸改变
+            window.addEventListener('resize', () => {
+                const container = document.getElementById('canvas-container');
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+                updateCharts();
+                drawCalvinCycle();
+            });
+        }
+
+        // --- 11. 自加载与启动 ---
+        window.onload = () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+
+            init3D();
+            initCharts();
+            loadQuiz(currentQuizIndex);
+            bindEvents();
+
+            // 首帧视图更新
+            updateVisuals();
+            renderEquations();
+
+            // 开启大循环
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>

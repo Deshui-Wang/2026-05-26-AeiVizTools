@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>昼夜早晚与四季更替实验室 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#22D3EE',
+                            teal: '#14B8A6',
+                            purple: '#A78BFA',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            dark: '#060A14',
+                            navy: '#0F172A',
+                            panel: 'rgba(15, 23, 42, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #22D3EE 50%, #A78BFA 100%);
+            --bg-gradient: radial-gradient(circle at top, #0A1428 0%, #050811 75%, #020306 100%);
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(34, 211, 238, 0.25);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.75);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 10, 20, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(34, 211, 238, 0.25);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.5);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 发光霓虹 */
+        .glow-teal {
+            box-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+        }
+        .glow-text-teal {
+            text-shadow: 0 0 8px rgba(20, 184, 166, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #22D3EE;
+            cursor: pointer;
+            box-shadow: 0 0 8px #22D3EE;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        /* 纬度选择卡激活 */
+        .lat-btn-active {
+            background: rgba(34, 211, 238, 0.18);
+            border-color: #22D3EE;
+            color: #22D3EE;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.25);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-teal-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-cyan-400 to-teal-500 flex items-center justify-center font-bold text-slate-950 glow-teal">🌞</div>
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400 bg-clip-text text-transparent uppercase tracking-wider font-mono">
+                    昼夜交替与四季更替实验室 <span class="text-xs font-normal text-teal-500/60 normal-case ml-1">Diurnal Cycle & Seasons Lab</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- 观察点纬度选择 -->
+        <div class="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
+            <button onclick="switchLatitude(0)" id="btn-lat-0" class="lat-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">🌐 赤道 (0°)</button>
+            <button onclick="switchLatitude(1)" id="btn-lat-1" class="lat-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono lat-btn-active">🌐 中纬度 (40° N)</button>
+            <button onclick="switchLatitude(2)" id="btn-lat-2" class="lat-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">🌐 北极圈 (66.5° N)</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" onclick="resetSimulator()" class="px-3 py-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-medium hover:bg-teal-500/20 active:scale-95 transition-all">
+                重置星空
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-teal-400 text-slate-950 text-xs font-bold hover:bg-teal-300 active:scale-95 transition-all">
+                暂停模拟
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧讲解面板 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-teal-500/15 bg-[#060A14]/90 flex flex-col p-5 overflow-y-auto gap-4 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-teal-500/10">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    🎯 地球物理探索目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" checked disabled class="mt-0.5 rounded cursor-pointer accent-teal-500">
+                        <span>领悟地球公转与 $23.44^\circ$ 黄赤交角控制四季更替的物理解析。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-teal-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-2" class="cursor-pointer hover:text-slate-300 transition-colors">观察地球在一日自转早晚更替中，日晷影子的逆时针旋转起伏。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-teal-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="cursor-pointer hover:text-slate-300 transition-colors">在北极圈纬度下体验极昼（24小时不落日影旋转）与极夜的产生。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心天文公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-teal-500/10">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    📝 太阳高度角物理公式
+                </h3>
+                <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center">
+                    <div id="latex-formula" class="text-xs text-slate-100 py-1 font-mono"></div>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                    公转黄经决定了直射点纬度 $\delta$。地面观察点纬度为 $\varphi$。在正午时，该观察点处的正午太阳高度角 $H_{noon}$ 达到最大。随着地球一日 $2\pi$ 自传，影子的长度随高度角 $\tan(h)$ 发生大幅舒张。
+                </p>
+            </section>
+
+            <!-- 极昼极夜与日晷思想实验 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 border-teal-500/10">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    💡 天文学思想实验
+                </h3>
+                <div class="text-[11px] text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">❓ 假如地球没有倾斜？</span>
+                        <p class="mt-1 text-slate-400">如果黄赤交角为 $0^\circ$，地球的自转轴垂直于黄道面，那么太阳直射点将永远锁死在赤道上。全球各地将不会有任何季节变化，一年到头昼夜平分，极圈永远不会发生极昼或极夜。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2.5">
+                        <span class="text-purple-300 font-semibold">⏰ 日晷——时间的影子印记</span>
+                        <p class="mt-1 text-slate-400">中国古人发明的日晷以影子指向测定时间。在北半球，太阳东升西落，因此晷针投影呈**逆时针方向绕行旋转**。正午影长最短，且影长在夏至时缩至最短，冬至时拉伸至极长，极为神奇精密。</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央渲染画布 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D Canvas 容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- 左上角 HUD 看板 -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[270px]">
+                <!-- 天文物理常数 HUD -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-teal-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">天文地理参数看板</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">直射点纬度 ($\delta$)</span>
+                            <span id="hud-delta" class="font-bold text-slate-200 font-mono">0.00°</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">正午太阳高度 ($H$)</span>
+                            <span id="hud-h-noon" class="font-bold text-slate-200 font-mono">50.00°</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500 text-[9px]">观察地表相对日照能</span>
+                        <span id="hud-solar-energy" class="font-bold text-teal-400 font-mono">0.64</span>
+                    </div>
+                </div>
+
+                <!-- 昼夜长短 HUD -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-purple-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">昼夜长短与节气常数</h4>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">观察点纬度</span>
+                            <span id="hud-lat" class="font-bold text-slate-300 font-mono">40.0° N</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">昼夜比长</span>
+                            <span id="hud-daynight-ratio" class="font-bold text-teal-400 font-mono">12.1h / 11.9h</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">当前主导节气</span>
+                            <span id="hud-term" class="font-bold text-purple-400 font-mono">春分 (Equinox)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">黄赤交角 ($\epsilon$)</span>
+                            <span class="font-bold text-purple-400 font-mono">23.44°</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧地面日晷影子传感器（右上角） -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-teal-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-xs font-semibold text-teal-400 flex items-center justify-between">
+                        <span>⏰ 地面日晷影长实时传感器</span>
+                        <span class="text-[9px] text-slate-500 font-mono">Sundial Shadow</span>
+                    </h4>
+                    <!-- 晷盘影子动态 SVG -->
+                    <div class="h-[150px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-900 flex items-center justify-center">
+                        <svg id="svg-sundial" class="w-full h-full"></svg>
+                    </div>
+                    <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800 text-[10.5px] flex flex-col gap-1">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">地面观察点时刻</span>
+                            <span id="hud-solar-time" class="font-bold text-slate-300 font-mono">12:00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">影长相对比例</span>
+                            <span id="hud-shadow-len" class="font-bold text-teal-400 font-mono">1.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部滑动调整器 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-5 items-center justify-between glass-panel rounded-2xl p-5 border border-teal-500/20 bg-[#060A14]/90 pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block text-[9px] uppercase">天体状态</span>
+                        <span id="txt-mode" class="text-teal-400 font-medium font-mono">系统公转自转中</span>
+                    </div>
+                </div>
+
+                <!-- 滑动控制 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🔴 四季公转进度 (黄道面黄经)</span>
+                            <span id="val-slider-1" class="font-mono text-teal-400">0.00 rad</span>
+                        </div>
+                        <input id="slider-1" type="range" min="0" max="6.28" step="0.05" value="0" class="custom-slider" oninput="handleSliderChange(1, this.value)">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🟢 自转一日早晚 (地方时)</span>
+                            <span id="val-slider-2" class="font-mono text-teal-400">12:00</span>
+                        </div>
+                        <input id="slider-2" type="range" min="0" max="24" step="0.2" value="12" class="custom-slider" oninput="handleSliderChange(2, this.value)">
+                    </div>
+                </div>
+
+                <!-- 倍率选择 -->
+                <div class="flex items-center gap-2">
+                    <select id="select-speed" onchange="changeTimeSpeed(this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-teal-500 transition-colors font-mono">
+                        <option value="0.0">0.0x 相对静止</option>
+                        <option value="0.5">0.5x 缓速自转</option>
+                        <option value="1.0" selected>1.0x 正常自转</option>
+                        <option value="2.5">2.5x 飞速流逝</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 诊断小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[350px] glass-panel border border-teal-500/20 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col bg-[#060A14]/95">
+                <div class="h-10 border-b border-teal-500/15 bg-slate-900/50 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-teal-400 flex items-center gap-1.5">
+                        ⚡ 昼夜四季诊断小测验
+                    </span>
+                    <button onclick="toggleQuizPanel()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-teal-400 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2"></div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" onclick="toggleQuizPanel()" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-teal-400 text-teal-400 flex items-center justify-center hover:scale-110 glow-teal active:scale-95 transition-all" title="展开小测验">
+                💡
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 天文物理仿真主脚本 -->
+    <script>
+        // --- 1. 全局系统状态 ---
+        const State = {
+            isPlaying: true,
+            time: 0,
+            speedMultiplier: 1.0,
+
+            // 公转自转物理量
+            revolutionPhase: 0.0,  // 四季公转角度 (黄道面) 0 ~ 2pi
+            diurnalHour: 12.0,      // 一日自转小时 0 ~ 24
+
+            observedLat: 40.0,     // 观察点纬度 (0:赤道, 40:中纬度, 66.5:北极圈)
+            
+            // 测验
+            currentQuizIdx: 0,
+            quizAnswered: false
+        };
+
+        // 3D Three.js 环境变量
+        let scene, camera, renderer;
+        let solarGroup;           // 整个太阳系外壳
+        let sunMesh, eclipticPath; // 太阳、轨道
+        let earthGroup, earthMesh; // 地球轴向外壳、地球球体实体
+        let polarAxisLine;        // 南北极自转轴线
+        let terminatorLight;      // 昼夜明暗晨昏太阳平行光
+        let shadowIndicator;      // 3D 地表观察点法线指针
+
+        let lastFrameTimestamp = 0;
+
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 2. 初始化 ---
+        function init() {
+            initWebGL();
+            buildSolarSystem();
+            switchLatitude(1); // 默认中纬度
+            initQuiz();
+            animate();
+        }
+
+        // --- 3. WebGL 环境配置 ---
+        function initWebGL() {
+            const w = canvasContainer.clientWidth || 800;
+            const h = canvasContainer.clientHeight || 600;
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 100);
+            camera.position.set(0, -5.2, 3.8);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            canvasContainer.appendChild(renderer.domElement);
+
+            // 极微弱背景环境光，表现太空深邃感
+            const ambient = new THREE.AmbientLight(0x0a0f24, 0.8);
+            scene.add(ambient);
+
+            // 太阳点光源 (以在地球上产生动态漫反射及强烈背阴)
+            const sunLight = new THREE.PointLight(0xfff5ea, 3.0, 30);
+            sunLight.position.set(0, 0, 0);
+            scene.add(sunLight);
+
+            // 漫反射星尘背景
+            const starGeom = new THREE.BufferGeometry();
+            const starCount = 350;
+            const starPos = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount*3; i+=3) {
+                starPos[i] = (Math.random() - 0.5) * 15;
+                starPos[i+1] = (Math.random() - 0.5) * 15;
+                starPos[i+2] = (Math.random() - 0.5) * 15;
+            }
+            starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0x22D3EE,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.35,
+                blending: THREE.AdditiveBlending
+            });
+            const starField = new THREE.Points(starGeom, starMat);
+            scene.add(starField);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- 4. 太阳-黄赤交角自转地球系统 3D 网格生成 ---
+        function buildSolarSystem() {
+            solarGroup = new THREE.Group();
+            scene.add(solarGroup);
+
+            // 4.1 金色自发光核心太阳
+            const sunGeom = new THREE.SphereGeometry(0.5, 32, 32);
+            const sunMat = new THREE.MeshBasicMaterial({
+                color: 0xFBBF24,
+                transparent: true,
+                opacity: 0.95
+            });
+            sunMesh = new THREE.Mesh(sunGeom, sunMat);
+            solarGroup.add(sunMesh);
+
+            // 太阳外围金色耀斑晕
+            const coronaGeom = new THREE.RingGeometry(0.55, 0.75, 32);
+            const coronaMat = new THREE.MeshBasicMaterial({
+                color: 0xFBBF24,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.25
+            });
+            const corona = new THREE.Mesh(coronaGeom, coronaMat);
+            sunMesh.add(corona);
+
+            // 4.2 黄道面公转轨道线 (金色圆环)
+            const orbitPoints = [];
+            const rOrbit = 2.4;
+            for (let i = 0; i <= 64; i++) {
+                const theta = (i / 64) * 2 * Math.PI;
+                orbitPoints.push(new THREE.Vector3(rOrbit * Math.cos(theta), rOrbit * Math.sin(theta), 0));
+            }
+            const orbitGeom = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+            const orbitMat = new THREE.LineBasicMaterial({
+                color: 0xFBBF24,
+                transparent: true,
+                opacity: 0.45,
+                blending: THREE.AdditiveBlending
+            });
+            eclipticPath = new THREE.Line(orbitGeom, orbitMat);
+            solarGroup.add(eclipticPath);
+
+            // 4.3 地球轴向外壳容器 (Obliquity Container)
+            // 地球自转轴需要沿着黄道面 Z 轴偏转倾斜 23.44 度！
+            earthGroup = new THREE.Group();
+            // 应用倾角 (黄赤交角) 倾斜
+            earthGroup.rotation.y = 23.44 * (Math.PI / 180);
+            solarGroup.add(earthGroup);
+
+            // 地球南北极贯穿发光极轴线段
+            const axisPoints = [
+                new THREE.Vector3(0, -0.65, 0),
+                new THREE.Vector3(0, 0.65, 0)
+            ];
+            const axisGeom = new THREE.BufferGeometry().setFromPoints(axisPoints);
+            const axisMat = new THREE.LineBasicMaterial({
+                color: 0x22D3EE,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+            polarAxisLine = new THREE.Line(axisGeom, axisMat);
+            earthGroup.add(polarAxisLine);
+
+            // 4.4 贴好 Canvas 大陆板块纹理的地球球体网格
+            const earthTex = createWorldTexture();
+            const earthGeom = new THREE.SphereGeometry(0.38, 32, 32);
+            // 使得地球极点贴合 Y 轴，以便自转绕 Y 轴转动
+            const earthMat = new THREE.MeshStandardMaterial({
+                color: 0x050f26,
+                map: earthTex,
+                roughness: 0.6,
+                metalness: 0.8,
+                emissive: 0x22D3EE,
+                emissiveMap: earthTex,
+                emissiveIntensity: 0.85
+            });
+            earthMesh = new THREE.Mesh(earthGeom, earthMat);
+            earthGroup.add(earthMesh);
+
+            // 观察点地表指针，显示当前选择的纬度指示器
+            const indicatorGeom = new THREE.ConeGeometry(0.02, 0.08, 4);
+            indicatorGeom.translate(0, 0.38, 0); // 移动到地表高度
+            const indicatorMat = new THREE.MeshBasicMaterial({ color: 0xFB7185 });
+            shadowIndicator = new THREE.Mesh(indicatorGeom, indicatorMat);
+            earthMesh.add(shadowIndicator);
+        }
+
+        // 大陆板块黑白程序 Canvas 贴图生成
+        function createWorldTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 512, 256);
+
+            function drawContinent(points) {
+                ctx.beginPath();
+                points.forEach((pt, idx) => {
+                    const x = ((pt.lng + 180) / 360) * 512;
+                    const y = ((90 - pt.lat) / 180) * 256;
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.closePath();
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fill();
+                ctx.strokeStyle = '#22D3EE';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+            }
+
+            // 内置主要大陆经纬度多边形
+            // 欧亚非
+            drawContinent([
+                {lng: -15, lat: 35}, {lng: -15, lat: 20}, {lng: 15, lat: -34}, {lng: 40, lat: -34},
+                {lng: 50, lat: 12}, {lng: 80, lat: 6}, {lng: 115, lat: -6}, {lng: 130, lat: -5},
+                {lng: 140, lat: 35}, {lng: 170, lat: 65}, {lng: 110, lat: 75}, {lng: 60, lat: 75},
+                {lng: -5, lat: 70}, {lng: -10, lat: 55}
+            ]);
+            // 北美
+            drawContinent([
+                {lng: -168, lat: 65}, {lng: -120, lat: 48}, {lng: -120, lat: 30}, {lng: -100, lat: 20},
+                {lng: -80, lat: 8}, {lng: -80, lat: 25}, {lng: -60, lat: 50}, {lng: -50, lat: 60},
+                {lng: -80, lat: 70}, {lng: -120, lat: 70}
+            ]);
+            // 南美
+            drawContinent([
+                {lng: -80, lat: 8}, {lng: -45, lat: -5}, {lng: -35, lat: -6}, {lng: -70, lat: -55},
+                {lng: -75, lat: -45}, {lng: -80, lat: -5}
+            ]);
+            // 澳洲
+            drawContinent([
+                {lng: 113, lat: -25}, {lng: 115, lat: -35}, {lng: 145, lat: -38}, {lng: 153, lat: -28},
+                {lng: 143, lat: -10}, {lng: 130, lat: -12}
+            ]);
+            // 南极洲
+            drawContinent([
+                {lng: -180, lat: -78}, {lng: -90, lat: -76}, {lng: 0, lat: -75}, {lng: 90, lat: -76},
+                {lng: 180, lat: -78}, {lng: 180, lat: -89}, {lng: -180, lat: -89}
+            ]);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- 5. 物理仿真引擎与天体旋转解算 ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                State.time += 0.012 * State.speedMultiplier;
+                
+                // 1. 随着时间，公转进度自动微幅推进
+                State.revolutionPhase += 0.001 * State.speedMultiplier;
+                if (State.revolutionPhase > 2 * Math.PI) State.revolutionPhase -= 2 * Math.PI;
+
+                // 2. 自转一日小时自动递增，一日 24 小时
+                State.diurnalHour += 0.02 * State.speedMultiplier;
+                if (State.diurnalHour > 24) State.diurnalHour -= 24;
+
+                // 同步滑块数值
+                document.getElementById('slider-1').value = State.revolutionPhase;
+                document.getElementById('slider-2').value = State.diurnalHour;
+            }
+
+            const lambda = State.revolutionPhase; // 黄经
+            const hour = State.diurnalHour;       // 早晚地方时 0 ~ 24
+
+            // 5.1 太阳核心发光体微动
+            if (sunMesh) {
+                sunMesh.rotation.z = State.time * 0.15;
+            }
+
+            // 5.2 地球公转位置物理公式解算
+            const rOrbit = 2.4;
+            const ex = rOrbit * Math.cos(lambda);
+            const ey = rOrbit * Math.sin(lambda);
+            const ez = 0; // 在黄道平面 z = 0 内移动
+
+            if (earthGroup) {
+                // 将地球容器平移到公转轨道上的当前位置
+                earthGroup.position.set(ex, ey, ez);
+
+                // 5.3 地球一日自传解算
+                // 绕地球自转轴（即 Y 轴）进行 24 小时的匀速自旋
+                const rotRad = (hour / 24) * 2 * Math.PI;
+                if (earthMesh) {
+                    earthMesh.rotation.y = rotRad;
+                }
+            }
+
+            // 5.4 天文高度角与直射纬度计算
+            const obliquity = 23.44; // 黄赤交角
+            // 太阳直射纬度 delta
+            const delta = obliquity * Math.sin(lambda);
+            const phi = State.observedLat; // 观察点纬度
+            
+            // 计算正午太阳高度角 H = 90 - |phi - delta|
+            const hNoon = 90 - Math.abs(phi - delta);
+
+            // 地表观察点地表日照瞬时相对高度角 h(t)
+            // 随自转小时 hour 进行正弦变化，正午时达到高度角 hNoon，夜间高度角小于 0
+            const localHourRad = ((hour - 12) / 12) * Math.PI; // 正午 12点为 0 弧度
+            const currentSunHeight = hNoon * Math.cos(localHourRad); // 瞬时高度角，夜间为负
+
+            // 5.5 昼夜长短计算公式 (时角计算)
+            // cos(omega_0) = -tan(phi) * tan(delta)
+            const radPhi = phi * (Math.PI / 180);
+            const radDelta = delta * (Math.PI / 180);
+            let cosOmega0 = -Math.tan(radPhi) * Math.tan(radDelta);
+            
+            let dayHours = 12.0;
+            if (cosOmega0 <= -1.0) {
+                dayHours = 24.0; // 发生极昼现象！太阳整天不落
+            } else if (cosOmega0 >= 1.0) {
+                dayHours = 0.0;  // 发生极夜现象！太阳整天不升
+            } else {
+                const omega0 = Math.acos(cosOmega0);
+                dayHours = (omega0 / Math.PI) * 24.0; // 计算白昼时长
+            }
+            const nightHours = 24.0 - dayHours;
+
+            // 5.6 获取当前所处节气
+            let termName = "春分 (Spring Equinox)";
+            const deg = lambda * (180 / Math.PI);
+            if (deg >= 45 && deg < 135) {
+                termName = "夏至 (Summer Solstice)";
+            } else if (deg >= 135 && deg < 225) {
+                termName = "秋分 (Autumn Equinox)";
+            } else if (deg >= 225 && deg < 315) {
+                termName = "冬至 (Winter Solstice)";
+            }
+
+            // 5.7 实时更新左上角 HUD 天文看板数据
+            document.getElementById('hud-delta').innerText = `${delta.toFixed(2)}°`;
+            document.getElementById('hud-h-noon').innerText = `${hNoon.toFixed(2)}°`;
+            document.getElementById('hud-solar-energy').innerText = Math.max(0.0, Math.sin(currentSunHeight * Math.PI / 180)).toFixed(2);
+            document.getElementById('hud-daynight-ratio').innerText = `${dayHours.toFixed(1)}h / ${nightHours.toFixed(1)}h`;
+            document.getElementById('hud-term').innerText = termName;
+
+            // 观察地表位置指针倾斜同步
+            if (shadowIndicator) {
+                // 北半球纬度，将指针绕 X 轴旋转偏转到对应的纬度上
+                shadowIndicator.rotation.x = -radPhi;
+            }
+
+            // 5.8 晷晷影子分析仪渲染 (SVG)
+            drawSundialShadow(hour, currentSunHeight, hNoon, dayHours);
+
+            renderer.render(scene, camera);
+        }
+
+        // --- 6. 右侧日晷影长实时分析仪 (Sundial Shadow SVG) ---
+        function drawSundialShadow(hour, sunHeight, hNoon, dayHours) {
+            const svg = document.getElementById('svg-sundial');
+            if (!svg) return;
+
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 150;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            // 自转小时对应晷针影子的逆时针旋转相角
+            // 早上 6 点太阳在东，影子拉向正西；下午 6 点太阳在西，影子拉向正东
+            const shadowAngle = ((hour - 12) / 12) * Math.PI + Math.PI / 2;
+
+            // 影子的相对长度：晷针高度 / tan(sunHeight)
+            let shadowLen = 0.0;
+            let showShadow = true;
+
+            if (sunHeight <= 0.0 || dayHours === 0.0) {
+                // 瞬时高度角小于等于0 ➔ 处于黑夜，或处于极夜，此时没有影子！
+                showShadow = false;
+            } else {
+                // 正午影长折算
+                const radHeight = sunHeight * (Math.PI / 180);
+                shadowLen = 42.0 / Math.tan(radHeight); // 晷针高 42px
+                // 阈值过滤，防止过长
+                shadowLen = Math.max(4, Math.min(100, shadowLen));
+            }
+
+            // 计算影子终点坐标
+            const ex = cx + shadowLen * Math.cos(shadowAngle);
+            const ey = cy + shadowLen * Math.sin(shadowAngle);
+
+            // 更新文本
+            const hourStr = String(Math.floor(hour)).padStart(2, '0');
+            const minStr = String(Math.floor((hour % 1) * 60)).padStart(2, '0');
+            document.getElementById('hud-solar-time').innerText = `${hourStr}:${minStr}`;
+            document.getElementById('hud-shadow-len').innerText = showShadow ? (shadowLen / 42.0).toFixed(2) : "无 (夜暗 / 极夜)";
+
+            // 绘制晷盘圆圈和影子线段
+            let dialRings = '';
+            for (let r = 20; r <= 60; r += 20) {
+                dialRings += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(34,211,238,0.1)" stroke-width="0.8" />`;
+            }
+            // 晷盘24小时刻度线
+            for (let i = 0; i < 24; i += 2) {
+                const rad = (i / 24) * 2 * Math.PI;
+                dialRings += `
+                    <line x1="${cx + 62 * Math.cos(rad)}" y1="${cy + 62 * Math.sin(rad)}" x2="${cx + 67 * Math.cos(rad)}" y2="${cy + 67 * Math.sin(rad)}" stroke="rgba(34,211,238,0.15)" stroke-width="1" />
+                `;
+            }
+
+            svg.innerHTML = `
+                <!-- 1. 晷盘同心刻度网格 -->
+                ${dialRings}
+                
+                <!-- 晷盘指示罗盘 -->
+                <text x="${cx}" y="${cy - 72}" fill="#64748B" font-size="8" font-family="monospace" text-anchor="middle">正北 (正午影向)</text>
+                <text x="${cx}" y="${cy + 78}" fill="#64748B" font-size="8" font-family="monospace" text-anchor="middle">正南</text>
+
+                <!-- 2. 发光日晷影子线段 -->
+                ${showShadow ? `
+                    <line x1="${cx}" y1="${cy}" x2="${ex}" y2="${ey}" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" opacity="0.8" class="glow-teal" />
+                    <!-- 影尖端粒子 -->
+                    <circle cx="${ex}" cy="${ey}" r="4.5" fill="#FFF" class="glow-teal" />
+                ` : `
+                    <!-- 漆黑夜景指示罩 -->
+                    <circle cx="${cx}" cy="${cy}" r="64" fill="rgba(6,10,20,0.4)" stroke="rgba(239,68,68,0.15)" stroke-width="1.5" stroke-dasharray="2,2" />
+                    <text x="${cx}" y="${cy + 4}" fill="#EF4444" font-size="9" font-weight="bold" font-family="monospace" text-anchor="middle">▲ 处于背阴暗夜中</text>
+                `}
+
+                <!-- 3. 中央晷针截面 (白色小圆点) -->
+                <circle cx="${cx}" cy="${cy}" r="4" fill="#FFF" stroke="#22D3EE" stroke-width="1.5" />
+            `;
+        }
+
+        // --- 7. 交互观察纬度切换与滑块控制 ---
+        function switchLatitude(idx) {
+            let lat = 40.0; // 北京中纬度
+            if (idx === 0) lat = 0.0;    // 赤道
+            else if (idx === 2) lat = 66.56; // 北极圈
+
+            State.observedLat = lat;
+
+            // 更新 Tab 高亮
+            document.querySelectorAll('.lat-btn').forEach(btn => {
+                btn.classList.remove('lat-btn-active');
+            });
+            document.getElementById(`btn-lat-${idx}`).classList.add('lat-btn-active');
+
+            // 更新左上 HUD 文本
+            document.getElementById('hud-lat').innerText = `${lat.toFixed(1)}° ${lat === 0.0 ? '赤道' : 'N'}`;
+
+            // 轻轻震动地球视角以作响应
+            if (earthGroup) {
+                camera.position.z -= 0.1;
+                setTimeout(() => { camera.position.z += 0.1; }, 100);
+            }
+        }
+
+        function handleSliderChange(sliderIdx, val) {
+            const parsedVal = parseFloat(val);
+            if (sliderIdx === 1) {
+                State.revolutionPhase = parsedVal;
+                // 弧度转角度显示
+                document.getElementById('val-slider-1').innerText = `${parsedVal.toFixed(2)} rad`;
+            } else {
+                State.diurnalHour = parsedVal;
+                const hr = Math.floor(parsedVal);
+                const mn = String(Math.floor((parsedVal % 1) * 60)).padStart(2, '0');
+                document.getElementById('val-slider-2').innerText = `${hr}:${mn}`;
+            }
+        }
+
+        function togglePlay() {
+            State.isPlaying = !State.isPlaying;
+            document.getElementById('btn-play').innerText = State.isPlaying ? "暂停模拟" : "开始模拟";
+        }
+
+        function resetSimulator() {
+            State.time = 0;
+            State.revolutionPhase = 0.0;
+            State.diurnalHour = 12.0;
+
+            document.getElementById('slider-1').value = 0;
+            document.getElementById('slider-2').value = 12;
+            document.getElementById('val-slider-1').innerText = "0.00 rad";
+            document.getElementById('val-slider-2').innerText = "12:00";
+
+            switchLatitude(1); // 回归中纬度
+            initQuiz();
+        }
+
+        function changeTimeSpeed(val) {
+            State.speedMultiplier = parseFloat(val);
+        }
+
+        function onWindowResize() {
+            if(camera && renderer && canvasContainer) {
+                const w = canvasContainer.clientWidth;
+                const h = canvasContainer.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+        }
+
+        // --- 8. 诊断小测验模块 ---
+        const QuizQuestions = [
+            {
+                question: "造成地球产生一年四季气候变化的最根本物理成因是什么？",
+                options: ["自转轴倾斜了23.44°（黄赤交角），导致公转时太阳直射点在南北回归线移动 (正确答案)", "地球公转轨道是一个极度扁平的椭圆", "地球在一日自传中速度发生变化", "太阳核心热核聚变强度随时间衰减"],
+                correct: 0,
+                feedback: "👍 回答完全正确！地球自转轴倾斜 $23.44^\circ$ 是四季交替的核心原因。随着公转运行，地球倾斜自转轴指向太空某方向恒定，从而使太阳直射角在南北半球周期移动，引起气候冷暖和昼夜长短变化。"
+            },
+            {
+                question: "在北半球中纬度观察日晷影子，一日之内影子在晷盘上以什么方向旋转绕行？",
+                options: ["顺时针方向旋转", "逆时针方向旋转 (正确答案)", "完全静止不动", "随引力发生左右摆动"],
+                correct: 1,
+                feedback: "🎉 答对啦！因为在北半球，太阳东升西落，正午时偏向正南，因此影子投向正北。这使得指针影子在晷盘上呈现从西北、正北到东北的**逆时针旋转轨迹**。"
+            },
+            {
+                question: "当公转至‘夏至’（λ = π/2 rad）时，在北极圈纬度（66.5° N）及更北区域，影长传感器会发生什么特殊现象？",
+                options: ["发生极昼，太阳24小时不落，日影逆时针旋转一整圈都不消失 (正确答案)", "发生极夜，晷盘完全陷入漆黑，影子彻底消失", "影子的长度拉伸到了无穷远", "影子只在正午出现，其余时刻彻底蒸发"],
+                correct: 0,
+                feedback: "💡 恭喜答对！夏至时，太阳直射北回归线。北极圈及以北区域发生极昼，太阳高度角整天保持在零度以上，因此日晷影子 24 小时不断旋转，永远不会因黑夜而消失，生动揭示了极昼极夜的宇宙奥秘。"
+            }
+        ];
+
+        function initQuiz() {
+            State.currentQuizIdx = 0;
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            document.getElementById('quiz-question-num').innerText = `问题 ${State.currentQuizIdx + 1} of ${QuizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-cyan-500/10 hover:border-cyan-500/30 text-left transition-all hover:scale-[1.01]";
+                btn.innerText = opt;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            State.quizAnswered = false;
+        }
+
+        function submitQuizAnswer(idx) {
+            if (State.quizAnswered) return;
+            State.quizAnswered = true;
+
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.remove('hidden');
+
+            if (idx === quiz.correct) {
+                feedbackBox.className = "p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `${quiz.feedback} <button onclick="nextQuizQuestion()" class="mt-2 block px-2.5 py-1 rounded bg-teal-500 text-slate-950 font-bold text-[10px] hover:scale-105 transition-all">下一题</button>`;
+            } else {
+                feedbackBox.className = "p-2.5 rounded-lg border border-rose-500/30 bg-rose-950/20 text-rose-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `❌ 节气错乱，回答错误！请再次细细阅读左侧的黄赤交角高度角方程，重新作出精准推演吧。`;
+                State.quizAnswered = false; // 允许重新选择
+            }
+        }
+
+        function nextQuizQuestion() {
+            State.currentQuizIdx = (State.currentQuizIdx + 1) % QuizQuestions.length;
+            showQuizQuestion();
+        }
+
+        function toggleQuizPanel() {
+            const panel = document.getElementById('quiz-panel');
+            const fab = document.getElementById('btn-quiz-fab');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                fab.classList.add('hidden');
+            } else {
+                panel.classList.add('hidden');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

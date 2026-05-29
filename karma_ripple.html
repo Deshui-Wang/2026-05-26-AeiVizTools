@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>因果三部曲：三生石与因果涟漪 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#22D3EE',
+                            teal: '#14B8A6',
+                            purple: '#A78BFA',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            dark: '#060A14',
+                            navy: '#0F172A',
+                            panel: 'rgba(15, 23, 42, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #A78BFA 0%, #C084FC 50%, #E9D5FF 100%);
+            --bg-gradient: radial-gradient(circle at top, #14081E 0%, #060913 75%, #020306 100%);
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(167, 139, 250, 0.25);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.75);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 10, 20, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(167, 139, 250, 0.25);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(167, 139, 250, 0.5);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 发光霓虹 */
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+        }
+        .glow-text-purple {
+            text-shadow: 0 0 8px rgba(167, 139, 250, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #A78BFA;
+            cursor: pointer;
+            box-shadow: 0 0 8px #A78BFA;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-purple-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-purple-500 to-fuchsia-400 flex items-center justify-center font-bold text-slate-950 glow-purple">🪨</div>
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-purple-400 via-fuchsia-300 to-pink-400 bg-clip-text text-transparent uppercase tracking-wider font-mono">
+                    三生石因果涟漪实验室 <span class="text-xs font-normal text-purple-500/60 normal-case ml-1">Karmic Ripples & Sansheng Stone</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" onclick="resetSimulator()" class="px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-medium hover:bg-purple-500/20 active:scale-95 transition-all">
+                重置涟漪
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-purple-400 text-slate-950 text-xs font-bold hover:bg-purple-300 active:scale-95 transition-all">
+                暂停模拟
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧讲解面板 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-purple-500/15 bg-[#060A14]/90 flex flex-col p-5 overflow-y-auto gap-4 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-purple-500/10">
+                <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    🎯 灵魂觉悟目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" checked disabled class="mt-0.5 rounded cursor-pointer accent-purple-500">
+                        <span>观察中央三生石在 3D 自转浮力状态下的缓慢微幅摇曳。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-purple-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-2" class="cursor-pointer hover:text-slate-300 transition-colors">点击或弹拨“过去内轨”，触发高斯阻尼正弦因果波纹向外漫射。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-purple-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="cursor-pointer hover:text-slate-300 transition-colors">观察“现在/未来”轨上粒子在波纹击中时受迫简谐振荡的纠缠现象。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心拓扑定义与公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-purple-500/10">
+                <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    📝 因果波动传播公式
+                </h3>
+                <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center">
+                    <div id="latex-formula" class="text-xs text-slate-100 py-1 font-mono"></div>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                    过去（内轨）造就的轻微震颤，会以阻尼正弦波的形式向空间三维极径 $r$ 辐射。当包络波峰抵达中轨与外轨时，强迫轨道命运粒子产生振幅与相位的叠加扰动，印证了“执念越强，宿命激荡越剧烈”的逻辑。
+                </p>
+            </section>
+
+            <!-- 东方哲学讲解 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 border-purple-500/10">
+                <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    💡 弹指一宿，万古成尘
+                </h3>
+                <div class="text-[11px] text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">❓ 慧根是抚平命运的良药</span>
+                        <p class="mt-1 text-slate-400">滑块二调节“慧根与慈悲”，物理上等价于提升**介质阻尼衰减系数 ($\lambda$)**。慧根越高，水面粘滞摩擦越大，因果波纹会在刹那间归于死寂与安宁，灵魂得以看破红尘，宿命重归祥和。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2.5">
+                        <span class="text-purple-300 font-semibold">🔬 命运粒子的次级受迫振荡</span>
+                        <p class="mt-1 text-slate-400">轨道上的命运粒子原本处于平静均匀的轨道运转。然而，任何“过去”释放的波动都会以有限的光速向前传导。尽管未来可能尚未发生，但一旦“因”已种下，波纹便会在命定时刻击中命运粒子，引发无法逃避的起伏挣扎。</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央渲染画布 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 底层 Canvas（用于渲染极同心圆与扩散水波涟漪） -->
+            <canvas id="ripple-canvas" class="absolute inset-0 z-10 w-full h-full pointer-events-auto"></canvas>
+            
+            <!-- 顶层 3D Canvas 容器（用于渲染漂浮自转三生石） -->
+            <div id="canvas-container" class="absolute inset-0 z-0 pointer-events-none"></div>
+
+            <!-- 左上角 HUD 看板 -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[260px]">
+                <!-- 涟漪传感器 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-purple-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">因果波传感器</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">宿命扰动总振幅</span>
+                            <span id="hud-amp" class="font-bold text-slate-200 font-mono">0.00 %</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">未来粒子受迫度</span>
+                            <span id="hud-force" class="font-bold text-purple-400 font-mono">0.00 mm</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500 text-[9px]">因果衰减系数 ($\lambda$)</span>
+                        <span id="hud-lambda" class="font-bold text-purple-400 font-mono">0.05 /m</span>
+                    </div>
+                </div>
+
+                <!-- 涟漪空间拓扑 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-rose-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">三生时空参数</h4>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">过去环半径</span>
+                            <span class="font-bold text-slate-300 font-mono">90 px</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">现在环半径</span>
+                            <span class="font-bold text-slate-300 font-mono">150 px</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">未来环半径</span>
+                            <span class="font-bold text-purple-400 font-mono">210 px</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">波源类型</span>
+                            <span class="font-bold text-rose-400 font-mono">高斯阻尼正弦</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧命运起伏分析仪（右上角） -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[300px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-purple-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-xs font-semibold text-purple-400 flex items-center justify-between">
+                        <span>📈 未来命运粒子扰动轨迹</span>
+                        <span class="text-[9px] text-slate-500 font-mono">Future Perturb</span>
+                    </h4>
+                    <!-- 截面波形图 SVG -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-900">
+                        <svg id="svg-slice-chart" class="w-full h-full"></svg>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        实时对“未来轨道”上的宿命粒子所遭受的因果波冲击进行振幅采样。波纹传导至此时，原本平静的运转会瞬间面临狂风骤雨。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 底部滑动调整器 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-5 items-center justify-between glass-panel rounded-2xl p-5 border border-purple-500/20 bg-[#060A14]/90 pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block text-[9px] uppercase">因果牵引</span>
+                        <span id="txt-mode" class="text-purple-400 font-medium font-mono">弹拨水面以种因</span>
+                    </div>
+                </div>
+
+                <!-- 滑动控制 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🔴 因果种念 (波动初振幅 A)</span>
+                            <span id="val-slider-1" class="font-mono text-purple-400">1.0</span>
+                        </div>
+                        <input id="slider-1" type="range" min="0.2" max="2.5" step="0.1" value="1.0" class="custom-slider" oninput="handleSliderChange(1, this.value)">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🟢 慧根/慈悲 (阻尼衰减系数 \lambda)</span>
+                            <span id="val-slider-2" class="font-mono text-purple-400">0.05</span>
+                        </div>
+                        <input id="slider-2" type="range" min="0.01" max="0.18" step="0.01" value="0.05" class="custom-slider" oninput="handleSliderChange(2, this.value)">
+                    </div>
+                </div>
+
+                <!-- 倍率选择 -->
+                <div class="flex items-center gap-2">
+                    <select id="select-speed" onchange="changeTimeSpeed(this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-purple-500 transition-colors font-mono">
+                        <option value="0.2">0.2x 顿悟</option>
+                        <option value="0.5">0.5x 沉思</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 急躁</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 诊断小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[350px] glass-panel border border-purple-500/20 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col bg-[#060A14]/95">
+                <div class="h-10 border-b border-purple-500/15 bg-slate-900/50 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-purple-400 flex items-center gap-1.5">
+                        ⚡ 涟漪纠缠诊断测验
+                    </span>
+                    <button onclick="toggleQuizPanel()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-purple-400 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2"></div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" onclick="toggleQuizPanel()" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-purple-400 text-purple-400 flex items-center justify-center hover:scale-110 glow-purple active:scale-95 transition-all" title="展开小测验">
+                💡
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 逻辑脚本 -->
+    <script>
+        // --- 1. 模拟器状态 ---
+        const State = {
+            isPlaying: true,
+            time: 0,
+            speedMultiplier: 1.0,
+
+            // 涟漪参数
+            waveAmp: 1.0,          // 执念种念振幅
+            waveLambda: 0.05,      // 慧根阻尼系数
+
+            // 宿命轨道三个粒子的角度
+            pastAngle: 0.0,
+            presentAngle: Math.PI * 0.6,
+            futureAngle: Math.PI * 1.3,
+
+            // 轨迹上命运粒子的受迫偏离高度
+            pastPerturb: 0.0,
+            presentPerturb: 0.0,
+            futurePerturb: 0.0,
+
+            // 测验
+            currentQuizIdx: 0,
+            quizAnswered: false
+        };
+
+        // 3D 变量 (三生石多面体)
+        let scene, camera, renderer;
+        let sanshengStone;
+        let animationFrameId;
+
+        // 2D 变量 (同心轨道与高斯阻尼水波解算)
+        let canvas, ctx;
+        let activeRipples = []; // 存储所有激发出去的因果波纹：{ cx, cy, t, amp, lambda }
+
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 2. 初始化 ---
+        function init() {
+            // KaTeX
+            katex.render(
+                "W(r, t) = A \\cdot e^{-\\lambda \\cdot (r - v t)^2} \\cdot \\cos\\big(k \\cdot (r - v t)\\big), \\quad \\nabla^2 W - \\frac{1}{v^2} \\frac{\\partial^2 W}{\\partial t^2} - 2\\lambda \\frac{\\partial W}{\\partial t} = 0",
+                document.getElementById('latex-formula'),
+                { throwOnError: false }
+            );
+
+            initWebGL();
+            initCanvas();
+            initQuiz();
+            animate();
+        }
+
+        // --- 3. 3D WebGL 环境 (用于三生石悬浮与自转) ---
+        function initWebGL() {
+            const w = canvasContainer.clientWidth || 800;
+            const h = canvasContainer.clientHeight || 600;
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, 0, 5.0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            canvasContainer.appendChild(renderer.domElement);
+
+            // 光源
+            const ambient = new THREE.AmbientLight(0x0a051c, 2.5);
+            scene.add(ambient);
+
+            const pointLight = new THREE.PointLight(0xA78BFA, 3, 10);
+            pointLight.position.set(0, 0, 3);
+            scene.add(pointLight);
+
+            // 创建三生石几何体 (十二面体，粗糙粗犷历史沧桑感)
+            const stoneGeom = new THREE.DodecahedronGeometry(0.7, 0);
+            
+            // 发光边线材质
+            const wireGeom = new THREE.WireframeGeometry(stoneGeom);
+            const lineMat = new THREE.LineBasicMaterial({
+                color: 0xC084FC,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            const stoneLines = new THREE.LineSegments(wireGeom, lineMat);
+
+            // 玻璃菲涅尔发光实体
+            const stoneMat = new THREE.MeshBasicMaterial({
+                color: 0xA78BFA,
+                transparent: true,
+                opacity: 0.08,
+                wireframe: false
+            });
+            sanshengStone = new THREE.Mesh(stoneGeom, stoneMat);
+            sanshengStone.add(stoneLines);
+            scene.add(sanshengStone);
+
+            // 三生石缓缓浮起的发光外光圈
+            const ringGeom = new THREE.RingGeometry(0.85, 0.88, 32);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: 0xC084FC,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.3
+            });
+            const glowRing = new THREE.Mesh(ringGeom, ringMat);
+            sanshengStone.add(glowRing);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- 4. 2D Canvas 水面涟漪解算配置 ---
+        function initCanvas() {
+            canvas = document.getElementById('ripple-canvas');
+            ctx = canvas.getContext('2d');
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // 绑定弹拨种因事件：在 Canvas 上点击产生因果波纹！
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                triggerRipple(mouseX, mouseY);
+            });
+
+            canvas.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = touch.clientX - rect.left;
+                const mouseY = touch.clientY - rect.top;
+                
+                triggerRipple(mouseX, mouseY);
+            });
+        }
+
+        function resizeCanvas() {
+            if (canvas) {
+                canvas.width = canvasContainer.clientWidth;
+                canvas.height = canvasContainer.clientHeight;
+            }
+        }
+
+        // 弹指播下波纹
+        function triggerRipple(x, y) {
+            activeRipples.push({
+                cx: x,
+                cy: y,
+                time: 0.0,
+                amp: State.waveAmp * 35.0, // 放大像素尺度
+                lambda: State.waveLambda
+            });
+
+            // 轻轻震动三生石作为响应
+            if (sanshengStone) {
+                sanshengStone.scale.set(1.15, 1.15, 1.15);
+                setTimeout(() => {
+                    if (sanshengStone) sanshengStone.scale.set(1.0, 1.0, 1.0);
+                }, 150);
+            }
+        }
+
+        // --- 5. 核心仿真动画渲染循环 ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                State.time += 0.015 * State.speedMultiplier;
+                
+                // 命运粒子圆轨道滑行
+                State.pastAngle += 0.008 * State.speedMultiplier;
+                State.presentAngle += 0.006 * State.speedMultiplier;
+                State.futureAngle += 0.005 * State.speedMultiplier;
+            }
+
+            // 5.1 三生石的慢速浮动与自转
+            if (sanshengStone) {
+                sanshengStone.rotation.y = State.time * 0.2;
+                sanshengStone.rotation.x = State.time * 0.1;
+                // 正弦浮动
+                sanshengStone.position.y = 0.06 * Math.sin(State.time * 2.0);
+            }
+
+            renderer.render(scene, camera);
+
+            // 5.2 2D 极同心轨与水波涟漪计算绘制
+            render2DCanvas();
+
+            // 绘制右侧命运起伏
+            drawFuturePerturbChart();
+        }
+
+        // 2D 核心绘制
+        function render2DCanvas() {
+            if (!canvas || !ctx) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            // 清理并设置半透轨迹叠加，表现漂亮的流光拖尾
+            ctx.fillStyle = 'rgba(6, 10, 20, 0.25)';
+            ctx.fillRect(0, 0, w, h);
+
+            // 1. 过去、现在、未来同心圆发光圆轨绘制
+            const rPast = 90;
+            const rPresent = 150;
+            const rFuture = 210;
+
+            drawGlowingCircle(cx, cy, rPast, 'rgba(251, 113, 133, 0.12)', 'rgba(251, 113, 133, 0.3)');
+            drawGlowingCircle(cx, cy, rPresent, 'rgba(34, 211, 238, 0.12)', 'rgba(34, 211, 238, 0.3)');
+            drawGlowingCircle(cx, cy, rFuture, 'rgba(167, 139, 250, 0.12)', 'rgba(167, 139, 250, 0.3)');
+
+            // 2. 解算所有激发的因果波纹
+            const dt = 0.15 * State.speedMultiplier;
+            const waveSpeed = 4.2; // 波纹扩散速度
+
+            // 更新波纹生命周期并清理消散的波纹
+            activeRipples.forEach(r => {
+                if (State.isPlaying) r.time += dt;
+            });
+            activeRipples = activeRipples.filter(r => {
+                const maxSpread = r.time * waveSpeed;
+                // 如果波纹传播半径已经大到超出画布，且振幅完全被高斯阻尼抚平，则抛弃
+                const currentAmp = r.amp * Math.exp(-r.lambda * maxSpread);
+                return (maxSpread < w * 0.9 && currentAmp > 0.05);
+            });
+
+            // 3. 计算宿命三环轨道上的命运粒子所遭受的受迫振动
+            // 粒子当前位置坐标
+            const pxPast = cx + rPast * Math.cos(State.pastAngle);
+            const pyPast = cy + rPast * Math.sin(State.pastAngle);
+
+            const pxPresent = cx + rPresent * Math.cos(State.presentAngle);
+            const pyPresent = cy + rPresent * Math.sin(State.presentAngle);
+
+            const pxFuture = cx + rFuture * Math.cos(State.futureAngle);
+            const pyFuture = cy + rFuture * Math.sin(State.futureAngle);
+
+            // 重置偏离高度
+            State.pastPerturb = 0;
+            State.presentPerturb = 0;
+            State.futurePerturb = 0;
+
+            // 分别解算波纹在三个粒子位置上的叠加瞬时振幅 W(r, t)
+            activeRipples.forEach(ripple => {
+                const distPast = Math.sqrt((pxPast - ripple.cx)**2 + (pyPast - ripple.cy)**2);
+                const distPresent = Math.sqrt((pxPresent - ripple.cx)**2 + (pyPresent - ripple.cy)**2);
+                const distFuture = Math.sqrt((pxFuture - ripple.cx)**2 + (pyFuture - ripple.cy)**2);
+
+                State.pastPerturb += calculateWaveAmplitude(distPast, ripple);
+                State.presentPerturb += calculateWaveAmplitude(distPresent, ripple);
+                State.futurePerturb += calculateWaveAmplitude(distFuture, ripple);
+
+                // 4. 绘制扩散的因果波环 (Canvas 荧光)
+                const waveRadius = ripple.time * waveSpeed;
+                const currentAmp = ripple.amp * Math.exp(-ripple.lambda * waveRadius * 0.05);
+
+                if (currentAmp > 0.1) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(ripple.cx, ripple.cy, waveRadius, 0, 2 * Math.PI);
+                    ctx.strokeStyle = `rgba(167, 139, 250, ${Math.min(0.7, currentAmp / 35)})`;
+                    ctx.lineWidth = 1.5 + currentAmp * 0.04;
+                    ctx.shadowBlur = 8 + currentAmp * 0.15;
+                    ctx.shadowColor = '#C084FC';
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            });
+
+            // 5. 绘制三环命运粒子，偏离中轨向外做简谐受迫振动，产生极其逼真的轨道晃动！
+            const pastRadiusTotal = rPast + State.pastPerturb;
+            const presentRadiusTotal = rPresent + State.presentPerturb;
+            const futureRadiusTotal = rFuture + State.futurePerturb;
+
+            const finalPxPast = cx + pastRadiusTotal * Math.cos(State.pastAngle);
+            const finalPyPast = cy + pastRadiusTotal * Math.sin(State.pastAngle);
+
+            const finalPxPresent = cx + presentRadiusTotal * Math.cos(State.presentAngle);
+            const finalPyPresent = cy + presentRadiusTotal * Math.sin(State.presentAngle);
+
+            const finalPxFuture = cx + futureRadiusTotal * Math.cos(State.futureAngle);
+            const finalPyFuture = cy + futureRadiusTotal * Math.sin(State.futureAngle);
+
+            // 绘制粒子实体
+            drawGlowingNode(finalPxPast, finalPyPast, 7, '#FB7185'); // 过去 - 红色
+            drawGlowingNode(finalPxPresent, finalPyPresent, 7, '#22D3EE'); // 现在 - 青色
+            drawGlowingNode(finalPxFuture, finalPyFuture, 7, '#A78BFA'); // 未来 - 紫色
+
+            // 6. 实时更新 HUD 数据传感器文本
+            const totalRipplesEnergy = activeRipples.reduce((sum, r) => sum + r.amp, 0);
+            document.getElementById('hud-amp').innerText = `${Math.min(100, totalRipplesEnergy * 2.8).toFixed(1)} %`;
+            document.getElementById('hud-force').innerText = `${(Math.abs(State.futurePerturb) * 0.15).toFixed(2)} mm`;
+            document.getElementById('hud-lambda').innerText = `${State.waveLambda.toFixed(3)} /m`;
+        }
+
+        // 计算高斯正弦阻尼波振幅
+        function calculateWaveAmplitude(distance, ripple) {
+            const waveRadius = ripple.time * 4.2;
+            const rDiff = distance - waveRadius;
+
+            // 高斯包络线控制：只有在波峰附近的像素点才会产生位移
+            const gaussianEnvelope = Math.exp(-0.0005 * (rDiff * rDiff));
+            // 空间阻尼衰减系数
+            const distanceDecay = Math.exp(-ripple.lambda * waveRadius * 0.05);
+            // 正弦波动项
+            const waveCos = Math.cos(0.08 * rDiff);
+
+            // 叠加形成最终的瞬时受迫位移偏角高度
+            return ripple.amp * gaussianEnvelope * distanceDecay * waveCos * 0.65;
+        }
+
+        // 绘制发光圆轨道辅助函数
+        function drawGlowingCircle(x, y, r, strokeStyle, shadowColor) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = 1.0;
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = shadowColor;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制命运粒子辅助函数
+        function drawGlowingNode(x, y, r, colorHex) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fillStyle = '#FFF';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = colorHex;
+            ctx.fill();
+
+            // 外层霓虹环
+            ctx.beginPath();
+            ctx.arc(x, y, r + 4, 0, 2 * Math.PI);
+            ctx.strokeStyle = colorHex;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // --- 6. 右侧未来轨道命运粒子受迫位移采样图 ---
+        function drawFuturePerturbChart() {
+            const svg = document.getElementById('svg-slice-chart');
+            if(!svg) return;
+
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 120;
+
+            const pts = [];
+            const perturb = State.futurePerturb;
+
+            // 绘制瞬时扰动曲线走势，模拟受迫简谐阻尼起伏
+            for (let i = 0; i <= w; i += 4) {
+                const xVal = i;
+                const tPhase = (State.time * 3.5) - (i * 0.08);
+                
+                // 次级阻尼波动模型
+                let yWave = Math.sin(tPhase) * Math.abs(perturb) * 0.6;
+                // 背景命运脉动微噪声
+                yWave += 1.8 * Math.cos(tPhase * 0.3);
+
+                const yVal = h/2 - yWave;
+                pts.push(`${xVal},${Math.max(10, Math.min(h-10, yVal))}`);
+            }
+
+            svg.innerHTML = `
+                <!-- 底部半透明阴影填充 -->
+                <path d="M 0,${h} L ${pts.join(' L ')} L ${w},${h} Z" fill="rgba(167,139,250,0.06)" />
+                <!-- 波动走向主导线 -->
+                <path d="M ${pts.join(' L ')}" fill="none" stroke="#A78BFA" stroke-width="1.8" />
+                
+                <!-- 实时采样点针 -->
+                <circle cx="${w - 20}" cy="${h/2 - perturb * 0.6}" r="4.5" fill="#C084FC" class="glow-purple" />
+                <circle cx="${w - 20}" cy="${h/2 - perturb * 0.6}" r="8" fill="none" stroke="#C084FC" stroke-width="1" class="animate-ping" />
+            `;
+        }
+
+        // --- 7. 交互控制器函数组 ---
+        function handleSliderChange(sliderIdx, val) {
+            const parsedVal = parseFloat(val);
+            if (sliderIdx === 1) {
+                document.getElementById('val-slider-1').innerText = parsedVal.toFixed(2);
+                State.waveAmp = parsedVal;
+            } else {
+                document.getElementById('val-slider-2').innerText = parsedVal.toFixed(2);
+                State.waveLambda = parsedVal;
+            }
+        }
+
+        function togglePlay() {
+            State.isPlaying = !State.isPlaying;
+            document.getElementById('btn-play').innerText = State.isPlaying ? "暂停模拟" : "开始模拟";
+        }
+
+        function resetSimulator() {
+            State.time = 0;
+            State.pastAngle = 0.0;
+            State.presentAngle = Math.PI * 0.6;
+            State.futureAngle = Math.PI * 1.3;
+            State.pastPerturb = 0.0;
+            State.presentPerturb = 0.0;
+            State.futurePerturb = 0.0;
+            
+            activeRipples = [];
+
+            State.waveAmp = 1.0;
+            State.waveLambda = 0.05;
+
+            document.getElementById('slider-1').value = 1.0;
+            document.getElementById('slider-2').value = 0.05;
+            document.getElementById('val-slider-1').innerText = "1.00";
+            document.getElementById('val-slider-2').innerText = "0.05";
+            
+            initQuiz();
+        }
+
+        function changeTimeSpeed(val) {
+            State.speedMultiplier = parseFloat(val);
+        }
+
+        function onWindowResize() {
+            if(camera && renderer && canvasContainer) {
+                const w = canvasContainer.clientWidth;
+                const h = canvasContainer.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+        }
+
+        // --- 8. 诊断小测验模块 ---
+        const QuizQuestions = [
+            {
+                question: "因果波动传导方程中，滑块二调节的“阻尼衰减系数 λ”在东方玄学中等价于什么？",
+                options: ["贪念的大小", "慧根与慈悲（消除执念与平息业力的能量） (正确答案)", "轮回的总速度", "真我灵魂粒子的质量"],
+                correct: 1,
+                feedback: "👍 回答完全正确！阻尼系数越大，说明介质粘滞力越强，因果水面受到的摩擦消耗越大，涟漪波纹在扩散中会在短时间内消耗为零，象征着‘看破执念、平息怨气、慧根清静’的因果解脱。"
+            },
+            {
+                question: "当点击或弹拨“过去内环”释放因果涟漪时，外围“未来轨道”上的粒子在命定时刻发生了振荡，这印证了什么哲学法则？",
+                options: ["前因必生后果，三世宿命相互纠缠关联 (正确答案)", "未来是完全随机且不可预测的", "空间是没有厚度的二维平片", "三生石内部发生了对称的裂变"],
+                correct: 0,
+                feedback: "🎉 答对啦！过去轨道的一点震颤，在时间的作用下向外蔓延并精确地在特定相角撞击‘未来粒子’，迫使其产生剧烈的物理振荡，完全证明了‘往昔之因，塑就明日之果’的因果波律。"
+            },
+            {
+                question: "因果波纹采用的“高斯指数包络阻尼消散”，其高深的几何玄学寓意是什么？",
+                options: ["波动振幅随空间距离呈指数级急剧消亡，寓意一切前尘旧事最终皆消解为空性 (正确答案)", "涟漪只向内部进行收缩传导", "未来轨道的半径发生了永久性的向外坍塌", "系统在这一瞬间失去了重力场"],
+                correct: 0,
+                feedback: "💡 答得非常妙！高斯阻尼正弦模型说明，虽然因果涟漪威力庞大，但随着空间的推移和距离波及的变广，其振幅会以高阶指数形式归于死寂。这正对应了‘一切有为法，如梦幻泡影，在万古长河里终将被虚无和空性融合平息’的终极境界。"
+            }
+        ];
+
+        function initQuiz() {
+            State.currentQuizIdx = 0;
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            document.getElementById('quiz-question-num').innerText = `问题 ${State.currentQuizIdx + 1} of ${QuizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-purple-500/10 hover:border-purple-500/30 text-left transition-all hover:scale-[1.01]";
+                btn.innerText = opt;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            State.quizAnswered = false;
+        }
+
+        function submitQuizAnswer(idx) {
+            if (State.quizAnswered) return;
+            State.quizAnswered = true;
+
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.remove('hidden');
+
+            if (idx === quiz.correct) {
+                feedbackBox.className = "p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `${quiz.feedback} <button onclick="nextQuizQuestion()" class="mt-2 block px-2.5 py-1 rounded bg-purple-500 text-slate-950 font-bold text-[10px] hover:scale-105 transition-all">下一题</button>`;
+            } else {
+                feedbackBox.className = "p-2.5 rounded-lg border border-rose-500/30 bg-rose-950/20 text-rose-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `❌ 执念未解，心水未平！请细细领悟左侧的阻尼消散公式并重新提交。`;
+                State.quizAnswered = false; // 允许重新选择
+            }
+        }
+
+        function nextQuizQuestion() {
+            State.currentQuizIdx = (State.currentQuizIdx + 1) % QuizQuestions.length;
+            showQuizQuestion();
+        }
+
+        function toggleQuizPanel() {
+            const panel = document.getElementById('quiz-panel');
+            const fab = document.getElementById('btn-quiz-fab');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                fab.classList.add('hidden');
+            } else {
+                panel.classList.add('hidden');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

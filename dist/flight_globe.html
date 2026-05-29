@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全息地球航空实验室 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#22D3EE',
+                            teal: '#14B8A6',
+                            purple: '#A78BFA',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            dark: '#060A14',
+                            navy: '#0F172A',
+                            panel: 'rgba(15, 23, 42, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #22D3EE 50%, #A78BFA 100%);
+            --bg-gradient: radial-gradient(circle at top, #091523 0%, #050811 75%, #020306 100%);
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(34, 211, 238, 0.25);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.75);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 10, 20, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.25);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(20, 184, 166, 0.5);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 发光霓虹 */
+        .glow-teal {
+            box-shadow: 0 0 15px rgba(20, 184, 166, 0.4);
+        }
+        .glow-text-teal {
+            text-shadow: 0 0 8px rgba(20, 184, 166, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #14B8A6;
+            cursor: pointer;
+            box-shadow: 0 0 8px #14B8A6;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        /* 航线按钮激活 */
+        .route-btn-active {
+            background: rgba(20, 184, 166, 0.18);
+            border-color: #14B8A6;
+            color: #14B8A6;
+            box-shadow: 0 0 10px rgba(20, 184, 166, 0.2);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-teal-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-teal-400 to-cyan-500 flex items-center justify-center font-bold text-slate-950 glow-teal">🗺️</div>
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-teal-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent uppercase tracking-wider font-mono">
+                    全息地球航线交互实验室 <span class="text-xs font-normal text-teal-500/60 normal-case ml-1">Holographic Globe & Great Circle Flight</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- 航线选择 Tab -->
+        <div class="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800 shrink-0">
+            <button onclick="switchRoute(0)" id="btn-route-0" class="route-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono route-btn-active">✈️ 北京 ➔ 纽约</button>
+            <button onclick="switchRoute(1)" id="btn-route-1" class="route-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">✈️ 伦敦 ➔ 东京</button>
+            <button onclick="switchRoute(2)" id="btn-route-2" class="route-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">✈️ 巴黎 ➔ 悉尼</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" onclick="restartFlight()" class="px-3 py-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-medium hover:bg-teal-500/20 active:scale-95 transition-all">
+                重新起飞
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-teal-400 text-slate-950 text-xs font-bold hover:bg-teal-300 active:scale-95 transition-all">
+                暂停模拟
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧讲解面板 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-teal-500/15 bg-[#060A14]/90 flex flex-col p-5 overflow-y-auto gap-4 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-teal-500/10">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    🎯 地理探索目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" checked disabled class="mt-0.5 rounded cursor-pointer accent-teal-500">
+                        <span>理解球面上两点间真正的最短距离线段——**大圆航线**。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-teal-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-2" class="cursor-pointer hover:text-slate-300 transition-colors">观察跨越经度时地表“时区地方时”的连续昼夜更替。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-teal-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="cursor-pointer hover:text-slate-300 transition-colors">追踪飞机飞越中国、俄罗斯、加拿大等不同领空时的特色地理情况。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心地理拓扑公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-teal-500/10">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    📝 大圆航线几何公式
+                </h3>
+                <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center">
+                    <div id="latex-formula" class="text-xs text-slate-100 py-1 font-mono"></div>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                    因为地球是近似球体，地图上的直线在球面上通常是弯曲的。**球面线性插值 (Slerp)** 算法能够解算出地表两点间最短的大圆弧航线。在插值中叠加高空抛物高度 $H(t)$，重塑真实爬升与降落过程。
+                </p>
+            </section>
+
+            <!-- 东方哲学与地转偏向力 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 border-teal-500/10">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                    💡 地球物理与科氏偏向力
+                </h3>
+                <div class="text-[11px] text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">❓ 为什么不飞直线？</span>
+                        <p class="mt-1 text-slate-400">当你飞北京到纽约时，大圆航线会带你向北穿越俄罗斯西伯利亚，进入北极圈，再顺着加拿大飞入纽约。在常规投影二维地图上这是一条诡异的抛物大弧，但从3D地球上看，它是完美的最短直径连线。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2.5">
+                        <span class="text-purple-300 font-semibold">🌀 国际日期变更线</span>
+                        <p class="mt-1 text-slate-400">飞机越过太平洋的 $180^\circ$ 经线时，会跨越“国际日期变更线”。由东向西跨越时日期会加上一天，由西向东则减去一天，这是经度时区划分造成的玄妙法则。</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央渲染画布 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D Canvas 容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- 左上角 HUD 看板 -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[270px]">
+                <!-- 飞行物理 HUD -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-teal-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">实时航空物理传感器</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">巡航航速</span>
+                            <span id="hud-speed" class="font-bold text-slate-200 font-mono">0.85 Mach</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">海拔高度</span>
+                            <span id="hud-alt" class="font-bold text-slate-200 font-mono">0 km</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500 text-[9px]">领空地面太阳高度角</span>
+                        <span id="hud-sun-angle" class="font-bold text-teal-400 font-mono">0.0°</span>
+                    </div>
+                </div>
+
+                <!-- 时区与日期 HUD -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-purple-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">当前领空时区与地方时</h4>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">时区 (Timezone)</span>
+                            <span id="hud-tz" class="font-bold text-teal-400 font-mono">UTC +8</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">地面地方时</span>
+                            <span id="hud-localtime" class="font-bold text-teal-400 font-mono">12:00:00</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">当前经度 (Lng)</span>
+                            <span id="hud-lng" class="font-bold text-purple-400 font-mono">116.5° E</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">当前纬度 (Lat)</span>
+                            <span id="hud-lat" class="font-bold text-purple-400 font-mono">40.1° N</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧领空地理追踪看板（右上角） -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[310px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-teal-400 flex flex-col gap-2.5 bg-[#060A14]/85">
+                    <h4 class="text-xs font-semibold text-teal-400 flex items-center justify-between">
+                        <span>🗺️ 飞越领空地理追踪看板</span>
+                        <span class="text-[9px] text-slate-500 font-mono">Geo Tracker</span>
+                    </h4>
+                    
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800 flex flex-col gap-2 text-xs">
+                        <div class="flex justify-between border-b border-slate-900 pb-1.5">
+                            <span class="text-slate-500">当前主权领空</span>
+                            <span id="geo-country" class="font-bold text-teal-300">中国上空 (China)</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1.5">
+                            <span class="text-slate-500">所属大洲板块</span>
+                            <span id="geo-continent" class="font-semibold text-slate-200">亚洲板块</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1.5">
+                            <span class="text-slate-500">区域人口估算</span>
+                            <span id="geo-pop" class="font-semibold text-slate-200 font-mono">14.1 亿人</span>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] text-slate-500 block uppercase">领空下方特色地貌与气候</span>
+                            <p id="geo-desc" class="text-[10px] text-slate-400 leading-relaxed font-sans mt-0.5">
+                                华北平原、黄土高原与青藏高海拔季风气候带。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 航线剖面高度计 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-purple-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">大圆航线剖面高度计</h4>
+                    <div class="h-[90px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-900">
+                        <svg id="svg-slice-chart" class="w-full h-full"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部滑动调整器 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-5 items-center justify-between glass-panel rounded-2xl p-5 border border-teal-500/20 bg-[#060A14]/90 pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block text-[9px] uppercase">客机状态</span>
+                        <span id="txt-mode" class="text-teal-400 font-medium font-mono">巡航巡游中</span>
+                    </div>
+                </div>
+
+                <!-- 滑动控制 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🔴 巡航速度 (马赫马数)</span>
+                            <span id="val-slider-1" class="font-mono text-teal-400">0.85 Mach</span>
+                        </div>
+                        <input id="slider-1" type="range" min="0.1" max="3.0" step="0.05" value="0.85" class="custom-slider" oninput="handleSliderChange(1, this.value)">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🟢 晨昏线照射角度 (太阳经度)</span>
+                            <span id="val-slider-2" class="font-mono text-teal-400">0.0°</span>
+                        </div>
+                        <input id="slider-2" type="range" min="-180" max="180" step="2" value="0" class="custom-slider" oninput="handleSliderChange(2, this.value)">
+                    </div>
+                </div>
+
+                <!-- 倍率选择 -->
+                <div class="flex items-center gap-2">
+                    <select id="select-speed" onchange="changeTimeSpeed(this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-teal-500 transition-colors font-mono">
+                        <option value="0.2">0.2x 缓行</option>
+                        <option value="0.5">0.5x 慢赏</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.5">2.5x 跨洋</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 诊断小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[350px] glass-panel border border-teal-500/20 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col bg-[#060A14]/95">
+                <div class="h-10 border-b border-teal-500/15 bg-slate-900/50 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-teal-400 flex items-center gap-1.5">
+                        ⚡ 地理与航空诊断小测验
+                    </span>
+                    <button onclick="toggleQuizPanel()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-teal-400 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2"></div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" onclick="toggleQuizPanel()" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-teal-400 text-teal-400 flex items-center justify-center hover:scale-110 glow-teal active:scale-95 transition-all" title="展开小测验">
+                💡
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 航空地理实验室核心代码 -->
+    <script>
+        // --- 1. 全局仿真状态 ---
+        const State = {
+            isPlaying: true,
+            time: 0,
+            speedMultiplier: 1.0,
+
+            // 调节参数
+            cruiseSpeed: 0.85,     // 巡航马赫数
+            sunAngle: 0.0,         // 太阳经度偏角
+
+            currentRouteIdx: 0,    // 当前选中航线
+            flightProgress: 0.0,   // 飞行进度 0.0 起飞 ➔ 1.0 降落
+
+            // 测验
+            currentQuizIdx: 0,
+            quizAnswered: false
+        };
+
+        // 航线配置数据
+        const RoutesData = [
+            {
+                name: "北京 PEK ➔ 纽约 JFK",
+                start: { name: "北京 (PEK)", lat: 40.07, lng: 116.59 },
+                end: { name: "纽约 (JFK)", lat: 40.64, lng: -73.78 },
+                estHours: 13.5
+            },
+            {
+                name: "伦敦 LHR ➔ 东京 HND",
+                start: { name: "伦敦 (LHR)", lat: 51.47, lng: -0.45 },
+                end: { name: "东京 (HND)", lat: 35.54, lng: 139.77 },
+                estHours: 11.8
+            },
+            {
+                name: "巴黎 CDG ➔ 悉尼 SYD",
+                start: { name: "巴黎 (CDG)", lat: 49.00, lng: 2.55 },
+                end: { name: "悉尼 (SYD)", lat: -33.94, lng: 151.17 },
+                estHours: 21.0
+            }
+        ];
+
+        // WebGL 场景对象
+        let scene, camera, renderer;
+        let globeGroup;           // 地球旋转容器
+        let neonGlobe, atmosphere; // 地球球体与外层发光壳
+        let sunLight;             // 模拟日照晨昏线的平行光
+        let flightPathLine;       // 当前航线的 3D 弧线段
+        let flightPlane;          // 发光小飞机模型
+        let planeTrail;           // 尾烟雾粒子
+        let trailPositions = [];  // 尾烟物理位置记录
+
+        let animationFrameId;
+
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 2. 初始化 ---
+        function init() {
+            // KaTeX
+            katex.render(
+                "P(t) = \\frac{\\sin(1-t)\\theta}{\\sin\\theta} P_{start} + \\frac{\\sin t\\theta}{\\sin\\theta} P_{end}, \\quad R(t) = R_{earth} + H_{cruise} \\sin(\\pi t)",
+                document.getElementById('latex-formula'),
+                { throwOnError: false }
+            );
+
+            initWebGL();
+            buildGlobe();
+            switchRoute(0); // 默认北京飞纽约
+            initQuiz();
+            animate();
+        }
+
+        // --- 3. WebGL 环境初始化 ---
+        function initWebGL() {
+            const w = canvasContainer.clientWidth || 800;
+            const h = canvasContainer.clientHeight || 600;
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, 0, 5.0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            canvasContainer.appendChild(renderer.domElement);
+
+            // 基础环境漫射光
+            const ambient = new THREE.AmbientLight(0x050e1f, 1.5);
+            scene.add(ambient);
+
+            // 太阳平行光 (用来照射地表形成晨昏日夜交替)
+            sunLight = new THREE.DirectionalLight(0xfff8ee, 2.5);
+            sunLight.position.set(5, 0, 3);
+            scene.add(sunLight);
+
+            // 背景星空粒子
+            const starGeom = new THREE.BufferGeometry();
+            const starCount = 300;
+            const starPos = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount*3; i+=3) {
+                starPos[i] = (Math.random() - 0.5) * 15;
+                starPos[i+1] = (Math.random() - 0.5) * 15;
+                starPos[i+2] = (Math.random() - 0.5) * 15;
+            }
+            starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0x14B8A6,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.35,
+                blending: THREE.AdditiveBlending
+            });
+            const starField = new THREE.Points(starGeom, starMat);
+            scene.add(starField);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- 4. 大陆板块 Canvas 程序贴图渲染与 3D 地球构建 ---
+        function buildGlobe() {
+            globeGroup = new THREE.Group();
+            scene.add(globeGroup);
+
+            // 4.1 动态绘制黑白世界大陆板块 Canvas
+            const canvasTex = createWorldContinentTexture();
+
+            // 4.2 3D 全息球体网格
+            const sphereGeom = new THREE.SphereGeometry(1.6, 64, 64);
+            const sphereMat = new THREE.MeshStandardMaterial({
+                color: 0x050d24,
+                map: canvasTex,
+                roughness: 0.65,
+                metalness: 0.8,
+                transparent: true,
+                opacity: 0.95,
+                // 大陆自发光发亮 (极具电影全息屏幕美感)
+                emissive: 0x22D3EE,
+                emissiveMap: canvasTex,
+                emissiveIntensity: 0.95
+            });
+            neonGlobe = new THREE.Mesh(sphereGeom, sphereMat);
+            globeGroup.add(neonGlobe);
+
+            // 4.3 外部发光大气层球罩 (Atmosphere fresnel)
+            const atmoGeom = new THREE.SphereGeometry(1.63, 32, 32);
+            const atmoMat = new THREE.MeshBasicMaterial({
+                color: 0x14B8A6,
+                transparent: true,
+                opacity: 0.1,
+                blending: THREE.AdditiveBlending,
+                side: THREE.BackSide
+            });
+            atmosphere = new THREE.Mesh(atmoGeom, atmoMat);
+            globeGroup.add(atmosphere);
+
+            // 4.4 初始化飞机模型 (一个发光的小型双锥喷气式多面体)
+            const planeGeom = new THREE.ConeGeometry(0.04, 0.12, 4);
+            planeGeom.rotateX(Math.PI / 2); // 调整飞行朝向朝前
+            const planeMat = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF,
+                transparent: false
+            });
+            flightPlane = new THREE.Mesh(planeGeom, planeMat);
+            globeGroup.add(flightPlane);
+
+            // 飞机绑定一个小聚光灯代表引擎火焰
+            const engineLight = new THREE.PointLight(0x22D3EE, 2.5, 2);
+            flightPlane.add(engineLight);
+
+            // 4.5 飞机烟尘粒子尾迹系统
+            const trailCount = 60;
+            const trailGeom = new THREE.BufferGeometry();
+            const trailPosArr = new Float32Array(trailCount * 3);
+            trailGeom.setAttribute('position', new THREE.BufferAttribute(trailPosArr, 3));
+            const trailMat = new THREE.PointsMaterial({
+                color: 0x22D3EE,
+                size: 0.025,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            planeTrail = new THREE.Points(trailGeom, trailMat);
+            globeGroup.add(planeTrail);
+
+            for (let i = 0; i < trailCount; i++) {
+                trailPositions.push(new THREE.Vector3(0, 0, 0));
+            }
+        }
+
+        // 程序动态生成大陆板块黑白掩模 CanvasTexture 贴图
+        // 内置极简的几块主要大陆轮廓路径，确保 100% 离线顺畅渲染
+        function createWorldContinentTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#000000'; // 海洋为黑
+            ctx.fillRect(0, 0, 1024, 512);
+
+            // 映射经纬度到 Canvas 2D 坐标
+            function getCanvasXY(lng, lat) {
+                const x = ((lng + 180) / 360) * 1024;
+                const y = ((90 - lat) / 180) * 512;
+                return { x, y };
+            }
+
+            function drawContinent(points) {
+                ctx.beginPath();
+                points.forEach((pt, idx) => {
+                    const coord = getCanvasXY(pt.lng, pt.lat);
+                    if (idx === 0) ctx.moveTo(coord.x, coord.y);
+                    else ctx.lineTo(coord.x, coord.y);
+                });
+                ctx.closePath();
+                ctx.fillStyle = '#FFFFFF'; // 大陆板块为白
+                ctx.fill();
+                ctx.strokeStyle = '#22D3EE'; // 霓虹大洲线条
+                ctx.lineWidth = 1.0;
+                ctx.stroke();
+            }
+
+            // 极简大洲多边形经纬度路径定义
+            // 1. 欧亚非大陆板块
+            drawContinent([
+                {lng: -15, lat: 35}, {lng: -15, lat: 20}, {lng: 15, lat: -34}, {lng: 40, lat: -34},
+                {lng: 50, lat: 12}, {lng: 80, lat: 6}, {lng: 115, lat: -6}, {lng: 130, lat: -5},
+                {lng: 140, lat: 35}, {lng: 170, lat: 65}, {lng: 110, lat: 75}, {lng: 60, lat: 75},
+                {lng: -5, lat: 70}, {lng: -10, lat: 55}
+            ]);
+
+            // 2. 北美大陆
+            drawContinent([
+                {lng: -168, lat: 65}, {lng: -120, lat: 48}, {lng: -120, lat: 30}, {lng: -100, lat: 20},
+                {lng: -80, lat: 8}, {lng: -80, lat: 25}, {lng: -60, lat: 50}, {lng: -50, lat: 60},
+                {lng: -80, lat: 70}, {lng: -120, lat: 70}
+            ]);
+
+            // 3. 南美大陆
+            drawContinent([
+                {lng: -80, lat: 8}, {lng: -45, lat: -5}, {lng: -35, lat: -6}, {lng: -70, lat: -55},
+                {lng: -75, lat: -45}, {lng: -80, lat: -5}
+            ]);
+
+            // 4. 澳大利亚
+            drawContinent([
+                {lng: 113, lat: -25}, {lng: 115, lat: -35}, {lng: 145, lat: -38}, {lng: 153, lat: -28},
+                {lng: 143, lat: -10}, {lng: 130, lat: -12}
+            ]);
+
+            // 5. 格陵兰
+            drawContinent([
+                {lng: -60, lat: 60}, {lng: -40, lat: 60}, {lng: -20, lat: 75}, {lng: -40, lat: 83},
+                {lng: -70, lat: 75}
+            ]);
+
+            // 6. 南极洲极度简易圆环
+            drawContinent([
+                {lng: -180, lat: -75}, {lng: -90, lat: -72}, {lng: 0, lat: -70}, {lng: 90, lat: -72},
+                {lng: 180, lat: -75}, {lng: 180, lat: -89}, {lng: -180, lat: -89}
+            ]);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- 5. 大圆航线数学投影解算器 ---
+        function calculateGreatCircleRoute(routeIdx) {
+            const data = RoutesData[routeIdx];
+            
+            // 5.1 获取起终点三维坐标
+            const startPt = latLngToVector3(data.start.lat, data.start.lng, 1.6);
+            const endPt = latLngToVector3(data.end.lat, data.end.lng, 1.6);
+
+            // 5.2 航线段插值 (Slerp) 生成 100 个点，连成拱形弧线网格
+            const points = [];
+            const segments = 100;
+            
+            // 两球面上向量夹角
+            const theta = startPt.angleTo(endPt);
+
+            for (let i = 0; i <= segments; i++) {
+                const t = i / segments;
+                
+                // 球面线性插值公式
+                let pt = new THREE.Vector3();
+                if (theta > 0.01) {
+                    const sinTheta = Math.sin(theta);
+                    pt.addScaledVector(startPt, Math.sin((1 - t) * theta) / sinTheta);
+                    pt.addScaledVector(endPt, Math.sin(t * theta) / sinTheta);
+                } else {
+                    pt.lerpVectors(startPt, endPt, t);
+                }
+
+                // 叠加飞行弧形抛物线高度：在旅途中爬升至 H_cruise，最后降落
+                const H_cruise = 0.22; // 巡航相对高度
+                const currentHeight = H_cruise * Math.sin(t * Math.PI); // 正弦拱
+                pt.normalize().multiplyScalar(1.6 + currentHeight);
+
+                points.push(pt);
+            }
+
+            // 绘制/重置 3D 航路虚线
+            if (flightPathLine) globeGroup.remove(flightPathLine);
+
+            const pathGeom = new THREE.BufferGeometry().setFromPoints(points);
+            const pathMat = new THREE.LineBasicMaterial({
+                color: 0x14B8A6,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+            flightPathLine = new THREE.Line(pathGeom, pathMat);
+            globeGroup.add(flightPathLine);
+
+            // 相机视角自适应缓动焦点对齐到出发地
+            alignCameraToCity(data.start.lat, data.start.lng);
+        }
+
+        // 经纬度换算为 3D 坐标
+        function latLngToVector3(lat, lng, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lng + 180) * (Math.PI / 180);
+
+            const x = -(radius * Math.sin(phi) * Math.sin(theta));
+            const y = radius * Math.cos(phi);
+            const z = radius * Math.sin(phi) * Math.cos(theta);
+
+            return new THREE.Vector3(x, y, z);
+        }
+
+        // 球面 3D 坐标逆向反演为经纬度
+        function vector3ToLatLng(vec) {
+            const radius = vec.length();
+            const lat = Math.asin(vec.y / radius) * (180 / Math.PI);
+            
+            // 计算经度，考虑 3D 世界轴向方向
+            let lng = Math.atan2(-vec.x, vec.z) * (180 / Math.PI) - 180;
+            if (lng < -180) lng += 360;
+            if (lng > 180) lng -= 360;
+
+            return { lat, lng };
+        }
+
+        // 相机视角转向起始出发点
+        function alignCameraToCity(lat, lng) {
+            const startVec = latLngToVector3(lat, lng, 4.6); // 稍微拉开距离
+            
+            // 使用平滑过渡把相机重置到合适的视角上
+            let prog = 0.0;
+            const startPos = camera.position.clone();
+            const targetPos = startVec;
+
+            function slerpCam() {
+                if (prog >= 1.0) return;
+                prog += 0.05;
+                camera.position.lerpVectors(startPos, targetPos, prog);
+                camera.lookAt(0, 0, 0);
+                requestAnimationFrame(slerpCam);
+            }
+            slerpCam();
+        }
+
+        // --- 6. 领空碰撞检测与国家地理 HUD 看板解算 ---
+        function checkTerritory(lat, lng) {
+            let country = "公海上空 (International Waters)";
+            let continent = "深海大洋板块";
+            let pop = "0 人";
+            let desc = "万米深蓝大洋领空，下方主要是浩瀚海洋地壳板块与水深极深的海沟海流区，气流颠簸可能较为频繁。";
+            let stateColor = "#64748B";
+
+            // 简易且高内聚的主权领空碰撞边界范围
+            // 1. 中国领空检测
+            if (lat >= 18 && lat <= 53 && lng >= 73 && lng <= 135) {
+                country = "中国领空 (China)";
+                continent = "亚洲板块";
+                pop = "14.1 亿人";
+                desc = "飞越广袤东亚地壳板块。下方地表覆盖了壮美的华北平原、黄土高原以及被称为‘世界屋脊’的青藏高原季风山地气候带。";
+                stateColor = "#14B8A6";
+            }
+            // 2. 俄罗斯领空检测
+            else if (lat >= 50 && lat <= 80 && lng >= 20 && lng <= 180) {
+                country = "俄罗斯领空 (Russia)";
+                continent = "欧亚大陆板块";
+                pop = "1.44 亿人";
+                desc = "飞越全球领土最辽阔之国。下方是一望无际的西伯利亚亚寒带针叶林、广袤的泰加冻土平原带，横跨多达11个时区。";
+                stateColor = "#22D3EE";
+            }
+            // 3. 美国领空检测
+            else if (lat >= 25 && lat <= 49 && lng >= -125 && lng <= -69) {
+                country = "美国领空 (USA)";
+                continent = "北美洲板块";
+                pop = "3.3 亿人";
+                desc = "飞越北美中低纬度领空。下方覆盖了阿巴拉契亚山脉与落基山脉褶皱带，密西西比河流域地理水系网络极为密集。";
+                stateColor = "#A78BFA";
+            }
+            // 4. 加拿大领空检测
+            else if (lat >= 50 && lat <= 83 && lng >= -140 && lng <= -50) {
+                country = "加拿大领空 (Canada)";
+                continent = "北美洲板块";
+                pop = "3800 万人";
+                desc = "飞越北美高纬度寒冷大陆。领空下方主要是受第四纪冰川严重侵蚀的湖泊群、高寒森林和纽芬兰群岛冰洋边缘带。";
+                stateColor = "#FB7185";
+            }
+            // 5. 日本及亚洲边缘领空
+            else if (lat >= 30 && lat <= 46 && lng >= 128 && lng <= 146) {
+                country = "日本领空 (Japan)";
+                continent = "亚洲东缘弧形群岛";
+                pop = "1.25 亿人";
+                desc = "飞越亚洲东缘狭长列岛领空。下方属于环太平洋火山地震带，地貌为崎岖的褶皱山地与岛弧，富士山清晰可见。";
+                stateColor = "#22D3EE";
+            }
+            // 6. 欧洲及周边领空
+            else if (lat >= 36 && lat <= 65 && lng >= -10 && lng <= 30) {
+                country = "欧洲主权联盟领空";
+                continent = "欧洲大陆板块";
+                pop = "7.4 亿人";
+                desc = "飞越西欧沿海湿润平原与阿尔卑斯山脉。下方拥有密集的运河水网、古老的欧洲地台轮廓与高密度的城镇定居点。";
+                stateColor = "#14B8A6";
+            }
+            // 7. 大洋洲领空
+            else if (lat <= -10 && lat >= -40 && lng >= 113 && lng <= 153) {
+                country = "澳大利亚领空 (Australia)";
+                continent = "大洋洲大陆板块";
+                pop = "2600 万人";
+                desc = "飞越古老的南方大陆。领空下方覆盖了广袤的大自流盆地红土荒漠、大分水岭森林以及海洋边缘的大堡礁珊瑚群。";
+                stateColor = "#A78BFA";
+            }
+
+            // 更新右侧国家追踪面板
+            document.getElementById('geo-country').innerText = country;
+            document.getElementById('geo-country').style.color = stateColor;
+            document.getElementById('geo-continent').innerText = continent;
+            document.getElementById('geo-pop').innerText = pop;
+            document.getElementById('geo-desc').innerText = desc;
+        }
+
+        // --- 8. 主物理仿真及航迹渲染循环 ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                State.time += 0.015 * State.speedMultiplier;
+                
+                // 航线飞行进度递增 (控制飞机飞行速度)
+                State.flightProgress += 0.0006 * State.cruiseSpeed * State.speedMultiplier;
+                if (State.flightProgress > 1.0) {
+                    State.flightProgress = 0.0; // 航班环形循环
+                    // 重置尾尾迹粒子
+                    trailPositions.forEach(p => p.set(0,0,0));
+                }
+            }
+
+            // 5.1 太阳光源位置随晨昏线滑块调整而移动
+            const sunRad = State.sunAngle * (Math.PI / 180);
+            if (sunLight) {
+                sunLight.position.set(5 * Math.cos(sunRad), 0, 5 * Math.sin(sunRad));
+            }
+
+            // 5.2 地球自转（营造壮丽的白天黑夜转换感）
+            if (neonGlobe && atmosphere && !State.isPlaying) {
+                neonGlobe.rotation.y = State.time * 0.02;
+                atmosphere.rotation.y = State.time * 0.02;
+            }
+
+            // 5.3 飞机实时球面线性插值 (Slerp) 大圆航路解算
+            const route = RoutesData[State.currentRouteIdx];
+            const startPt = latLngToVector3(route.start.lat, route.start.lng, 1.6);
+            const endPt = latLngToVector3(route.end.lat, route.end.lng, 1.6);
+            const theta = startPt.angleTo(endPt);
+
+            let planePos = new THREE.Vector3();
+            let lookTarget = new THREE.Vector3(); // 用于计算飞机机头朝向
+
+            const t = State.flightProgress;
+            
+            // 5.3.1 计算飞机当前坐标 P(t)
+            if (theta > 0.01) {
+                const sinTheta = Math.sin(theta);
+                planePos.addScaledVector(startPt, Math.sin((1 - t) * theta) / sinTheta);
+                planePos.addScaledVector(endPt, Math.sin(t * theta) / sinTheta);
+                
+                // 计算前方极小步长的瞄准点以便机头对齐
+                const tNext = Math.min(1.0, t + 0.01);
+                lookTarget.addScaledVector(startPt, Math.sin((1 - tNext) * theta) / sinTheta);
+                lookTarget.addScaledVector(endPt, Math.sin(tNext * theta) / sinTheta);
+            }
+
+            // 叠加正弦抛物线飞行高度
+            const H_cruise = 0.22;
+            const currentHeight = H_cruise * Math.sin(t * Math.PI);
+            
+            planePos.normalize().multiplyScalar(1.6 + currentHeight);
+            lookTarget.normalize().multiplyScalar(1.6 + H_cruise * Math.sin(Math.min(1.0, t + 0.01) * Math.PI));
+
+            if (flightPlane) {
+                flightPlane.position.copy(planePos);
+                
+                // 机头精准朝向前方航路，且法向贴合球面切线！
+                flightPlane.lookAt(lookTarget);
+
+                // 5.3.2 喷气引擎微粒云尾迹更新
+                if (State.isPlaying && planeTrail) {
+                    const trailPosAttr = planeTrail.geometry.attributes.position;
+                    
+                    // 往前挪位置，末尾插入当前飞机位置
+                    trailPositions.shift();
+                    trailPositions.push(planePos.clone());
+
+                    for (let i = 0; i < trailPositions.length; i++) {
+                        const pt = trailPositions[i];
+                        // 附加少许散落的乱序漂流感
+                        const scatter = 0.01 * Math.sin(State.time * 8 + i);
+                        trailPosAttr.setXYZ(i, pt.x + scatter, pt.y + scatter, pt.z + scatter);
+                    }
+                    trailPosAttr.needsUpdate = true;
+                }
+            }
+
+            // 5.4 经纬度逆解算与国家主权领空碰撞判定
+            const currentGeo = vector3ToLatLng(planePos);
+            checkTerritory(currentGeo.lat, currentGeo.lng);
+
+            // 5.5 地面地方时 (Terminator Local Time) 及太阳高度角实时换算
+            const lng = currentGeo.lng;
+            // 每 15 度对应 1 个小时，换算时区差
+            const tzDiff = Math.round(lng / 15);
+            const tzText = `UTC ${tzDiff >= 0 ? '+' + tzDiff : tzDiff}`;
+
+            // 计算地方时时间
+            const simHour = (State.time * 0.8) % 24; // 仿真模拟时间天
+            let localHour = Math.floor(simHour + tzDiff);
+            if (localHour < 0) localHour += 24;
+            if (localHour >= 24) localHour -= 24;
+
+            const timeStr = `${String(localHour).padStart(2, '0')}:12:05`;
+            
+            document.getElementById('hud-tz').innerText = tzText;
+            document.getElementById('hud-localtime').innerText = timeStr;
+            document.getElementById('hud-lng').innerText = `${Math.abs(lng).toFixed(1)}° ${lng >= 0 ? 'E' : 'W'}`;
+            document.getElementById('hud-lat').innerText = `${Math.abs(currentGeo.lat).toFixed(1)}° ${currentGeo.lat >= 0 ? 'N' : 'S'}`;
+
+            // 飞行传感器高度/速度同步
+            document.getElementById('hud-alt').innerText = `${(currentHeight * 80).toFixed(1)} km (万米)`;
+            const isClimbing = t < 0.15 ? "起飞爬升" : (t > 0.85 ? "降落减速" : "万米巡航");
+            document.getElementById('txt-mode').innerText = `${isClimbing}中`;
+            
+            // 计算太阳高度角：大致表征为平行光方向与领空坐标的内积夹角余角
+            const sunVec = sunLight.position.clone().normalize();
+            const dot = planePos.clone().normalize().dot(sunVec);
+            const sunAngleDeg = Math.asin(Math.max(-1.0, Math.min(1.0, dot))) * (180 / Math.PI);
+            document.getElementById('hud-sun-angle').innerText = `${sunAngleDeg.toFixed(1)}° (${sunAngleDeg >= 0 ? '白天' : '黑夜'})`;
+
+            renderer.render(scene, camera);
+
+            // 渲染右侧高度计
+            drawAltitudeChart();
+        }
+
+        // --- 9. 右侧大圆航线剖面高度计 (Altitude Chart) ---
+        function drawAltitudeChart() {
+            const svg = document.getElementById('svg-slice-chart');
+            if(!svg) return;
+
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 90;
+
+            const pts = [];
+            const segments = 60;
+            const progress = State.flightProgress;
+
+            // 绘制抛物起飞-降落高度大圆曲线段
+            for (let i = 0; i <= segments; i++) {
+                const fraction = i / segments;
+                const H_cruise = 38; // 最大高度像素
+                // 正弦抛物高度曲线
+                const hVal = H_cruise * Math.sin(fraction * Math.PI);
+                const x = (fraction * w);
+                const y = h - 15 - hVal;
+                pts.push(`${x},${y}`);
+            }
+
+            // 当前飞机所在的位置高度指示
+            const currPlaneY = h - 15 - 38 * Math.sin(progress * Math.PI);
+
+            svg.innerHTML = `
+                <!-- 地面基准线 -->
+                <line x1="0" y1="${h-15}" x2="${w}" y2="${h-15}" stroke="rgba(20,184,166,0.3)" stroke-width="1.5" />
+                <text x="5" y="${h-4}" fill="#64748B" font-size="8">出发</text>
+                <text x="${w-25}" y="${h-4}" fill="#64748B" font-size="8">目的港</text>
+
+                <!-- 航线抛物曲线 -->
+                <path d="M ${pts.join(' L ')}" fill="none" stroke="#14B8A6" stroke-width="1.5" stroke-dasharray="3,2" />
+                <path d="M 0,${h-15} L ${pts.join(' L ')} L ${w},${h-15} Z" fill="rgba(20,184,166,0.03)" />
+
+                <!-- 飞机当前高度进度点 -->
+                <circle cx="${progress * w}" cy="${currPlaneY}" r="4" fill="#22D3EE" class="glow-teal" />
+                <circle cx="${progress * w}" cy="${currPlaneY}" r="7" fill="none" stroke="#22D3EE" stroke-width="1" class="animate-ping" />
+            `;
+        }
+
+        // --- 10. 交互航线切换与滑块控制 ---
+        function switchRoute(idx) {
+            State.currentRouteIdx = idx;
+            State.flightProgress = 0.0; // 重置进度
+
+            // 更新 Tab 高亮
+            document.querySelectorAll('.route-btn').forEach(btn => {
+                btn.classList.remove('route-btn-active');
+            });
+            document.getElementById(`btn-route-${idx}`).classList.add('route-btn-active');
+
+            // 重新解算航路与相机镜头
+            calculateGreatCircleRoute(idx);
+        }
+
+        function restartFlight() {
+            State.flightProgress = 0.0;
+            trailPositions.forEach(p => p.set(0,0,0));
+        }
+
+        function togglePlay() {
+            State.isPlaying = !State.isPlaying;
+            document.getElementById('btn-play').innerText = State.isPlaying ? "暂停模拟" : "开始模拟";
+        }
+
+        function handleSliderChange(sliderIdx, val) {
+            const parsedVal = parseFloat(val);
+            if (sliderIdx === 1) {
+                document.getElementById('val-slider-1').innerText = `${parsedVal.toFixed(2)} Mach`;
+                State.cruiseSpeed = parsedVal;
+            } else {
+                document.getElementById('val-slider-2').innerText = `${parsedVal.toFixed(1)}°`;
+                State.sunAngle = parsedVal;
+            }
+        }
+
+        function changeTimeSpeed(val) {
+            State.speedMultiplier = parseFloat(val);
+        }
+
+        function resetSimulator() {
+            State.time = 0;
+            State.cruiseSpeed = 0.85;
+            State.sunAngle = 0.0;
+            State.flightProgress = 0.0;
+
+            document.getElementById('slider-1').value = 0.85;
+            document.getElementById('slider-2').value = 0;
+            document.getElementById('val-slider-1').innerText = "0.85 Mach";
+            document.getElementById('val-slider-2').innerText = "0.0°";
+
+            switchRoute(State.currentRouteIdx);
+            initQuiz();
+        }
+
+        function onWindowResize() {
+            if(camera && renderer && canvasContainer) {
+                const w = canvasContainer.clientWidth;
+                const h = canvasContainer.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+        }
+
+        // --- 11. 地理学小测验模块 ---
+        const QuizQuestions = [
+            {
+                question: "为什么飞机从北京飞往纽约不走赤道‘横线’，而是绕行高纬度极圈的抛物弧线？",
+                options: ["因为地球是球体，高纬度圆弧才是两点间真正的最短球面大圆航线 (正确答案)", "为了躲避强风层", "因为地球自转产生了离心重力偏向力", "低纬度有极强的磁场磁暴干扰"],
+                correct: 0,
+                feedback: "👍 回答完全正确！地球表面两点间的最短路程是大圆（以地球球心为圆心的平面与地球表面相交而得的圆）的劣弧。在二维地图上看起来是抛物弯曲大弧，但其实是球面上绝对的最短连线！"
+            },
+            {
+                question: "当客机自西向东飞行跨越 $180^\\circ$ 经度线（国际日期变更线）时，客机上的日期应当如何调整？",
+                options: ["日期加上一天", "日期减去一天 (正确答案)", "日期保持不变，仅时间加上12小时", "日期彻底清零，采用格林尼治时间"],
+                correct: 1,
+                feedback: "🎉 答对啦！为避免环球旅行时日期混乱，规定 $180^\circ$ 经线附近为国际日期变更线。自西向东（从东十二区跨入西十二区）跨越该线时，日期必须减去一天；自东向西跨越时，则加上一天。"
+            },
+            {
+                question: "地转偏向力（科里奥利力，Coriolis force）会对北半球飞越太平洋的客机产生什么方向的偏转？",
+                options: ["产生向飞行方向左侧的偏转力", "产生向飞行方向右侧的偏转力 (正确答案)", "产生垂直向下的重力加速度", "产生逆向的超音速气流阻力"],
+                correct: 1,
+                feedback: "💡 恭喜答对！受地球自转产生的惯性力（地转偏向力）影响，在北半球做水平运动的物体都会发生向右偏转的现象，在南半球则向左偏转。所以民航路线在设计和惯导解算中必须实时抵消这一科氏偏角。"
+            }
+        ];
+
+        function initQuiz() {
+            State.currentQuizIdx = 0;
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            document.getElementById('quiz-question-num').innerText = `问题 ${State.currentQuizIdx + 1} of ${QuizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-teal-500/10 hover:border-teal-500/30 text-left transition-all hover:scale-[1.01]";
+                btn.innerText = opt;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            State.quizAnswered = false;
+        }
+
+        function submitQuizAnswer(idx) {
+            if (State.quizAnswered) return;
+            State.quizAnswered = true;
+
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.remove('hidden');
+
+            if (idx === quiz.correct) {
+                feedbackBox.className = "p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `${quiz.feedback} <button onclick="nextQuizQuestion()" class="mt-2 block px-2.5 py-1 rounded bg-teal-500 text-slate-950 font-bold text-[10px] hover:scale-105 transition-all">下一题</button>`;
+            } else {
+                feedbackBox.className = "p-2.5 rounded-lg border border-rose-500/30 bg-rose-950/20 text-rose-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `❌ 回答错误，航线偏离！请再次细细阅读左侧关于地球大圆弧线的偏向力原理说明并重新选择。`;
+                State.quizAnswered = false; // 允许重新选择
+            }
+        }
+
+        function nextQuizQuestion() {
+            State.currentQuizIdx = (State.currentQuizIdx + 1) % QuizQuestions.length;
+            showQuizQuestion();
+        }
+
+        function toggleQuizPanel() {
+            const panel = document.getElementById('quiz-panel');
+            const fab = document.getElementById('btn-quiz-fab');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                fab.classList.add('hidden');
+            } else {
+                panel.classList.add('hidden');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

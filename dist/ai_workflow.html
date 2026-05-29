@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 智能体工作流原理互动教学 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            teal: '#14B8A6',
+                            cyan: '#22D3EE',
+                            green: '#10B981',
+                            emerald: '#059669',
+                            amber: '#F59E0B',
+                            orange: '#EA580C',
+                            rose: '#F43F5E',
+                            dark: '#040d12', // 极客暗黑夜电路底色
+                            navy: '#091d24',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #10B981 50%, #22D3EE 100%);
+            --bg-gradient: linear-gradient(180deg, #020608 0%, #05141a 60%, #020608 100%);
+            --glass-bg: rgba(4, 18, 23, 0.7);
+            --glass-border: rgba(20, 184, 166, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+            --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-inter);
+            background: var(--bg-gradient);
+            color: #E2F1F1;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(4, 18, 23, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.35);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 霓虹发光 */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.45);
+        }
+        .glow-text-cyan {
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #14B8A6 0%, #22D3EE 100%);
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
+        }
+
+        /* 电路科技感网格背景 */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(20, 184, 166, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 184, 166, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-cyan-500/30 bg-slate-950/90 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center font-bold text-slate-950 glow-cyan">🤖</div>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-300 bg-clip-text text-transparent uppercase tracking-wider">
+                    AI 智能体工作流动力学 <span class="text-xs font-normal text-cyan-400/80 normal-case ml-1">Agentic Workflow Dynamics</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" class="px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-medium hover:bg-cyan-500/20 active:scale-95 transition-all">
+                重置工作流
+            </button>
+            <button id="btn-random-task" class="px-3 py-1.5 rounded-lg border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-medium hover:bg-teal-500/20 active:scale-95 transition-all">
+                触发随机复杂任务
+            </button>
+            <button id="btn-fullscreen" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 active:scale-95 transition-all">
+                全屏
+            </button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-cyan-500/20 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-1" class="accent-cyan w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-1" class="leading-relaxed">理解智能体工作流中 Router、LLM Planning 与 Tool Execution 节点的交互逻辑。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-cyan w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" checked disabled>
+                        <label for="goal-2" class="leading-relaxed">掌握 Self-Reflection（自我反思与评估纠错）机制的闭环流向原理。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-cyan w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="leading-relaxed cursor-pointer hover:text-cyan-300 transition-colors">解析 RAG 向量检索与 Function Calling 工具调用的数据融合过程。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心状态方程 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 智能体状态转移方程
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-teal-950 text-center flex flex-col gap-2">
+                    <div id="latex-agent-state" class="text-[12px] text-teal-300 font-medium"></div>
+                    <div class="border-t border-cyan-950 pt-2 mt-1 flex flex-col gap-1.5 text-[10px] text-left text-slate-400">
+                        <div id="latex-react-step"></div>
+                        <div id="latex-eval-gate"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 原理生动解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 从单次问答到团队工作流
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-teal-300 font-semibold">❓ 为什么普通的 GPT 会在一句话里犯常识错误？</span>
+                        <p class="mt-1 text-slate-400">普通的单次对话是一次性快照预测。而智能体工作流（Agentic Workflow）具备 <b>“慢思考”</b> 属性，它把任务分拆，通过<b>工具反馈 (Observation)</b> 判定事实，再进行<b>自我纠错 (Self-Correction)</b>，就像一个团队在协作写报告。</p>
+                    </div>
+                    <div class="border-t border-cyan-950/60 pt-2">
+                        <span class="text-amber-300 font-semibold">🔄 自我反思与评估闸门 (Reflection Gate)</span>
+                        <p class="mt-1 text-slate-400">反思门会评估工具返回的结果。如果检测到代码执行报错、数值异常或答案不符合约束，它会驳回输出，重新将带错的数据流打回大脑进行第二次思考。这也是本系统粒子反向飞行的精妙所在。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 扩展说明 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-600">
+                    <span>学科领域：AI 系统架构</span>
+                    <span>AetherViz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央主交互区域 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 电路板 SVG 拓扑图 -->
+            <div id="canvas-container" class="absolute inset-0 z-0 cyber-grid">
+                <svg id="svg-topology" class="w-full h-full text-slate-600"></svg>
+            </div>
+
+            <!-- 数据状态 HUD (左上角) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-cyan-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">AI 工作流状态 HUD</h4>
+                    
+                    <div class="bg-slate-950/70 p-2.5 rounded border border-cyan-950/60 text-xs flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>工作流状态:</span>
+                            <span id="hud-status" class="font-bold text-amber-400 uppercase">已暂停</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>记忆检索 (RAG):</span>
+                            <span id="hud-rag-hits" class="font-bold text-teal-400">未触发</span>
+                        </div>
+                        <div class="border-t border-cyan-950/80 my-0.5"></div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>工具执行状态:</span>
+                            <span id="hud-tool-status" class="font-bold text-cyan-400">待命</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>自我纠错次数 (Loops):</span>
+                            <span id="hud-loop-count" class="font-mono font-bold text-rose-400">0</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>Token 累计消耗:</span>
+                            <span id="hud-tokens" class="font-mono font-bold text-teal-300">0 Tokens</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务详情与终端日志 (右上角) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-cyan-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-cyan-400 flex items-center justify-between">
+                        <span>📋 当前模拟 AI 任务</span>
+                        <span class="text-[10px] text-slate-500">动态解构</span>
+                    </h4>
+                    <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-900 text-xs flex flex-col gap-1 text-slate-300 leading-relaxed min-h-[50px]">
+                        <span id="task-title" class="text-emerald-400 font-semibold">待命状态</span>
+                        <p id="task-desc" class="text-[11px] text-slate-400">点击底部播放，或选择“随机复杂任务”开始工作流动力学仿真。</p>
+                    </div>
+                </div>
+
+                <!-- 终端流式日志 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-teal-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-teal-400 flex items-center justify-between">
+                        <span>💻 智能体流式执行日志 (Agent Logs)</span>
+                        <span class="text-[10px] text-slate-500">实时输出</span>
+                    </h4>
+                    <!-- 终端日志框 -->
+                    <div id="terminal-log" class="h-[120px] bg-slate-950/90 rounded-lg p-2 overflow-y-auto border border-cyan-950 font-mono text-[10px] leading-relaxed text-emerald-400 flex flex-col gap-1">
+                        <div>&gt;_ System: AI Workflow ready.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-cyan-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-play" class="w-12 h-12 rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 text-slate-950 flex items-center justify-center glow-cyan hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg id="icon-play" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon (hidden) -->
+                        <svg id="icon-pause" class="w-5 h-5 fill-current hidden" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button id="btn-step" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步节点执行">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">引擎驱动</span>
+                        <span id="txt-status" class="text-amber-400 font-medium">已休眠</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数：工具路由概率 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-teal-400 font-semibold">🛠️ 外部工具调用率</span>
+                            <span id="val-tool-prob" class="font-mono text-slate-300">70 %</span>
+                        </div>
+                        <input id="slider-tool-prob" type="range" min="0" max="100" step="5" value="70" class="custom-slider">
+                    </div>
+
+                    <!-- 参数：RAG 向量检索关联度 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-cyan-400 font-semibold">📚 RAG 向量相关度</span>
+                            <span id="val-rag-match" class="font-mono text-slate-300">85 %</span>
+                        </div>
+                        <input id="slider-rag-match" type="range" min="0" max="100" step="5" value="85" class="custom-slider">
+                    </div>
+
+                    <!-- 参数：自我纠错反思概率 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-rose-400 font-semibold">🔄 自我纠错触发率</span>
+                            <span id="val-reflection" class="font-mono text-slate-300">40 %</span>
+                        </div>
+                        <input id="slider-reflection" type="range" min="0" max="100" step="5" value="40" class="custom-slider">
+                    </div>
+                </div>
+
+                <!-- 运行倍速 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">运行速度</span>
+                    <select id="select-speed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-cyan-500 transition-colors">
+                        <option value="0.5">0.5x 慢速</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-cyan-500/30 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col">
+                <div class="h-10 border-b border-cyan-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-cyan-400 flex items-center gap-1.5">
+                        ⚡ Agent 架构小测验
+                    </span>
+                    <button id="btn-quiz-close" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-cyan-500 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2">
+                        <!-- 动态生成 -->
+                    </div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-cyan-400 text-cyan-400 flex items-center justify-center hover:scale-110 glow-cyan active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- HTML 结尾 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-600 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>在智能体系统的神经网络中，每一次对工具的探索与自我纠错，都是机器自主进化、靠近理性的回音。</span>
+        <span class="text-cyan-500/80">由 AetherViz Master 为你生成 ❤️</span>
+    </footer>
+
+    <!-- JS Logic Core -->
+    <script>
+        // --- 1. 模拟物理和状态参数 ---
+        const State = {
+            isPlaying: false,
+            // 滑动参数控制
+            toolProbability: 70,   // 工具调用概率
+            ragMatch: 85,          // 知识检索相关性 
+            reflectionRate: 40,    // 纠错反思概率
+
+            // HUD 统计假数据
+            loopCount: 0,
+            tokenUsed: 0,
+            
+            // 流程控制进度 0~100 代表粒子在链路中的整体流动阶段
+            flowProgress: 0.0,
+            
+            // 0: 空闲, 1: Query渗入, 2: LLM规划, 3: 工具分发与RAG, 4: 结果聚合, 5: 自我反思纠错判定, 6: 驳回回流LLM, 7: 输出成功
+            workflowPhase: 0,
+
+            // 速度与帧控制
+            simSpeed: 1.0,
+            timeStep: 0.25, // 控制流动平滑度
+
+            // 预设随机复杂任务库
+            tasks: [
+                { title: "跨国并购案分析与图表生成", desc: "【任务解构】需要从记忆库检索历年并购法规 (RAG) -> 调用搜索API检索最新汇率 (Tool) -> 运行Python绘制收益折线 (Tool) -> 最终审计并翻译输出报告。" },
+                { title: "自动化代码缺陷修复与沙箱部署", desc: "【任务解构】拉取Github Issue代码 (Tool) -> 检索内部编程规范库 (RAG) -> 编写补丁并在沙箱测试 (Tool) -> 自我反思测试用例，若未通过则重写 (Reflection) -> 提交PR。" },
+                { title: "智能医疗诊断辅助与病理推导", desc: "【任务解构】加载病历报告 (Query) -> 检索权威医学病理数据库 (RAG) -> 使用医学计算器计算用药剂量 (Tool) -> 临床合理性与毒性限制自我反思审查 (Reflection) -> 输出诊疗方案。" }
+            ],
+            currentTaskIdx: -1
+        };
+
+        // 拓扑节点定义 (以画布百分比比例定格，实现全自适应响应式)
+        const Nodes = {
+            query: { id: "nd-query", name: "📥 输入查询 (User Input)", cx: 0.15, cy: 0.5, color: "#22d3ee" },
+            llm: { id: "nd-llm", name: "🧠 LLM 核心大脑 (Planner & Router)", cx: 0.35, cy: 0.5, color: "#10b981" },
+            rag: { id: "nd-rag", name: "📚 记忆与向量检索 (RAG DB)", cx: 0.52, cy: 0.25, color: "#14b8a6" },
+            web: { id: "nd-web", name: "🌐 外部搜索引擎 (Search API)", cx: 0.52, cy: 0.42, color: "#a855f7" },
+            code: { id: "nd-code", name: "💻 代码沙箱执行器 (Sandbox)", cx: 0.52, cy: 0.58, color: "#6366f1" },
+            calc: { id: "nd-calc", name: "🛠️ 物理与数学计算器 (Tool)", cx: 0.52, cy: 0.75, color: "#ec4899" },
+            reflection: { id: "nd-reflection", name: "⚖️ 自我反思与评估 (Guardrail)", cx: 0.72, cy: 0.5, color: "#f59e0b" },
+            output: { id: "nd-output", name: "📤 响应终端 (Response Output)", cx: 0.9, cy: 0.5, color: "#10b981" }
+        };
+
+        // --- 2. 拓扑场景渲染与连线引擎 ---
+        function initTopology() {
+            const svg = document.getElementById('svg-topology');
+            if(!svg) return;
+
+            const w = svg.clientWidth;
+            const h = svg.clientHeight;
+
+            // 根据宽高映射出节点实际像素位置
+            Object.keys(Nodes).forEach(k => {
+                const node = Nodes[k];
+                node.px = w * node.cx;
+                node.py = h * node.cy;
+            });
+
+            drawTopology();
+        }
+
+        function drawTopology() {
+            const svg = document.getElementById('svg-topology');
+            if(!svg) return;
+
+            const w = svg.clientWidth;
+            const h = svg.clientHeight;
+
+            // 2.1 绘制发光导轨 (光导纤维) 路径
+            const l_query_llm = getLinePath(Nodes.query, Nodes.llm);
+            const l_llm_rag = getCurvePath(Nodes.llm, Nodes.rag);
+            const l_llm_web = getCurvePath(Nodes.llm, Nodes.web);
+            const l_llm_code = getCurvePath(Nodes.llm, Nodes.code);
+            const l_llm_calc = getCurvePath(Nodes.llm, Nodes.calc);
+
+            const l_rag_ref = getCurvePath(Nodes.rag, Nodes.reflection);
+            const l_web_ref = getCurvePath(Nodes.web, Nodes.reflection);
+            const l_code_ref = getCurvePath(Nodes.code, Nodes.reflection);
+            const l_calc_ref = getCurvePath(Nodes.calc, Nodes.reflection);
+
+            const l_ref_output = getLinePath(Nodes.reflection, Nodes.output);
+            
+            // 自我反思失败 - 驳回红色回流线 (由 Reflection 反向指回 LLM 大脑)
+            const l_ref_llm_reject = `M ${Nodes.reflection.px},${Nodes.reflection.py - 10} Q ${(Nodes.llm.px + Nodes.reflection.px)/2},${Nodes.reflection.py - 120} ${Nodes.llm.px},${Nodes.llm.py - 10}`;
+
+            // 2.2 粒子流在链路中的绝对位置插值演算
+            let flowParticles = '';
+            
+            if (State.isPlaying && State.workflowPhase > 0) {
+                const prog = State.flowProgress; // 0~100 分阶段代表粒子状态
+                
+                // 阶段 1：Query -> LLM (进度 0~15)
+                if (prog >= 0 && prog < 15) {
+                    const ratio = prog / 15;
+                    const pos = interpolateLine(Nodes.query, Nodes.llm, ratio);
+                    flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="5" fill="#34d399" class="glow-cyan" />`;
+                }
+                
+                // 阶段 2：LLM 大脑闪烁规划 (进度 15~30)
+                // 此时粒子暂时待在 LLM 核心内发生剧烈发光波动，模拟规划
+                else if (prog >= 15 && prog < 30) {
+                    const waveR = 8 + Math.sin(performance.now() * 0.02) * 4;
+                    flowParticles += `
+                        <circle cx="${Nodes.llm.px}" cy="${Nodes.llm.py}" r="${waveR}" fill="none" stroke="#22d3ee" stroke-width="2" opacity="0.6" />
+                        <circle cx="${Nodes.llm.px}" cy="${Nodes.llm.py}" r="5" fill="#10b981" />
+                    `;
+                }
+
+                // 阶段 3：LLM -> Tools 分流执行 (进度 30~55)
+                else if (prog >= 30 && prog < 55) {
+                    const ratio = (prog - 30) / 25;
+                    
+                    // RAG 分流 (如果设定了相关度)
+                    if (State.ragMatch > 0) {
+                        const pos = interpolateCurve(Nodes.llm, Nodes.rag, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#14b8a6" />`;
+                    }
+                    // Web API 分流 (受参数调用率制约)
+                    if (State.toolProbability > 20) {
+                        const pos = interpolateCurve(Nodes.llm, Nodes.web, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#a855f7" />`;
+                    }
+                    // Code Sandbox 分流
+                    if (State.toolProbability > 40) {
+                        const pos = interpolateCurve(Nodes.llm, Nodes.code, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#6366f1" />`;
+                    }
+                    // Calculator 分流
+                    if (State.toolProbability > 65) {
+                        const pos = interpolateCurve(Nodes.llm, Nodes.calc, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#ec4899" />`;
+                    }
+                }
+
+                // 阶段 4：Tools 返回观察结果 -> Reflection 汇聚 (进度 55~75)
+                else if (prog >= 55 && prog < 75) {
+                    const ratio = (prog - 55) / 20;
+                    
+                    if (State.ragMatch > 0) {
+                        const pos = interpolateCurve(Nodes.rag, Nodes.reflection, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#14b8a6" />`;
+                    }
+                    if (State.toolProbability > 20) {
+                        const pos = interpolateCurve(Nodes.web, Nodes.reflection, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#a855f7" />`;
+                    }
+                    if (State.toolProbability > 40) {
+                        const pos = interpolateCurve(Nodes.code, Nodes.reflection, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#6366f1" />`;
+                    }
+                    if (State.toolProbability > 65) {
+                        const pos = interpolateCurve(Nodes.calc, Nodes.reflection, ratio);
+                        flowParticles += `<circle cx="${pos.x}" cy="${pos.y}" r="4" fill="#ec4899" />`;
+                    }
+                }
+
+                // 阶段 5：自我反思评估判定中 (进度 75~85)
+                // 此时判断是否驳回回流。
+                // 如果设定了自我纠错触发率且触发成功，在此阶段会显示反向回流红色粒子飞往 LLM，同时 HUD 累计循环数
+                else if (prog >= 75 && prog < 92) {
+                    const isRejected = State.workflowPhase === 6; // 6代表驳回状态
+                    const ratio = (prog - 75) / 17;
+
+                    if (isRejected) {
+                        // 红色驳回粒子在抛物线轨道上倒行
+                        const pos = interpolateQuadratic(Nodes.reflection, Nodes.llm, ratio);
+                        flowParticles += `
+                            <circle cx="${pos.x}" cy="${pos.y}" r="4.5" fill="#f43f5e" class="glow-cyan" />
+                            <circle cx="${pos.x}" cy="${pos.y}" r="7" fill="none" stroke="#f43f5e" stroke-width="1.5" opacity="0.6" />
+                        `;
+                    } else {
+                        // 正常通过评估，粒子在 Reflection 准备飞向 Output
+                        flowParticles += `<circle cx="${Nodes.reflection.px}" cy="${Nodes.reflection.py}" r="5.5" fill="#10b981" />`;
+                    }
+                }
+
+                // 阶段 6：Reflection -> Output (进度 92~100)
+                else if (prog >= 92 && prog <= 100) {
+                    const ratio = (prog - 92) / 8;
+                    const pos = interpolateLine(Nodes.reflection, Nodes.output, ratio);
+                    flowParticles += `
+                        <circle cx="${pos.x}" cy="${pos.y}" r="5.5" fill="#10b981" class="glow-cyan" />
+                        <circle cx="${pos.x}" cy="${pos.y}" r="9" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.5" />
+                    `;
+                }
+            }
+
+            // 2.3 生成各大拓扑节点 DOM SVG 代码
+            let nodesContent = '';
+            Object.keys(Nodes).forEach(k => {
+                const node = Nodes[k];
+                
+                // 判定哪个节点正在处于激活发光状态 (HUD高亮效果)
+                let strokeColor = "rgba(20,184,166,0.3)";
+                let glowFilter = '';
+                let nodeR = 12;
+
+                if (State.isPlaying) {
+                    const p = State.flowProgress;
+                    if (k === 'query' && p < 15) { strokeColor = "#22d3ee"; nodeR = 14; }
+                    else if (k === 'llm' && p >= 15 && p < 30) { strokeColor = "#10b981"; nodeR = 15; }
+                    else if (k === 'llm' && State.workflowPhase === 6) { strokeColor = "#f43f5e"; nodeR = 15; } // 驳回红色
+                    else if (k === 'rag' && p >= 30 && p < 55 && State.ragMatch > 0) { strokeColor = "#14b8a6"; nodeR = 14; }
+                    else if (k === 'web' && p >= 30 && p < 55 && State.toolProbability > 20) { strokeColor = "#a855f7"; nodeR = 14; }
+                    else if (k === 'code' && p >= 30 && p < 55 && State.toolProbability > 40) { strokeColor = "#6366f1"; nodeR = 14; }
+                    else if (k === 'calc' && p >= 30 && p < 55 && State.toolProbability > 65) { strokeColor = "#ec4899"; nodeR = 14; }
+                    else if (k === 'reflection' && p >= 75 && p < 92) {
+                        strokeColor = State.workflowPhase === 6 ? "#f43f5e" : "#f59e0b";
+                        nodeR = 15;
+                    }
+                    else if (k === 'output' && p >= 92) { strokeColor = "#10b981"; nodeR = 14; }
+                }
+
+                nodesContent += `
+                    <g>
+                        <!-- 外发光环 -->
+                        <circle cx="${node.px}" cy="${node.py}" r="${nodeR + 6}" fill="none" stroke="${strokeColor}" stroke-width="1.5" opacity="0.3" />
+                        <!-- 节点球体 -->
+                        <circle cx="${node.px}" cy="${node.py}" r="${nodeR}" fill="#020d12" stroke="${node.color}" stroke-width="2.5" />
+                        <!-- 核心核心心跳 -->
+                        <circle cx="${node.px}" cy="${node.py}" r="4" fill="${node.color}" />
+                        <!-- 节点名字标签 -->
+                        <text x="${node.px}" y="${node.py - nodeR - 12}" fill="#8ec5fc" font-size="9.5" font-weight="600" text-anchor="middle" font-family="sans-serif">${node.name}</text>
+                    </g>
+                `;
+            });
+
+            // 渲染至主拓扑层
+            svg.innerHTML = `
+                <!-- 定义箭头标志 -->
+                <defs>
+                    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="#10b981" />
+                    </marker>
+                    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="#22d3ee" />
+                    </marker>
+                    <marker id="arrow-reject" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
+                    </marker>
+                </defs>
+
+                <!-- 光导纤维管道 (底层暗轨道，科技霓虹质感) -->
+                <g opacity="0.25">
+                    <path d="${l_query_llm}" fill="none" stroke="#22d3ee" stroke-width="1.5" />
+                    
+                    <path d="${l_llm_rag}" fill="none" stroke="#14b8a6" stroke-width="1.5" />
+                    <path d="${l_llm_web}" fill="none" stroke="#a855f7" stroke-width="1.5" />
+                    <path d="${l_llm_code}" fill="none" stroke="#6366f1" stroke-width="1.5" />
+                    <path d="${l_llm_calc}" fill="none" stroke="#ec4899" stroke-width="1.5" />
+
+                    <path d="${l_rag_ref}" fill="none" stroke="#14b8a6" stroke-width="1.5" />
+                    <path d="${l_web_ref}" fill="none" stroke="#a855f7" stroke-width="1.5" />
+                    <path d="${l_code_ref}" fill="none" stroke="#6366f1" stroke-width="1.5" />
+                    <path d="${l_calc_ref}" fill="none" stroke="#ec4899" stroke-width="1.5" />
+
+                    <path d="${l_ref_output}" fill="none" stroke="#10b981" stroke-width="1.5" />
+                </g>
+
+                <!-- 激活态的高亮有向带箭头线路 (根据目前进度发光流动) -->
+                <g>
+                    <!-- 红色反思驳回警告线 (仅在驳回阶段高亮呈现) -->
+                    <path d="${l_ref_llm_reject}" fill="none" stroke="${State.workflowPhase === 6 ? '#f43f5e' : '#3f1621'}" stroke-width="${State.workflowPhase === 6 ? 2.5 : 1}" stroke-dasharray="4,4" marker-end="url(#arrow-reject)" opacity="${State.workflowPhase === 6 ? 1.0 : 0.1}" />
+
+                    <!-- 其他正常光纤激活态 -->
+                    <path d="${l_query_llm}" fill="none" stroke="#22d3ee" stroke-width="2" opacity="${State.flowProgress < 15 ? 0.9 : 0.15}" marker-end="url(#arrow-cyan)" />
+                    
+                    <!-- 规划工具分发期高亮 -->
+                    <path d="${l_llm_rag}" fill="none" stroke="#14b8a6" stroke-width="1.8" opacity="${State.flowProgress >= 30 && State.flowProgress < 55 && State.ragMatch > 0 ? 0.9 : 0.15}" />
+                    <path d="${l_llm_web}" fill="none" stroke="#a855f7" stroke-width="1.8" opacity="${State.flowProgress >= 30 && State.flowProgress < 55 && State.toolProbability > 20 ? 0.9 : 0.15}" />
+                    <path d="${l_llm_code}" fill="none" stroke="#6366f1" stroke-width="1.8" opacity="${State.flowProgress >= 30 && State.flowProgress < 55 && State.toolProbability > 40 ? 0.9 : 0.15}" />
+                    <path d="${l_llm_calc}" fill="none" stroke="#ec4899" stroke-width="1.8" opacity="${State.flowProgress >= 30 && State.flowProgress < 55 && State.toolProbability > 65 ? 0.9 : 0.15}" />
+
+                    <!-- 工具返回期高亮 -->
+                    <path d="${l_rag_ref}" fill="none" stroke="#14b8a6" stroke-width="1.8" opacity="${State.flowProgress >= 55 && State.flowProgress < 75 && State.ragMatch > 0 ? 0.9 : 0.15}" />
+                    <path d="${l_web_ref}" fill="none" stroke="#a855f7" stroke-width="1.8" opacity="${State.flowProgress >= 55 && State.flowProgress < 75 && State.toolProbability > 20 ? 0.9 : 0.15}" />
+                    <path d="${l_code_ref}" fill="none" stroke="#6366f1" stroke-width="1.8" opacity="${State.flowProgress >= 55 && State.flowProgress < 75 && State.toolProbability > 40 ? 0.9 : 0.15}" />
+                    <path d="${l_calc_ref}" fill="none" stroke="#ec4899" stroke-width="1.8" opacity="${State.flowProgress >= 55 && State.flowProgress < 75 && State.toolProbability > 65 ? 0.9 : 0.15}" />
+
+                    <!-- 输出期高亮 -->
+                    <path d="${l_ref_output}" fill="none" stroke="#10b981" stroke-width="2" opacity="${State.flowProgress >= 92 ? 0.9 : 0.15}" marker-end="url(#arrow-green)" />
+                </g>
+
+                <!-- 流动的数据粒子 -->
+                ${flowParticles}
+
+                <!-- 绘制节点高亮 -->
+                ${nodesContent}
+            `;
+        }
+
+        // --- 3. 几何数学向量与插值工具 (支持曲线/直线粒子飘逸) ---
+        function getLinePath(n1, n2) {
+            return `M ${n1.px},${n1.py} L ${n2.px},${n2.py}`;
+        }
+
+        // 中间弯曲的三次贝塞尔曲线路径
+        function getCurvePath(n1, n2) {
+            const cx1 = n1.px + (n2.px - n1.px) * 0.4;
+            const cy1 = n1.py;
+            const cx2 = n1.px + (n2.px - n1.px) * 0.6;
+            const cy2 = n2.py;
+            return `M ${n1.px},${n1.py} C ${cx1},${cy1} ${cx2},${cy2} ${n2.px},${n2.py}`;
+        }
+
+        // 沿直线进行位置插值
+        function interpolateLine(n1, n2, t) {
+            return {
+                x: n1.px + (n2.px - n1.px) * t,
+                y: n1.py + (n2.py - n1.py) * t
+            };
+        }
+
+        // 三次贝塞尔曲线坐标点实时解算插值
+        function interpolateCurve(n1, n2, t) {
+            const cx1 = n1.px + (n2.px - n1.px) * 0.4;
+            const cy1 = n1.py;
+            const cx2 = n1.px + (n2.px - n1.px) * 0.6;
+            const cy2 = n2.py;
+
+            // 贝塞尔三次多项式
+            const x = Math.pow(1-t, 3)*n1.px + 3*Math.pow(1-t, 2)*t*cx1 + 3*(1-t)*Math.pow(t, 2)*cx2 + Math.pow(t, 3)*n2.px;
+            const y = Math.pow(1-t, 3)*n1.py + 3*Math.pow(1-t, 2)*t*cy1 + 3*(1-t)*Math.pow(t, 2)*cy2 + Math.pow(t, 3)*n2.py;
+            return { x, y };
+        }
+
+        // 二次贝塞尔曲线插值 (用于向上的反思驳回曲线)
+        function interpolateQuadratic(n1, n2, t) {
+            const ctrlX = (n1.px + n2.px) / 2;
+            const ctrlY = n1.py - 120; // 向上拱起
+
+            const x = (1-t)*(1-t)*n1.px + 2*(1-t)*t*ctrlX + t*t*n2.px;
+            const y = (1-t)*(1-t)*n1.py + 2*(1-t)*t*ctrlY + t*t*n2.py;
+            return { x, y };
+        }
+
+        // --- 4. 智能体流式日志输出控制 ---
+        function addTerminalLog(msg, colorClass = "") {
+            const logBox = document.getElementById('terminal-log');
+            if(!logBox) return;
+
+            const div = document.createElement('div');
+            if (colorClass) div.className = colorClass;
+            div.innerHTML = `&gt;_ ${msg}`;
+            logBox.appendChild(div);
+            
+            // 保持终端滚动在最底部
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // --- 5. 工作流步骤动力学控制 ---
+        function runWorkflowStep() {
+            // 控制单帧速度
+            const speedMultiplier = State.simSpeed;
+            State.flowProgress += State.timeStep * speedMultiplier;
+
+            const p = State.flowProgress;
+
+            // 根据粒子所在的百分比进度，切入对应的工作流状态阶段
+            if (p < 15 && State.workflowPhase !== 1) {
+                State.workflowPhase = 1;
+                document.getElementById('hud-status').innerText = "任务渗入中";
+                document.getElementById('hud-status').className = "font-bold text-cyan-400";
+                addTerminalLog("User Query input received. Dispatching packet...", "text-cyan-300");
+            } 
+            else if (p >= 15 && p < 30 && State.workflowPhase !== 2) {
+                State.workflowPhase = 2;
+                document.getElementById('hud-status').innerText = "意图规划中";
+                document.getElementById('hud-status').className = "font-bold text-emerald-400";
+                addTerminalLog("LLM Agent Router initialized. Analyzing intent...", "text-emerald-400");
+                addTerminalLog("Planning task breakdown. Token usage: +350", "text-slate-400");
+                State.tokenUsed += 350;
+            }
+            else if (p >= 30 && p < 55 && State.workflowPhase !== 3) {
+                State.workflowPhase = 3;
+                document.getElementById('hud-status').innerText = "工具分流执行";
+                document.getElementById('hud-status').className = "font-bold text-teal-400";
+                
+                // RAG
+                if (State.ragMatch > 0) {
+                    addTerminalLog(`RAG Context matching... related score: ${State.ragMatch}%`, "text-teal-300");
+                    document.getElementById('hud-rag-hits').innerText = "向量匹配成功";
+                    document.getElementById('hud-rag-hits').className = "font-bold text-teal-300";
+                }
+                
+                // Tool Router
+                let executingTools = [];
+                if (State.toolProbability > 20) executingTools.push("WebSearch API");
+                if (State.toolProbability > 40) executingTools.push("Python Sandbox");
+                if (State.toolProbability > 65) executingTools.push("Calculator Tool");
+
+                document.getElementById('hud-tool-status').innerText = executingTools.length > 0 ? `活跃 (${executingTools.length})` : "无调用";
+                document.getElementById('hud-tool-status').className = executingTools.length > 0 ? "font-bold text-cyan-400" : "font-bold text-slate-500";
+
+                if (executingTools.length > 0) {
+                    addTerminalLog(`Function Calling triggered: [${executingTools.join(', ')}]`, "text-fuchsia-400");
+                    State.tokenUsed += 480;
+                } else {
+                    addTerminalLog("Direct Zero-shot response planned. No tool needed.", "text-slate-400");
+                }
+            }
+            else if (p >= 55 && p < 75 && State.workflowPhase !== 4) {
+                State.workflowPhase = 4;
+                document.getElementById('hud-status').innerText = "观察结果聚合中";
+                document.getElementById('hud-status').className = "font-bold text-indigo-400";
+                addTerminalLog("Tools execution completed. Observation data stream gathered.", "text-indigo-300");
+                addTerminalLog("Injecting observation variables into LLM Stroma...", "text-slate-400");
+            }
+            else if (p >= 75 && p < 92 && State.workflowPhase !== 5 && State.workflowPhase !== 6) {
+                State.workflowPhase = 5;
+                document.getElementById('hud-status').innerText = "自我反思评估";
+                document.getElementById('hud-status').className = "font-bold text-amber-400";
+                addTerminalLog("Guardrail evaluation: Reviewing output quality...", "text-amber-400");
+
+                // 随机判断本次评估是否通过 (受滑杆纠错触发率控制)
+                const rand = Math.random() * 100;
+                if (rand < State.reflectionRate && State.loopCount < 2) {
+                    // 自我反思失败！触发纠错打回状态 6
+                    State.workflowPhase = 6;
+                    State.loopCount++;
+                    document.getElementById('hud-loop-count').innerText = State.loopCount;
+                    addTerminalLog(`⚠️ Reflection Failed: Output deviates from constraints. Triggering Self-Correction (Loop #${State.loopCount})`, "text-rose-400");
+                    addTerminalLog("Generating remedial prompt. Re-evaluating Planning graph. Token usage: +520", "text-slate-400");
+                    State.tokenUsed += 520;
+                } else {
+                    // 正常评估通过
+                    addTerminalLog("🎉 Reflection Passed: Answers verified and aligned with goals.", "text-green-400");
+                }
+            }
+            else if (p >= 100) {
+                if (State.workflowPhase === 6) {
+                    // 若是处于被打回状态，粒子运动到末尾后重回 LLM 开始处 (进度 15) 进行再次纠错循环
+                    State.flowProgress = 15.0; 
+                    State.workflowPhase = 2; 
+                } else {
+                    // 彻底通过
+                    State.workflowPhase = 7;
+                    State.isPlaying = false;
+                    document.getElementById('hud-status').innerText = "响应成功输出";
+                    document.getElementById('hud-status').className = "font-bold text-green-400";
+                    document.getElementById('txt-status').innerText = "执行完毕";
+                    document.getElementById('txt-status').className = "text-green-400 font-medium";
+
+                    // 还原播放按钮
+                    document.getElementById('icon-play').classList.remove('hidden');
+                    document.getElementById('icon-pause').classList.add('hidden');
+                    
+                    addTerminalLog("Response successfully compiled. Ready.", "text-emerald-300");
+                    State.tokenUsed += 150;
+                }
+            }
+
+            // 同步 Token 显示
+            document.getElementById('hud-tokens').innerText = `${State.tokenUsed} Tokens`;
+        }
+
+        // --- 6. KaTeX 核心状态方程渲染 ---
+        function renderFormulas() {
+            const state = `State_{t+1} = LLM(P_{rompt}, Context, Memory, Observation_t)`;
+            const step = `\\text{ReAct 步骤: } Context \\leftarrow Context \\cup \\{Thought_t, Action_t, Obs_t\\}`;
+            const guard = `\\text{反思门控: } Eval(State_{t+1}) < \\tau \\implies \\text{驳回并触发纠错}`;
+
+            katex.render(state, document.getElementById('latex-agent-state'), { throwOnError: false });
+            katex.render(step, document.getElementById('latex-react-step'), { throwOnError: false });
+            katex.render(guard, document.getElementById('latex-eval-gate'), { throwOnError: false });
+        }
+
+        // --- 7. 互动小测验设计 ---
+        const QuizData = [
+            {
+                q: "在 AI 智能体工作流中，RAG (检索增强生成) 主要为 LLM 提供什么？",
+                options: [
+                    { t: "A. 外部实时运行代码的安全沙箱环境", correct: false },
+                    { t: "B. 精准的长期与短期病历/领域知识库上下文记忆", correct: true },
+                    { t: "C. 自我反思的真假逻辑判定开关", correct: false },
+                    { t: "D. 图像和语音信号的物理转化接口", correct: false }
+                ],
+                explain: "正确答案是 B。RAG (Retrieval-Augmented Generation) 主要通过将向量检索出来的外部私有知识库数据注入到 prompt 提示词的 context 上下文中，为 LLM 提供及时、准确的记忆与事实保障。"
+            },
+            {
+                q: "与“单次 Prompt 问答”相比，“智能体工作流 (Agentic Workflow)”能大幅提升复杂任务成功率的最主要原因在于？",
+                options: [
+                    { t: "A. 使用了更大尺寸的语言模型进行极速预测", correct: false },
+                    { t: "B. 移除了任何人为规则，完全由模型自由瞎想", correct: false },
+                    { t: "C. 引入了任务拆解、外部工具调用与自我反思反驳纠错的闭环迭代控制", correct: true },
+                    { t: "D. 仅支持生成独立的可运行 Python 代码文件", correct: false }
+                ],
+                explain: "正确答案是 C。工作流式智能体摒弃了一次性快照输出的缺陷，允许系统将任务分阶段执行，并不断评估工具执行返回的信息（Observation），若存在瑕疵则通过 Self-Reflection 自动重做纠正，形成闭环进化。"
+            },
+            {
+                q: "如果工具执行返回报错 `Error: NameError`，工作流中哪一个环节会捕获此信息并驱动纠错重写？",
+                options: [
+                    { t: "A. 用户输入查询门闸 (Query)", correct: false },
+                    { t: "B. 外部搜索引擎 (Search API)", correct: false },
+                    { t: "C. 自我反思与评估节点 (Reflection Gate) 结合规划器再次决策", correct: true },
+                    { t: "D. 最终输出响应终端 (Output)", correct: false }
+                ],
+                explain: "正确答案是 C。当工具运行报错时，Observation 返回错误流，自我反思节点（Reflection Gate）捕获此错误并识别为输出不符合预期，于是拦截输出、提升纠错循环计数器，并将报错信息重新装填回 LLM 大脑进行重新 Planning 修复。"
+            }
+        ];
+
+        let currentQuizIndex = 0;
+
+        function loadQuiz(index) {
+            const quiz = QuizData[index];
+            document.getElementById('quiz-question-num').innerText = `问题 ${index + 1} of ${QuizData.length}`;
+            document.getElementById('quiz-question').innerText = quiz.q;
+            
+            const optsContainer = document.getElementById('quiz-options');
+            optsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2 text-left rounded bg-slate-900 border border-cyan-950 text-slate-300 hover:bg-cyan-500/10 hover:border-cyan-400 transition-colors";
+                btn.innerText = opt.t;
+                btn.onclick = () => checkAnswer(opt.correct, quiz.explain);
+                optsContainer.appendChild(btn);
+            });
+
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.add('hidden');
+
+            renderMathInElement(document.getElementById('quiz-panel'), {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+        }
+
+        function checkAnswer(isCorrect, explanation) {
+            const feedback = document.getElementById('quiz-feedback');
+            feedback.classList.remove('hidden');
+            if (isCorrect) {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-teal-500/10 border-teal-500 text-teal-300 glow-cyan";
+                feedback.innerHTML = `🎉 <b>完全正确！</b><br>${explanation}`;
+                setTimeout(() => {
+                    currentQuizIndex = (currentQuizIndex + 1) % QuizData.length;
+                    loadQuiz(currentQuizIndex);
+                }, 4000);
+            } else {
+                feedback.className = "p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all bg-rose-500/10 border-rose-500 text-rose-300";
+                feedback.innerHTML = `❌ <b>再试一次吧：</b><br>${explanation}`;
+            }
+
+            renderMathInElement(feedback, {
+                delimiters: [
+                    {left: '$', right: '$', display: false}
+                ]
+            });
+        }
+
+        // --- 8. 动画主循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                runWorkflowStep();
+                drawTopology();
+            }
+        }
+
+        // --- 9. 事件绑定与 UI 交互控制 ---
+        function bindEvents() {
+            const sliderTool = document.getElementById('slider-tool-prob');
+            const sliderRag = document.getElementById('slider-rag-match');
+            const sliderRef = document.getElementById('slider-reflection');
+
+            sliderTool.oninput = (e) => {
+                State.toolProbability = parseFloat(e.target.value);
+                document.getElementById('val-tool-prob').innerText = `${State.toolProbability.toFixed(0)} %`;
+            };
+            sliderRag.oninput = (e) => {
+                State.ragMatch = parseFloat(e.target.value);
+                document.getElementById('val-rag-match').innerText = `${State.ragMatch.toFixed(0)} %`;
+            };
+            sliderRef.oninput = (e) => {
+                State.reflectionRate = parseFloat(e.target.value);
+                document.getElementById('val-reflection').innerText = `${State.reflectionRate.toFixed(0)} %`;
+            };
+
+            // 播放与暂停
+            const playBtn = document.getElementById('btn-play');
+            const playIcon = document.getElementById('icon-play');
+            const pauseIcon = document.getElementById('icon-pause');
+            const statusTxt = document.getElementById('txt-status');
+
+            playBtn.onclick = () => {
+                State.isPlaying = !State.isPlaying;
+                if (State.isPlaying) {
+                    playIcon.classList.add('hidden');
+                    pauseIcon.classList.remove('hidden');
+                    statusTxt.innerText = "正在运转";
+                    statusTxt.className = "text-emerald-400 font-medium";
+
+                    // 若从空闲启动，则初始化流
+                    if(State.workflowPhase === 0) {
+                        State.workflowPhase = 1;
+                        State.flowProgress = 0.0;
+                        State.loopCount = 0;
+                        State.tokenUsed = 0;
+                        document.getElementById('hud-loop-count').innerText = 0;
+                        
+                        // 终端日志清空并刷新
+                        document.getElementById('terminal-log').innerHTML = "<div>&gt;_ System: AI Workflow active.</div>";
+                        
+                        if(State.currentTaskIdx === -1) {
+                            // 默认分配第一个任务
+                            triggerTask(0);
+                        }
+                    }
+                } else {
+                    playIcon.classList.remove('hidden');
+                    pauseIcon.classList.add('hidden');
+                    statusTxt.innerText = "已暂停";
+                    statusTxt.className = "text-amber-400 font-medium";
+                }
+            };
+
+            // 单步
+            document.getElementById('btn-step').onclick = () => {
+                State.isPlaying = false;
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                statusTxt.innerText = "单步调试";
+                statusTxt.className = "text-teal-400 font-medium";
+
+                if (State.workflowPhase === 0) {
+                    State.workflowPhase = 1;
+                    State.flowProgress = 0.0;
+                    State.loopCount = 0;
+                    State.tokenUsed = 0;
+                    document.getElementById('hud-loop-count').innerText = 0;
+                    document.getElementById('terminal-log').innerHTML = "<div>&gt;_ System: Step Debug mode.</div>";
+                    triggerTask(0);
+                }
+
+                // 强制推进几个点
+                State.flowProgress += 3.5;
+                if(State.flowProgress > 100) State.flowProgress = 100;
+                
+                runWorkflowStep();
+                drawTopology();
+            };
+
+            // 重置
+            document.getElementById('btn-reset').onclick = () => {
+                State.workflowPhase = 0;
+                State.flowProgress = 0.0;
+                State.loopCount = 0;
+                State.tokenUsed = 0;
+                State.isPlaying = false;
+
+                document.getElementById('hud-loop-count').innerText = 0;
+                document.getElementById('hud-tokens').innerText = "0 Tokens";
+                document.getElementById('hud-status').innerText = "已暂停";
+                document.getElementById('hud-status').className = "font-bold text-amber-400";
+                document.getElementById('hud-rag-hits').innerText = "未触发";
+                document.getElementById('hud-rag-hits').className = "font-bold text-slate-500";
+                document.getElementById('hud-tool-status').innerText = "待命";
+                document.getElementById('hud-tool-status').className = "font-bold text-slate-500";
+
+                document.getElementById('txt-status').innerText = "已休眠";
+                document.getElementById('txt-status').className = "text-amber-400 font-medium";
+
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+
+                document.getElementById('terminal-log').innerHTML = "<div>&gt;_ System: AI Workflow reset.</div>";
+                
+                drawTopology();
+            };
+
+            // 随机任务
+            document.getElementById('btn-random-task').onclick = () => {
+                const randIdx = Math.floor(Math.random() * State.tasks.length);
+                triggerTask(randIdx);
+                
+                // 重置状态流重新跑
+                State.workflowPhase = 1;
+                State.flowProgress = 0.0;
+                State.loopCount = 0;
+                State.tokenUsed = 0;
+                State.isPlaying = true;
+
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                statusTxt.innerText = "正在运转";
+                statusTxt.className = "text-emerald-400 font-medium";
+
+                document.getElementById('terminal-log').innerHTML = `<div>&gt;_ System: Dispatched new task #${randIdx+1}.</div>`;
+                drawTopology();
+            };
+
+            // 全屏
+            document.getElementById('btn-fullscreen').onclick = () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            };
+
+            // 倍速选择
+            document.getElementById('select-speed').onchange = (e) => {
+                State.simSpeed = parseFloat(e.target.value);
+            };
+
+            // 测验折叠
+            const quizPanel = document.getElementById('quiz-panel');
+            const quizFab = document.getElementById('btn-quiz-fab');
+            
+            document.getElementById('btn-quiz-close').onclick = () => {
+                quizPanel.classList.add('hidden');
+                quizFab.classList.remove('hidden');
+            };
+
+            quizFab.onclick = () => {
+                quizPanel.classList.remove('hidden');
+                quizFab.classList.add('hidden');
+            };
+
+            // 自适应缩放
+            window.onresize = () => {
+                initTopology();
+            };
+        }
+
+        function triggerTask(idx) {
+            State.currentTaskIdx = idx;
+            const task = State.tasks[idx];
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('task-desc').innerText = task.desc;
+        }
+
+        // --- 10. 系统加载初始化 ---
+        window.onload = () => {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$', right: '$', display: false},
+                    {left: '$$', right: '$$', display: true}
+                ]
+            });
+
+            // 初始化 SVG 节点及坐标关系
+            initTopology();
+            
+            // 预刷一次
+            updateVisuals();
+            renderFormulas();
+
+            // 测验
+            loadQuiz(currentQuizIndex);
+
+            // 绑定事件
+            bindEvents();
+
+            // 开启动画大循环
+            requestAnimationFrame(animate);
+        };
+
+        // 占位函数兼容
+        function updateVisuals() {}
+    </script>
+</body>
+</html>

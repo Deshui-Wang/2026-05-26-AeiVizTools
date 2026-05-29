@@ -4,6 +4,7 @@
   "description": "Interactive educational visualization builder",
   "main": "index.html",
   "scripts": {
+    "dev": "npx http-server -p 8080",
     "build": "mkdir -p dist && cp *.html *.gif *.js dist/ 2>/dev/null || true"
   },
   "keywords": [],

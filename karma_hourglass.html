@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>因果三部曲：业力无常沙漏 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#22D3EE',
+                            teal: '#14B8A6',
+                            purple: '#A78BFA',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            dark: '#060A14',
+                            navy: '#0F172A',
+                            panel: 'rgba(15, 23, 42, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FBBF24 0%, #F59E0B 50%, #EF4444 100%);
+            --bg-gradient: radial-gradient(circle at top, #1A1208 0%, #060811 75%, #020306 100%);
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(245, 158, 11, 0.25);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.75);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 10, 20, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(245, 158, 11, 0.25);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(245, 158, 11, 0.5);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 发光霓虹 */
+        .glow-amber {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+        .glow-text-amber {
+            text-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #FBBF24;
+            cursor: pointer;
+            box-shadow: 0 0 8px #FBBF24;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-amber-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-amber-400 to-red-500 flex items-center justify-center font-bold text-slate-950 glow-amber">⏳</div>
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-amber-400 via-yellow-300 to-red-400 bg-clip-text text-transparent uppercase tracking-wider font-mono">
+                    业力无常沙漏实验室 <span class="text-xs font-normal text-amber-500/60 normal-case ml-1">Karmic Hourglass Singularity</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <!-- 核心翻转按钮 -->
+            <button id="btn-reincarnate" onclick="triggerReincarnation()" class="px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/15 text-red-300 text-xs font-bold hover:bg-red-500/25 active:scale-95 transition-all glow-amber">
+                🔄 触发六道轮回 (180°翻转)
+            </button>
+            <button id="btn-reset" onclick="resetSimulator()" class="px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-xs font-medium hover:bg-amber-500/20 active:scale-95 transition-all">
+                重置沙漏
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 text-xs font-bold hover:bg-amber-300 active:scale-95 transition-all">
+                暂停模拟
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧讲解面板 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-amber-500/15 bg-[#060A14]/90 flex flex-col p-5 overflow-y-auto gap-4 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-amber-500/10">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    🎯 宿命因果目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" checked disabled class="mt-0.5 rounded cursor-pointer accent-amber-500">
+                        <span>探究对称双向锥体几何在交汇奇点窄口的重力粒子流汇聚。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-amber-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-2" class="cursor-pointer hover:text-slate-300 transition-colors">观察“业障/贪嗔痴”对粒子过口碰撞无序度与色彩的影响。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-amber-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="cursor-pointer hover:text-slate-300 transition-colors">体验在 Z 轴大翻转瞬间，落底之果重塑为悬浮之因的守恒定律。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-amber-500/10">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    📝 业力沙漏与奇点方程
+                </h3>
+                <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center">
+                    <div id="latex-formula" class="text-xs text-slate-100 py-1 font-mono"></div>
+                </div>
+                <p class="text-[10.5px] text-slate-400 leading-relaxed">
+                    双向沙漏由两个在奇点 $(y=0)$ 处顶点对接的半锥体所定义。当因果粒子在前世（上半斗 $y > 0$）累积，奇点引力会促使其发生加速流动。窄口作为“今生门槛”，强制粒子进行碰撞与能量重新整合。
+                </p>
+            </section>
+
+            <!-- 东方哲学讲解 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 border-amber-500/10">
+                <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                    💡 业力守恒与轮回翻转
+                </h3>
+                <div class="text-[11px] text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">❓ 业力不失，因果守恒</span>
+                        <p class="mt-1 text-slate-400">玄学因果观认为，前世造就的业障并不会平白消失。当下受到的每一份波折，皆是上部锥体滑落的能量积蓄。在沙漏底部积聚的“果”，正是我们下一次翻转后重新面临的“因”。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2.5">
+                        <span class="text-red-300 font-semibold">⚡ 贪嗔痴是物理熵的紊乱</span>
+                        <p class="mt-1 text-slate-400">滑块一调节“贪嗔痴”，在物理学中等价于注入**热力学噪声 (Entropy Chaos)**。当内心执念无序增加时，粒子在奇点碰撞时摩擦剧增，且颜色从明净的纯金滑向代表杂染愤怒的暗红，生命轨迹陷入嘈杂。</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央渲染画布 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D Canvas 容器 -->
+            <div id="canvas-container" class="absolute inset-0 z-0"></div>
+
+            <!-- 左上角 HUD 看板 -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[260px]">
+                <!-- 沙漏状态传感器 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-amber-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">因果业力流传感器</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">宿命流速 (g)</span>
+                            <span id="hud-g" class="font-bold text-slate-200 font-mono">0.15 m/s²</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">粒子过口速率</span>
+                            <span id="hud-flow" class="font-bold text-amber-400 font-mono">0 粒/秒</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500 text-[9px]">已历经转世轮回数</span>
+                        <span id="hud-reincarnations" class="font-bold text-amber-400 font-mono">0 次</span>
+                    </div>
+                </div>
+
+                <!-- 业力无常常数 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-red-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">热力因果熵看板</h4>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">总业力粒子</span>
+                            <span class="font-bold text-slate-300 font-mono">200 P</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">业障混乱度</span>
+                            <span id="hud-chaos" class="font-bold text-red-400 font-mono">0.20</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">奇点发光能</span>
+                            <span class="font-bold text-red-400 font-mono">8.5 GW</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">系统拓扑</span>
+                            <span class="font-bold text-slate-300 font-mono">双锥流形</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧命运起伏分析仪（右上角） -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[300px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-amber-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-xs font-semibold text-amber-400 flex items-center justify-between">
+                        <span>📈 奇点瞬时业力密度图</span>
+                        <span class="text-[9px] text-slate-500 font-mono">Karmic Flux</span>
+                    </h4>
+                    <!-- 截面波形图 SVG -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-900">
+                        <svg id="svg-slice-chart" class="w-full h-full"></svg>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-relaxed">
+                        监控粒子通过今生奇点 $(y=0)$ 时的瞬间通量密度。波峰表示大量因果汇聚窄门，进入转世高潮。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 底部滑动调整器 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-5 items-center justify-between glass-panel rounded-2xl p-5 border border-amber-500/20 bg-[#060A14]/90 pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block text-[9px] uppercase">轮回动力</span>
+                        <span id="txt-mode" class="text-amber-400 font-medium font-mono">时空物理演变</span>
+                    </div>
+                </div>
+
+                <!-- 滑动控制 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🔴 贪嗔痴 (业障混乱噪音)</span>
+                            <span id="val-slider-1" class="font-mono text-amber-400">0.20</span>
+                        </div>
+                        <input id="slider-1" type="range" min="0.0" max="1.0" step="0.05" value="0.2" class="custom-slider" oninput="handleSliderChange(1, this.value)">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-300 font-semibold">🟢 时间宿命流速 (重力大小)</span>
+                            <span id="val-slider-2" class="font-mono text-amber-400">0.15</span>
+                        </div>
+                        <input id="slider-2" type="range" min="0.05" max="0.40" step="0.02" value="0.15" class="custom-slider" oninput="handleSliderChange(2, this.value)">
+                    </div>
+                </div>
+
+                <!-- 倍率选择 -->
+                <div class="flex items-center gap-2">
+                    <select id="select-speed" onchange="changeTimeSpeed(this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-amber-500 transition-colors font-mono">
+                        <option value="0.2">0.2x 宁静</option>
+                        <option value="0.5">0.5x 缓行</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 湍流</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 诊断小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[350px] glass-panel border border-amber-500/20 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col bg-[#060A14]/95">
+                <div class="h-10 border-b border-amber-500/15 bg-slate-900/50 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-amber-400 flex items-center gap-1.5">
+                        ⚡ 业力沙漏诊断测验
+                    </span>
+                    <button onclick="toggleQuizPanel()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-amber-400 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2"></div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" onclick="toggleQuizPanel()" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-amber-400 text-amber-400 flex items-center justify-center hover:scale-110 glow-amber active:scale-95 transition-all" title="展开小测验">
+                💡
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 逻辑脚本 -->
+    <script>
+        // --- 1. 物理模拟状态 ---
+        const State = {
+            isPlaying: true,
+            time: 0,
+            speedMultiplier: 1.0,
+
+            // 沙漏调节参数
+            chaosNoise: 0.2,       // 贪嗔痴 (混乱熵噪音)
+            gravity: 0.15,         // 重力大小
+
+            // 轮回物理状态
+            numReincarnations: 0,  // 转世轮回次数
+            flowCountPerSec: 0,    // 瞬间过口速率计数
+            particlesPassingCount: 0,
+
+            // 沙漏翻转过渡动画
+            isReversing: false,    // 是否正在发生180°大翻转
+            reverseProgress: 0.0,  // 翻转进度 0~1
+            reverseStartAngle: 0.0,
+            reverseTargetAngle: 0.0,
+            
+            // 测验
+            currentQuizIdx: 0,
+            quizAnswered: false
+        };
+
+        let scene, camera, renderer;
+        let hourglassContainer; // 装载上下斗和所有粒子的 3D 旋转外壳容器！
+        let topCone, bottomCone; // 两个线框锥体
+        let particles = [];      // 存储 200 个独立粒子的物理状态对象
+        let particleSystem;      // Three.js 粒子群
+        let collisionSparks;     // 奇点碰撞瞬间的溅射火花粒子
+        let sparkLife = [];      // 火花生命期
+
+        let lastSecTimestamp = 0; // 用于计算过口率的每秒定时器
+
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 2. 初始化 ---
+        function init() {
+            // KaTeX 公式
+            katex.render(
+                "x^2 + z^2 = \\left( R_{cap} \\cdot \\frac{y}{H} \\right)^2, \\quad S = \\int \\dot{m}_{singularity} \\cdot \\text{entropy}(C) \\, dt",
+                document.getElementById('latex-formula'),
+                { throwOnError: false }
+            );
+
+            initWebGL();
+            buildHourglass();
+            initQuiz();
+            animate();
+        }
+
+        // --- 3. WebGL 环境配置 ---
+        function initWebGL() {
+            const w = canvasContainer.clientWidth || 800;
+            const h = canvasContainer.clientHeight || 600;
+
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera.position.set(0, 0, 5.2);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(w, h);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            canvasContainer.appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0x0f0b04, 2.0);
+            scene.add(ambient);
+
+            // 背景漫射尘埃
+            const starGeom = new THREE.BufferGeometry();
+            const starCount = 300;
+            const starPos = new Float32Array(starCount * 3);
+            for(let i=0; i<starCount*3; i+=3) {
+                starPos[i] = (Math.random() - 0.5) * 12;
+                starPos[i+1] = (Math.random() - 0.5) * 12;
+                starPos[i+2] = (Math.random() - 0.5) * 12;
+            }
+            starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({
+                color: 0xFBBF24,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.35,
+                blending: THREE.AdditiveBlending
+            });
+            const starField = new THREE.Points(starGeom, starMat);
+            scene.add(starField);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // --- 4. 沙漏 3D 几何与重力粒子生成 ---
+        function buildHourglass() {
+            hourglassContainer = new THREE.Group();
+            scene.add(hourglassContainer);
+
+            // 4.1 上部锥体线框 (前世斗) - 开口朝上
+            const topGeom = new THREE.ConeGeometry(1.3, 1.6, 16, 2, true);
+            // 翻转并往上偏移
+            topGeom.translate(0, 0.8, 0);
+            const topWire = new THREE.WireframeGeometry(topGeom);
+            const coneMat = new THREE.LineBasicMaterial({
+                color: 0xFBBF24,
+                transparent: true,
+                opacity: 0.28,
+                blending: THREE.AdditiveBlending
+            });
+            topCone = new THREE.LineSegments(topWire, coneMat);
+            hourglassContainer.add(topCone);
+
+            // 4.2 下部锥体线框 (来世斗) - 开口朝下
+            const bottomGeom = new THREE.ConeGeometry(1.3, 1.6, 16, 2, true);
+            bottomGeom.rotateX(Math.PI); // 倒转
+            bottomGeom.translate(0, -0.8, 0); // 往下偏移
+            const bottomWire = new THREE.WireframeGeometry(bottomGeom);
+            bottomCone = new THREE.LineSegments(bottomWire, coneMat);
+            hourglassContainer.add(bottomCone);
+
+            // 4.3 粒子物理状态初始化 (200个独立粒子)
+            const numParticles = 200;
+            const ptsGeom = new THREE.BufferGeometry();
+            const posArr = new Float32Array(numParticles * 3);
+
+            for (let i = 0; i < numParticles; i++) {
+                // 默认初始随机散落在上部锥体内
+                const y = 0.05 + Math.random() * 1.4; // 高度 0.05 ~ 1.45
+                const maxR = 1.3 * (y / 1.6);         // 漏斗在该高度的最大允许半径
+                const theta = Math.random() * 2 * Math.PI;
+                const r = Math.random() * maxR * 0.95; // 稍微收缩避开壁
+
+                const x = r * Math.cos(theta);
+                const z = r * Math.sin(theta);
+
+                particles.push({
+                    x: x, y: y, z: z,
+                    vx: 0, vy: 0, vz: 0,
+                    isDead: false,
+                    colorState: 0.12 // 初始为金色 HSL 色相
+                });
+
+                posArr[i*3] = x;
+                posArr[i*3+1] = y;
+                posArr[i*3+2] = z;
+            }
+
+            ptsGeom.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+            
+            // 发光点粒子材质
+            const ptsMat = new THREE.PointsMaterial({
+                color: 0xFBBF24,
+                size: 0.045,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending
+            });
+            particleSystem = new THREE.Points(ptsGeom, ptsMat);
+            hourglassContainer.add(particleSystem);
+
+            // 4.4 奇点碰撞火花系统
+            const sparkCount = 80;
+            const sparkGeom = new THREE.BufferGeometry();
+            const sparkPosArr = new Float32Array(sparkCount * 3);
+            sparkGeom.setAttribute('position', new THREE.BufferAttribute(sparkPosArr, 3));
+            
+            const sparkMat = new THREE.PointsMaterial({
+                color: 0xF59E0B,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.0,
+                blending: THREE.AdditiveBlending
+            });
+            collisionSparks = new THREE.Points(sparkGeom, sparkMat);
+            hourglassContainer.add(collisionSparks);
+
+            for(let i=0; i<sparkCount; i++) {
+                sparkLife.push({ life: 0.0, vx: 0.0, vy: 0.0, vz: 0.0 });
+            }
+        }
+
+        // --- 5. 核心物理仿真引擎 ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            if (State.isPlaying) {
+                State.time += 0.015 * State.speedMultiplier;
+            }
+
+            // 5.1 六道轮回 180° 大翻转动画解算
+            if (State.isReversing) {
+                State.reverseProgress += 0.012 * State.speedMultiplier; // 翻转平滑步进
+                if (State.reverseProgress >= 1.0) {
+                    State.reverseProgress = 1.0;
+                    State.isReversing = false;
+                    
+                    // 翻转结束：将所有已经积底的粒子重置为悬浮因！
+                    // 因为经历了一次旋转，现在粒子逻辑上的 y 坐标需要做正反镜像反转，从而变成在上斗
+                    particles.forEach(p => {
+                        p.y = -p.y; // 镜像翻转 y 坐标使其回归上半斗
+                        p.vy = 0;   // 速度清零
+                        p.vx = (Math.random() - 0.5) * 0.1;
+                        p.vz = (Math.random() - 0.5) * 0.1;
+                    });
+                }
+
+                // 正弦插值实现极度顺滑、带缓动阻尼感的旋转曲线
+                const angle = State.reverseStartAngle + (State.reverseTargetAngle - State.reverseStartAngle) * Math.sin(State.reverseProgress * Math.PI / 2);
+                hourglassContainer.rotation.z = angle;
+            }
+
+            // 5.2 重力粒子系统更新（仅在沙漏不翻转或翻转前期更新）
+            if (State.isPlaying && particleSystem) {
+                const posAttr = particleSystem.geometry.attributes.position;
+                const dt = 0.1 * State.speedMultiplier;
+                const g = State.gravity;
+                const chaos = State.chaosNoise; // 贪嗔痴无常阻力
+
+                // 每秒过口速率定时器清零
+                const currTime = Date.now();
+                if (currTime - lastSecTimestamp >= 1000) {
+                    document.getElementById('hud-flow').innerText = `${State.particlesPassingCount} 粒/秒`;
+                    State.particlesPassingCount = 0;
+                    lastSecTimestamp = currTime;
+                }
+
+                particles.forEach((p, idx) => {
+                    // 若沙漏正处于翻转中途，粒子会根据沙漏局部坐标随之倾斜移动
+                    let ay = -g; // 重力加速度向下
+                    let ax = 0;
+                    let az = 0;
+
+                    // 1. 上半斗粒子的物理行为（y > 0）：受奇点向下拽拉
+                    if (p.y > 0) {
+                        // 产生漏斗向下的中心聚拢力：越靠近窄口，拉拽力越大
+                        const distToSingular = Math.sqrt(p.x * p.x + p.z * p.z);
+                        // 引力向中心 (0, 0) 拉
+                        ax = -p.x * 0.15;
+                        az = -p.z * 0.15;
+
+                        // 业障噪音浮动：执念使粒子运动轨迹变得混乱无序
+                        ax += chaos * (Math.random() - 0.5) * 0.18;
+                        az += chaos * (Math.random() - 0.5) * 0.18;
+                        ay += chaos * (Math.random() - 0.5) * 0.08;
+                    } 
+                    // 2. 刚刚跨越窄口奇点瞬间 (y 从正值滑向负值)
+                    else if (p.y <= 0 && p.y > -0.05 && p.vy < 0) {
+                        State.particlesPassingCount++;
+                        // 在奇点窄口激发溅射火花粒子
+                        triggerSparks(p.x, p.y, p.z);
+                    }
+                    // 3. 下半斗粒子的堆积物理限制 (y <= 0)
+                    else if (p.y <= -0.05) {
+                        // 重力依旧向下
+                        // 碰撞下半部漏斗壁反弹限制
+                        const maxR = 1.35 * (Math.abs(p.y) / 1.6); // 漏斗在该高度的最大截面活动半径
+                        const r = Math.sqrt(p.x * p.x + p.z * p.z);
+                        
+                        if (r > maxR * 0.96) {
+                            // 发生边缘斜面碰撞反弹：反弹方向指向中轴并向上
+                            const angle = Math.atan2(p.z, p.x);
+                            p.x = maxR * 0.94 * Math.cos(angle);
+                            p.z = maxR * 0.94 * Math.sin(angle);
+                            p.vx = -p.vx * 0.3; // 弹性阻尼衰减
+                            p.vz = -p.vz * 0.3;
+                            p.vy = -p.vy * 0.1; // 阻止下落并向上弹
+                        }
+
+                        // 容器最底部的堆积限制：粒子不能漏出去
+                        if (p.y <= -1.48) {
+                            p.y = -1.48;
+                            p.vy = 0;
+                            // 底层粒子做随意的微幅打转堆积
+                            p.vx = (Math.random() - 0.5) * 0.015;
+                            p.vz = (Math.random() - 0.5) * 0.015;
+                        }
+                    }
+
+                    // 更新速度和位置
+                    p.vx += ax * dt;
+                    p.vy += ay * dt;
+                    p.vz += az * dt;
+
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.z += p.vz * dt;
+
+                    // 写入 3D 几何体的顶点坐标中
+                    posAttr.setXYZ(idx, p.x, p.y, p.z);
+                });
+
+                posAttr.needsUpdate = true;
+            }
+
+            // 5.3 奇点火花系统的生命周期演变
+            updateSparks();
+
+            // 5.4 沙漏主视角的微幅自转运动，增强层次感
+            if (hourglassContainer && !State.isReversing) {
+                hourglassContainer.rotation.y = State.time * 0.06;
+            }
+
+            // 5.5 动态调整粒子渲染的颜色相：业障高时变血红，慧根高时变明亮金黄
+            if (particleSystem) {
+                const chaos = State.chaosNoise;
+                // 根据混乱度在 HSL 之间进行插值：混乱度 0(0.12 HSL金色) ~ 1(0.0 HSL暗红)
+                const hue = 0.12 - (chaos * 0.12);
+                const lightness = 0.65 - (chaos * 0.2); // 业障高时发光度变暗
+                particleSystem.material.color.setHSL(hue, 1.0, lightness);
+                
+                // 奇点火花的颜色同步变化
+                if (collisionSparks) {
+                    collisionSparks.material.color.setHSL(hue, 1.0, 0.6);
+                }
+            }
+
+            renderer.render(scene, camera);
+
+            // 更新右侧命运起伏
+            drawKarmicFlux();
+        }
+
+        // --- 6. 奇点瞬间碰撞火花系统 ---
+        function triggerSparks(x, y, z) {
+            if (!collisionSparks) return;
+
+            const posAttr = collisionSparks.geometry.attributes.position;
+            const numSparks = 10; // 每次喷射 10 颗火星
+
+            let injected = 0;
+            for(let i=0; i<sparkLife.length; i++) {
+                if (sparkLife[i].life <= 0.0) {
+                    // 找到了空闲的火花槽
+                    sparkLife[i].life = 1.0; // 充满生命力
+                    
+                    // 向四周溅射爆发速度
+                    const theta = Math.random() * 2 * Math.PI;
+                    const spd = 0.05 + Math.random() * 0.08;
+                    sparkLife[i].vx = spd * Math.cos(theta);
+                    sparkLife[i].vz = spd * Math.sin(theta);
+                    sparkLife[i].vy = (Math.random() - 0.5) * 0.04;
+
+                    posAttr.setXYZ(i, x, y, z);
+
+                    injected++;
+                    if (injected >= numSparks) break;
+                }
+            }
+            posAttr.needsUpdate = true;
+        }
+
+        function updateSparks() {
+            if (!collisionSparks) return;
+
+            const posAttr = collisionSparks.geometry.attributes.position;
+            let activeSparks = false;
+
+            for(let i=0; i<sparkLife.length; i++) {
+                if (sparkLife[i].life > 0.0) {
+                    activeSparks = true;
+                    // 生命周期流逝
+                    sparkLife[i].life -= 0.04 * State.speedMultiplier;
+                    if (sparkLife[i].life < 0) sparkLife[i].life = 0;
+
+                    // 惯性位移
+                    let px = posAttr.getX(i) + sparkLife[i].vx;
+                    let py = posAttr.getY(i) + sparkLife[i].vy - 0.005; // 稍微受点重力下坠
+                    let pz = posAttr.getZ(i) + sparkLife[i].vz;
+
+                    posAttr.setXYZ(i, px, py, pz);
+                } else {
+                    // 死去的火花重置到无穷远以隐藏它们
+                    posAttr.setXYZ(i, 9999, 9999, 9999);
+                }
+            }
+            posAttr.needsUpdate = true;
+
+            // 动态调节火花透明度
+            if (activeSparks) {
+                collisionSparks.material.opacity = 0.85;
+            } else {
+                collisionSparks.material.opacity = 0.0;
+            }
+        }
+
+        // --- 7. 六道轮回 (180° 平滑大翻转) ---
+        function triggerReincarnation() {
+            if (State.isReversing) return;
+
+            State.isReversing = true;
+            State.reverseProgress = 0.0;
+            State.reverseStartAngle = hourglassContainer.rotation.z;
+            State.reverseTargetAngle = State.reverseStartAngle + Math.PI; // 顺时针旋转 180°
+
+            // 轮回次数累加
+            State.numReincarnations++;
+            document.getElementById('hud-reincarnations').innerText = `${State.numReincarnations} 次`;
+
+            // 振动视觉效果
+            camera.position.z -= 0.15;
+            setTimeout(() => { camera.position.z += 0.15; }, 150);
+        }
+
+        // --- 8. 右侧瞬间业力密度波形采样 (Karmic Flux Chart) ---
+        function drawKarmicFlux() {
+            const svg = document.getElementById('svg-slice-chart');
+            if(!svg) return;
+
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 120;
+
+            const pts = [];
+            const chaos = State.chaosNoise;
+
+            // 仿真通量起伏波形
+            for (let i = 0; i <= w; i += 4) {
+                const xVal = i;
+                const tPhase = (State.time * 2.0) - (i * 0.05);
+                
+                // 业力密度通量正弦叠加模型
+                let fluxVal = 18 * Math.sin(tPhase) * Math.cos(tPhase * 0.4);
+                fluxVal += chaos * 12 * Math.sin(tPhase * 4.5); // 贪嗔痴导致的余震剧烈起伏
+                
+                // 映射到沙漏中正在过口的粒子浓度
+                const currentPassingDensity = State.particlesPassingCount * 3.5;
+                const smoothFlux = h/2 - (Math.abs(fluxVal) + currentPassingDensity);
+
+                pts.push(`${xVal},${Math.max(10, Math.min(h-10, smoothFlux))}`);
+            }
+
+            svg.innerHTML = `
+                <!-- 底部阴影填充 -->
+                <path d="M 0,${h} L ${pts.join(' L ')} L ${w},${h} Z" fill="rgba(245,158,11,0.06)" />
+                <!-- 走势主导线 -->
+                <path d="M ${pts.join(' L ')}" fill="none" stroke="#F59E0B" stroke-width="1.8" />
+                
+                <!-- 采样针点 -->
+                <circle cx="${w - 20}" cy="${pts[Math.floor(pts.length - 6)].split(',')[1]}" r="4.5" fill="#EF4444" class="glow-amber" />
+            `;
+        }
+
+        // --- 9. 调节滑块与通用控制器 ---
+        function handleSliderChange(sliderIdx, val) {
+            const parsedVal = parseFloat(val);
+            if (sliderIdx === 1) {
+                document.getElementById('val-slider-1').innerText = parsedVal.toFixed(2);
+                State.chaosNoise = parsedVal;
+                document.getElementById('hud-chaos').innerText = parsedVal.toFixed(2);
+            } else {
+                document.getElementById('val-slider-2').innerText = parsedVal.toFixed(2);
+                State.gravity = parsedVal;
+                document.getElementById('hud-g').innerText = `${parsedVal.toFixed(2)} m/s²`;
+            }
+        }
+
+        function togglePlay() {
+            State.isPlaying = !State.isPlaying;
+            document.getElementById('btn-play').innerText = State.isPlaying ? "暂停模拟" : "开始模拟";
+        }
+
+        function resetSimulator() {
+            State.time = 0;
+            State.numReincarnations = 0;
+            State.particlesPassingCount = 0;
+            State.chaosNoise = 0.2;
+            State.gravity = 0.15;
+            State.isReversing = false;
+            if (hourglassContainer) {
+                hourglassContainer.rotation.set(0, 0, 0);
+            }
+
+            document.getElementById('slider-1').value = 0.2;
+            document.getElementById('slider-2').value = 0.15;
+            document.getElementById('val-slider-1').innerText = "0.20";
+            document.getElementById('val-slider-2').innerText = "0.15";
+            document.getElementById('hud-reincarnations').innerText = "0 次";
+            document.getElementById('hud-chaos').innerText = "0.20";
+            document.getElementById('hud-g').innerText = "0.15 m/s²";
+
+            // 重置所有粒子位置至上半部
+            const numParticles = 200;
+            particles = [];
+            for (let i = 0; i < numParticles; i++) {
+                const y = 0.05 + Math.random() * 1.4;
+                const maxR = 1.3 * (y / 1.6);
+                const theta = Math.random() * 2 * Math.PI;
+                const r = Math.random() * maxR * 0.95;
+
+                particles.push({
+                    x: r * Math.cos(theta), y: y, z: r * Math.sin(theta),
+                    vx: 0, vy: 0, vz: 0,
+                    isDead: false
+                });
+            }
+
+            initQuiz();
+        }
+
+        function changeTimeSpeed(val) {
+            State.speedMultiplier = parseFloat(val);
+        }
+
+        function onWindowResize() {
+            if(camera && renderer && canvasContainer) {
+                const w = canvasContainer.clientWidth;
+                const h = canvasContainer.clientHeight;
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(w, h);
+            }
+        }
+
+        // --- 10. 诊断小测验数据 ---
+        const QuizQuestions = [
+            {
+                question: "对称双向沙漏在中心交界 (y=0) 的汇聚窄口在数学和拓扑学上被称为什么？",
+                options: ["对称面 (Symmetric plane)", "奇点 (Singularity) (正确答案)", "流形渐近线 (Asymptote)", "极限环 (Limit cycle)"],
+                correct: 1,
+                feedback: "👍 回答完全正确！y=0 处是双锥流形的拓扑奇点。在物理模型中，粒子的坐标体积在该点收缩为零，所有的力与信息在这里瞬间压缩交汇并再次爆发，代表了‘降生窄门’。"
+            },
+            {
+                question: "当我们点击“六道轮回”按钮促使沙漏沿着 Z 轴翻转 180° 时，能量和信息是如何转移的？",
+                options: ["所有落底的‘果粒子’在引力翻转下，重塑成了上半斗重新滑落的‘因粒子’ (正确答案)", "沙漏直接从三维坍塌成了一维", "系统总业力减少了 50%", "粒子完全逃逸出了沙漏壁外"],
+                correct: 0,
+                feedback: "🎉 答对啦！沙漏的翻转巧妙地体现了‘因果守恒，生生不息’。下部凝聚的果实，由于时空的颠倒，瞬间转变为新一轮生命滑落的诱因，这极具哲学美感。"
+            },
+            {
+                question: "滑块一控制的“贪嗔痴（业力混乱噪音）”在物理方程中，等价于注入了哪类物理干扰？",
+                options: ["重力常数的翻倍", "极坐标的缩放因子", "热力学无序度（熵熵）与高斯扰动阻力 (正确答案)", "三维相机的旋转角度"],
+                correct: 2,
+                feedback: "💡 恭喜答对！增加贪嗔痴在物理上相当于在粒子受力中加入了无序的高频扰动噪音，使得下落路径剧烈碰撞冲突，业力流变得浑浊（红色），完美演示了‘贪念生嗔，嗔生痴怨，生命路径陷入紊乱’。"
+            }
+        ];
+
+        function initQuiz() {
+            State.currentQuizIdx = 0;
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            document.getElementById('quiz-question-num').innerText = `问题 ${State.currentQuizIdx + 1} of ${QuizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-amber-500/10 hover:border-amber-500/30 text-left transition-all hover:scale-[1.01]";
+                btn.innerText = opt;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            State.quizAnswered = false;
+        }
+
+        function submitQuizAnswer(idx) {
+            if (State.quizAnswered) return;
+            State.quizAnswered = true;
+
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.remove('hidden');
+
+            if (idx === quiz.correct) {
+                feedbackBox.className = "p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `${quiz.feedback} <button onclick="nextQuizQuestion()" class="mt-2 block px-2.5 py-1 rounded bg-amber-500 text-slate-950 font-bold text-[10px] hover:scale-105 transition-all">下一题</button>`;
+            } else {
+                feedbackBox.className = "p-2.5 rounded-lg border border-rose-500/30 bg-rose-950/20 text-rose-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `❌ 回答错误，业力未消！请细心领悟左侧的沙漏奇点拓扑规律，再重新作出抉择。`;
+                State.quizAnswered = false; // 允许重新选择
+            }
+        }
+
+        function nextQuizQuestion() {
+            State.currentQuizIdx = (State.currentQuizIdx + 1) % QuizQuestions.length;
+            showQuizQuestion();
+        }
+
+        function toggleQuizPanel() {
+            const panel = document.getElementById('quiz-panel');
+            const fab = document.getElementById('btn-quiz-fab');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                fab.classList.add('hidden');
+            } else {
+                panel.classList.add('hidden');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

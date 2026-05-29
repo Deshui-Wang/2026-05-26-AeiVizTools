@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 大模型工作原理与 Transformer 可视化 - AI可视化教学生成器</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Element Plus -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+    
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Font Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-purple: linear-gradient(135deg, #A855F7 0%, #EC4899 50%, #F43F5E 100%);
+            --bg-gradient: linear-gradient(180deg, #050209 0%, #150C24 60%, #050209 100%);
+            --glass-bg: rgba(23, 12, 38, 0.7);
+            --glass-border: rgba(236, 72, 153, 0.2);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(23, 12, 38, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(236, 72, 153, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(244, 63, 94, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 迷幻紫粉科技感网格 */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(236, 72, 153, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(236, 72, 153, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+        }
+        .glow-text-pink {
+            text-shadow: 0 0 8px rgba(236, 72, 153, 0.6);
+        }
+
+        /* Element Plus 覆盖 */
+        .el-slider {
+            --el-slider-main-bg-color: #EC4899;
+            --el-slider-runway-bg-color: rgba(255, 255, 255, 0.06);
+            --el-slider-stop-bg-color: rgba(255, 255, 255, 0.12);
+        }
+        .el-slider__button {
+            border: 2px solid #F43F5E !important;
+            background-color: #0A0312 !important;
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.7);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+<div id="app" class="flex flex-col h-full">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-purple-500/30 bg-slate-950/90 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center font-bold text-slate-950 glow-purple">🤖</div>
+            <div>
+                <h1 class="text-base font-extrabold bg-gradient-to-r from-purple-400 via-pink-300 to-rose-400 bg-clip-text text-transparent uppercase tracking-wider">
+                    大模型注意力与生成动力学 <span class="text-xs font-normal text-purple-400/80 normal-case ml-1">Transformer & Attention Dynamics</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <el-button size="small" type="danger" plain @click="resetSimulation">重置神经网络</el-button>
+            <el-button size="small" type="success" plain @click="injectRandomPrompt">手动重置随机 Prompt</el-button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-purple-500/20 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-pink-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-pink-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2" v-for="(goal, idx) in goals" :key="idx">
+                        <input type="checkbox" :id="'goal-'+idx" class="accent-pink w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" v-model="goal.checked">
+                        <label :for="'goal-'+idx" class="leading-relaxed cursor-pointer hover:text-pink-300 transition-colors">{{ goal.text }}</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 经典自注意力数学公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-pink-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-pink-400 rounded-sm"></span> 自注意力计算数学模型
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-purple-950/60 text-center flex flex-col gap-2">
+                    <div id="latex-attention-formula" class="text-[12px] text-pink-300 font-medium"></div>
+                    <div class="border-t border-purple-950/80 pt-2 mt-1 flex flex-col gap-1.5 text-[10px] text-left text-slate-400">
+                        <div id="latex-autoregressive-step"></div>
+                        <div id="latex-temperature-scale"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 原理生动解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-xs font-bold text-pink-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-pink-400 rounded-sm"></span> 为什么大模型像在“蹦字”？
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-pink-300 font-semibold">🔄 自回归生成：Next-Token 预测</span>
+                        <p class="mt-1 text-slate-400">所谓大模型，本质上是一个极其庞大的<b>“概率接龙机器”</b>。它每次并不是直接写完一篇文章，而是输入前面的所有文字，计算出下一个最可能出现的“词元（Token）”并拼在后面，再拿着新的输入重新循环。这就是其自回归（Autoregressive）特性，也就是本案例中粒子回流的精妙写照！</p>
+                    </div>
+                    <div class="border-t border-purple-950/40 pt-2">
+                        <span class="text-purple-300 font-semibold">🧠 多头注意力：捕捉全上下文关联</span>
+                        <p class="mt-1 text-slate-400">在生成每个词时，<b>自注意力机制（Self-Attention）</b>会计算文本中各个词之间的关联强度。例如在“河水在流淌，它很清澈”中，“它”会通过高亮注意力连线指向“河水”，从而精确理解语境，这是 Transformer 架构的灵魂所在。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-600">
+                    <span>学科领域：人工智能与认知计算</span>
+                    <span>AI-Viz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央主交互区域 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 神经元网络 SVG 拓扑图 -->
+            <div id="canvas-container" class="absolute inset-0 z-0 cyber-grid">
+                <svg id="svg-topology" class="w-full h-full text-slate-600"></svg>
+            </div>
+
+            <!-- 数据状态 HUD (左上角) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-pink-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Transformer 运行 HUD</h4>
+                    
+                    <div class="bg-slate-950/70 p-2.5 rounded border border-purple-950/60 text-xs flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>神经元运行状态:</span>
+                            <span class="font-bold uppercase" :class="phaseClass">{{ phaseText }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>多头注意力头数 (Heads):</span>
+                            <span class="font-bold text-pink-400 font-mono">8 个独立注意力头</span>
+                        </div>
+                        <div class="border-t border-purple-950/80 my-0.5"></div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>推理困惑度 (Perplexity):</span>
+                            <span class="font-bold text-purple-400 font-mono">{{ calculatedPerplexity }} PPL</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>单 Token 推理延迟:</span>
+                            <span class="font-mono font-bold text-indigo-400">{{ calculatedLatency }} ms</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>采样生成的多样性:</span>
+                            <span class="font-mono font-bold text-emerald-400">{{ calculatedDiversity }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 实时 Token 生成流与终端日志 (右上角) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <!-- 输入与生成缓冲区 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-pink-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-pink-400 flex items-center justify-between">
+                        <span>💬 自回归上下文缓冲区</span>
+                        <span class="text-[10px] text-slate-500">Autoregressive Context</span>
+                    </h4>
+                    <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-900 text-xs flex flex-col gap-1 text-slate-300 leading-relaxed min-h-[50px]">
+                        <span class="text-slate-400 text-[10px] block">Prompt输入与生成流：</span>
+                        <p class="text-[11px] text-pink-300 font-mono leading-relaxed mt-1">
+                            {{ currentPromptText }}<span class="text-emerald-400 font-bold animate-pulse" v-if="isPlaying">_</span>
+                        </p>
+                        <div class="mt-2 pt-2 border-t border-purple-950/60 flex justify-between text-[9px] text-slate-500">
+                            <span>Token计数: {{ generatedTokenCount }}</span>
+                            <span>最大限制: {{ maxTokens }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 采样分布预测区 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-purple-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-purple-400 flex items-center justify-between">
+                        <span>📊 Softmax 采样概率分布 (下一 Token)</span>
+                        <span class="text-[10px] text-slate-500">Top-4 概率柱</span>
+                    </h4>
+                    <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-900 flex flex-col gap-2">
+                        <div class="flex flex-col gap-1.5" v-for="(cand, cIdx) in samplingCandidates" :key="cIdx">
+                            <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                                <span :class="{'text-emerald-300 font-bold': cIdx === selectedIndex}">"{{ cand.word }}"</span>
+                                <span>{{ (cand.prob * 100).toFixed(0) }}%</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-slate-900 rounded-sm overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
+                                     :style="{width: (cand.prob * 100) + '%'}"
+                                     :class="{'from-emerald-400 to-teal-400 glow-purple': cIdx === selectedIndex}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 终端流式日志 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-rose-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-rose-400 flex items-center justify-between">
+                        <span>💻 Transformer 推理流式日志</span>
+                        <span class="text-[10px] text-slate-500">Console Logs</span>
+                    </h4>
+                    <!-- 终端日志框 -->
+                    <div id="terminal-log" class="h-[80px] bg-slate-950/90 rounded-lg p-2 overflow-y-auto border border-purple-950/40 font-mono text-[10px] leading-relaxed text-pink-400 flex flex-col gap-1">
+                        <div>&gt;_ System: Transformer Network Initialized. Model parameters = 7B.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-purple-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button @click="togglePlay" class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-slate-950 flex items-center justify-center glow-purple hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg v-if="!isPlaying" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon -->
+                        <svg v-else class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button @click="stepForward" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步 Token 接龙">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">推理演化时空</span>
+                        <span class="text-amber-400 font-medium" v-if="isPlaying">自回归生成中...</span>
+                        <span class="text-slate-400 font-medium" v-else>已暂停</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 1 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-pink-400 font-semibold">🌡️ 采样温度 Temperature (随机性)</span>
+                            <span class="font-mono text-slate-300">{{ temperature.toFixed(1) }}</span>
+                        </div>
+                        <el-slider v-model="temperature" :min="0.1" :max="1.5" :step="0.1" @change="onParamChange"></el-slider>
+                    </div>
+
+                    <!-- 参数 2 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-purple-400 font-semibold">📏 最大生成 Token 限制 (Length)</span>
+                            <span class="font-mono text-slate-300">{{ maxTokens }} tokens</span>
+                        </div>
+                        <el-slider v-model="maxTokens" :min="10" :max="50" :step="5" @change="onParamChange"></el-slider>
+                    </div>
+
+                    <!-- 参数 3 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-rose-400 font-semibold">🛡️ 核采样过滤阀 (Top-P)</span>
+                            <span class="font-mono text-slate-300">{{ (topP * 100).toFixed(0) }} %</span>
+                        </div>
+                        <el-slider v-model="topP" :min="0.5" :max="1.0" :step="0.05" @change="onParamChange"></el-slider>
+                    </div>
+                </div>
+
+                <!-- 运行频率 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">推理频率</span>
+                    <select v-model="simSpeed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1 outline-none cursor-pointer hover:border-purple-500 transition-colors">
+                        <option :value="0.5">0.5x 慢速</option>
+                        <option :value="1.0">1.0x 标准</option>
+                        <option :value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <transition name="slide-up">
+                <div v-if="showQuiz" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-purple-500/30 rounded-2xl overflow-hidden flex flex-col">
+                    <div class="h-10 border-b border-purple-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-pink-400 flex items-center gap-1.5">
+                            ⚡ AI 大模型与注意力原理测验
+                        </span>
+                        <button @click="showQuiz = false" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">✕</button>
+                    </div>
+                    
+                    <div class="p-4 flex flex-col gap-3 text-xs">
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-pink-500 uppercase block mb-1">问题 {{ currentQuestionIdx + 1 }} of {{ quizQuestions.length }}</span>
+                            <p class="text-slate-200 font-medium leading-relaxed">{{ quizQuestions[currentQuestionIdx].q }}</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button v-for="(opt, oIdx) in quizQuestions[currentQuestionIdx].o" :key="oIdx"
+                                    @click="submitQuizAnswer(oIdx)"
+                                    class="w-full text-left p-2.5 rounded-lg border text-[11px] transition-all"
+                                    :class="getOptionClass(oIdx)">
+                                {{ opt }}
+                            </button>
+                        </div>
+                        <div v-if="quizFeedback" class="p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"
+                             :class="quizFeedbackCorrect ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/60 border-rose-500/40 text-rose-300'">
+                            {{ quizFeedback }}
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-2 border-t border-slate-800 pt-2" v-if="quizAnswered">
+                            <span class="text-[10px] text-slate-500">回答完毕</span>
+                            <button @click="nextQuestion" class="px-3 py-1 rounded bg-purple-500 text-slate-950 font-bold hover:bg-pink-400 active:scale-95 transition-all text-[10px]">
+                                {{ currentQuestionIdx < quizQuestions.length - 1 ? '下一题' : '重新开始' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button v-if="!showQuiz" @click="showQuiz = true" class="absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-pink-400 text-pink-400 flex items-center justify-center hover:scale-110 glow-purple active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- 底部状态条 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-600 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>无论是在庞大的注意力网络中发光比对，还是在一万种可能中以骰子做出Softmax概率选择，都是机器编织出的硅基思想诗篇。</span>
+        <span class="text-purple-500/80">由 AI可视化教学生成器 为你生成 ❤️</span>
+    </footer>
+
+</div>
+
+<!-- Script Block -->
+<script>
+    const { createApp } = Vue;
+
+    // 拓扑图节点配置
+    const Nodes = {
+        prompt: { id: "nd-prompt", name: "📥 文本上下文缓冲区 (Prompt)", cx: 0.13, cy: 0.5, color: "#EC4899" },
+        token: { id: "nd-token", name: "🧩 词元切分器 (Tokenizer)", cx: 0.3, cy: 0.5, color: "#A855F7" },
+        attention: { id: "nd-attention", name: "🧠 自注意力层 (Self-Attention Layer)", cx: 0.52, cy: 0.5, color: "#F43F5E" },
+        ffn: { id: "nd-ffn", name: "🔌 多层感知机映射 (FFN Layer)", cx: 0.72, cy: 0.5, color: "#FBBF24" },
+        softmax: { id: "nd-softmax", name: "⚖️ 概率归一采样 (Softmax Sampling)", cx: 0.89, cy: 0.5, color: "#34D399" }
+    };
+
+    const app = createApp({
+        data() {
+            return {
+                goals: [
+                    { text: "掌握大语言模型 Tokenization 切分与数值编码的流程原理。", checked: true },
+                    { text: "理解 Self-Attention 机制如何解构句子中单词与单词间的距离关联性权重。", checked: true },
+                    { text: "探索采样温度 (Temperature) 参数对归一化概率分布和输出创造性的影响。", checked: false }
+                ],
+                // 仿真参数
+                isPlaying: false,
+                temperature: 0.7,     // 采样温度
+                maxTokens: 25,        // 生成长度限制
+                topP: 0.9,            // Top-P 采样过滤
+                simSpeed: 1.0,
+                timeStep: 0.22,       // 控制流畅度
+                flowProgress: 0.0,
+                workflowPhase: 0,     // 0: 就绪, 1: token化, 2: 注意力计算, 3: FFN映射, 4: Softmax采样计算, 5: Token自回归回流
+
+                // 推理指标
+                calculatedPerplexity: 4.8,
+                calculatedLatency: 35,
+                calculatedDiversity: "极具创造力",
+                generatedTokenCount: 5,
+
+                // 自回归生成器
+                initialPrompt: "AI changes the ",
+                currentPromptText: "AI changes the ",
+                selectedIndex: 0,
+                
+                // 温度控制下的多路采样候选词概率库
+                wordCandidates: {
+                    lowTemp: [
+                        { word: "world", prob: 0.85 },
+                        { word: "future", prob: 0.12 },
+                        { word: "industry", prob: 0.02 },
+                        { word: "life", prob: 0.01 }
+                    ],
+                    midTemp: [
+                        { word: "world", prob: 0.52 },
+                        { word: "future", prob: 0.28 },
+                        { word: "industry", prob: 0.12 },
+                        { word: "society", prob: 0.08 }
+                    ],
+                    highTemp: [
+                        { word: "paradigm", prob: 0.35 },
+                        { word: "concept", prob: 0.25 },
+                        { word: "landscape", prob: 0.22 },
+                        { word: "destiny", prob: 0.18 }
+                    ]
+                },
+                samplingCandidates: [],
+
+                // 测验
+                showQuiz: true,
+                currentQuestionIdx: 0,
+                selectedOptionIdx: null,
+                quizAnswered: false,
+                quizFeedback: '',
+                quizFeedbackCorrect: false,
+                quizQuestions: [
+                    {
+                        q: "在 Transformer 架构中，‘Self-Attention（自注意力机制）’的最核心作用是？",
+                        o: [
+                            "A. 纯粹用于对文本文件进行压缩和保存",
+                            "B. 让大模型具备人类一样的视觉感官能力",
+                            "C. 计算输入序列中，不同词元（Token）之间相互依赖和影响的关联度权重",
+                            "D. 限制大模型的生成长度以减少显存开销"
+                        ],
+                        a: 2,
+                        explain: "正确答案为 C。自注意力机制正是通过计算输入序列里所有单词两两之间的 Query 和 Key 的乘积，来决定每一个单词在整个上下文中应分配的关联权重。"
+                    },
+                    {
+                        q: "当采样温度 (Temperature) 调整到极低的值（例如 0.1），大模型的生成结果会表现出什么特性？",
+                        o: [
+                            "A. 极其天马行空，充满不可预测的想象力与混乱内容",
+                            "B. 高度确定性和重复性，大模型会总是倾向于选择概率最高、最保守安全的那个词",
+                            "C. 大模型会完全拒绝输出任何汉字或符号",
+                            "D. 单 Token 计算时间会成倍数暴增，延迟变高"
+                        ],
+                        a: 1,
+                        explain: "正确答案为 B。温度较低会使得 Softmax 输出概率分布变窄，最高概率项的概率接近于 1，大模型基本丧失了随机性，只输出唯一的确定性选择。"
+                    },
+                    {
+                        q: "为什么大模型在生成一篇文章时需要‘自回归（Autoregressive）’地一个词一个词预测，而不是一次性输出？",
+                        o: [
+                            "A. 主要是因为现在的 CPU / GPU 内存不足以存储完整的句子",
+                            "B. 因为 Transformer 只能处理 1 个维度的数据",
+                            "C. 这是由语言模型的本质决定的。为了确保上下文连贯，生成第 N 个词必须以第 1 至 N-1 个词作为输入条件进行前向计算",
+                            "D. 一次性输出需要消耗两倍的 Token 费用"
+                        ],
+                        a: 2,
+                        explain: "正确答案为 C。自回归代表模型的输出会被拼回输入端作为下一周期的输入条件。如果不这样做，新生成的词就会丧失对前面已生成内容的依赖性，语义就无法连贯。"
+                    }
+                ]
+            };
+        },
+        computed: {
+            phaseText() {
+                const phases = ["网络空闲", "词元分切 (Tokenization)...", "自注意力权重矩阵加载...", "FFN层状态向前传递...", "Softmax多路归一采样...", "自回归 Token 回流中"];
+                return phases[this.workflowPhase];
+            },
+            phaseClass() {
+                const classes = [
+                    "text-slate-400 font-bold",
+                    "text-pink-400 font-bold glow-text-pink animate-pulse",
+                    "text-purple-400 font-bold glow-text-pink",
+                    "text-yellow-400 font-bold",
+                    "text-emerald-400 font-bold",
+                    "text-pink-300 font-bold glow-text-pink animate-bounce"
+                ];
+                return classes[this.workflowPhase];
+            }
+        },
+        watch: {
+            temperature(newVal) {
+                this.calculateMetrics();
+                this.updateSamplingCandidates();
+            }
+        },
+        mounted() {
+            this.updateSamplingCandidates();
+            this.calculateMetrics();
+            
+            // 初始化 KaTeX 渲染
+            this.renderMath();
+            
+            // 初始化 SVG 拓扑图与粒子
+            window.addEventListener('resize', this.initTopology);
+            this.initTopology();
+
+            // 启动定时仿真渲染循环
+            this.animationLoop();
+        },
+        unmounted() {
+            window.removeEventListener('resize', this.initTopology);
+        },
+        methods: {
+            renderMath() {
+                this.$nextTick(() => {
+                    const attDiv = document.getElementById('latex-attention-formula');
+                    if (attDiv) {
+                        katex.render("Attention(Q,K,V) = Softmax\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V", attDiv, { displayMode: true, throwOnError: false });
+                    }
+
+                    const regDiv = document.getElementById('latex-autoregressive-step');
+                    if (regDiv) {
+                        katex.render("Autoregressive: P(X_{t}) = \\prod P(X_t \\mid X_1, X_2, ..., X_{t-1})", regDiv, { displayMode: false, throwOnError: false });
+                    }
+
+                    const tempDiv = document.getElementById('latex-temperature-scale');
+                    if (tempDiv) {
+                        katex.render("Softmax\\,Scaling\\,by\\,T: P(x_i) = \\frac{e^{z_i / T}}{\\sum e^{z_j / T}}", tempDiv, { displayMode: false, throwOnError: false });
+                    }
+                });
+            },
+            calculateMetrics() {
+                // 延迟随 Top-P、温度等参数的变化模拟
+                this.calculatedLatency = Math.round(28 + (this.temperature * 5) + Math.random() * 2);
+                
+                // 困惑度 PPL（越低代表预测越确定，因此低温下困惑度低）
+                this.calculatedPerplexity = (3.2 + (this.temperature * 1.8)).toFixed(2);
+                
+                // 多样性描述
+                if (this.temperature <= 0.3) {
+                    this.calculatedDiversity = "低随机性 (极其确定)";
+                } else if (this.temperature <= 0.8) {
+                    this.calculatedDiversity = "标准多样性 (语意流畅)";
+                } else {
+                    this.calculatedDiversity = "高创造力 (多样随机)";
+                }
+            },
+            updateSamplingCandidates() {
+                // 根据温度选择哪一组概率候选词并渲染
+                if (this.temperature <= 0.4) {
+                    this.samplingCandidates = JSON.parse(JSON.stringify(this.wordCandidates.lowTemp));
+                } else if (this.temperature <= 0.9) {
+                    this.samplingCandidates = JSON.parse(JSON.stringify(this.wordCandidates.midTemp));
+                } else {
+                    this.samplingCandidates = JSON.parse(JSON.stringify(this.wordCandidates.highTemp));
+                }
+                
+                // 根据温度，使用概率进行伪采样，从而决定哪一个候选词高亮并被输出
+                let rand = Math.random();
+                let cumProb = 0;
+                let selIdx = 0;
+                for(let i = 0; i < this.samplingCandidates.length; i++) {
+                    cumProb += this.samplingCandidates[i].prob;
+                    if (rand <= cumProb) {
+                        selIdx = i;
+                        break;
+                    }
+                }
+                this.selectedIndex = selIdx;
+            },
+            onParamChange() {
+                this.addLog(`超参面板已更新。当前 Temperature: ${this.temperature.toFixed(1)} | Max Tokens: ${this.maxTokens}`, "text-amber-400");
+                this.renderMath();
+            },
+            togglePlay() {
+                this.isPlaying = !this.isPlaying;
+                this.addLog(this.isPlaying ? "神经网络前向计算引擎启动..." : "挂起模型推理引擎.", this.isPlaying ? "text-pink-400 glow-text-pink" : "text-slate-500");
+            },
+            stepForward() {
+                this.isPlaying = false;
+                this.flowProgress = (this.flowProgress + 15) % 100;
+                this.updateWorkflowPhaseByProgress();
+                this.addLog(`手动单步自回归计算。上下文进度: ${this.flowProgress.toFixed(0)}%`, "text-yellow-400");
+                this.drawTopology();
+            },
+            resetSimulation() {
+                this.flowProgress = 0.0;
+                this.workflowPhase = 0;
+                this.isPlaying = false;
+                this.currentPromptText = this.initialPrompt;
+                this.generatedTokenCount = 4;
+                this.addLog("重置大模型生成缓冲区，恢复初始 Prompt.", "text-slate-400");
+                this.drawTopology();
+            },
+            injectRandomPrompt() {
+                const prompts = [
+                    "AI-Viz makes interactive ",
+                    "Deep learning empowers the ",
+                    "Attention mechanisms compute the "
+                ];
+                const rIdx = Math.floor(Math.random() * prompts.length);
+                this.initialPrompt = prompts[rIdx];
+                this.currentPromptText = prompts[rIdx];
+                this.flowProgress = 0.0;
+                this.workflowPhase = 0;
+                this.isPlaying = false;
+                this.generatedTokenCount = 4;
+                this.addLog(`载入全新随机种子 Prompt: "${this.initialPrompt}"`, "text-cyan-300");
+                this.drawTopology();
+            },
+            addLog(msg, colorClass = "") {
+                const logBox = document.getElementById('terminal-log');
+                if(!logBox) return;
+
+                const div = document.createElement('div');
+                if (colorClass) div.className = colorClass;
+                div.innerHTML = `&gt;_ ${msg}`;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+            initTopology() {
+                const svg = document.getElementById('svg-topology');
+                if(!svg) return;
+
+                const w = svg.clientWidth;
+                const h = svg.clientHeight;
+
+                Object.keys(Nodes).forEach(k => {
+                    const node = Nodes[k];
+                    node.px = w * node.cx;
+                    node.py = h * node.cy;
+                });
+
+                this.drawTopology();
+            },
+            updateWorkflowPhaseByProgress() {
+                const p = this.flowProgress;
+                if (p < 15 && this.workflowPhase !== 1) {
+                    this.workflowPhase = 1;
+                    this.addLog("开始提取文本词根，执行 Tokenizer 词元分切与整数编索引...", "text-pink-300");
+                } 
+                else if (p >= 15 && p < 35 && this.workflowPhase !== 2) {
+                    this.workflowPhase = 2;
+                    this.addLog("Token 进入多头自注意力层。执行 Q、K 矩阵并行点积，计算相对注意力权重...", "text-purple-300");
+                }
+                else if (p >= 35 && p < 65 && this.workflowPhase !== 3) {
+                    this.workflowPhase = 3;
+                    this.addLog("前馈网络 MLP/FFN 数据流映射向前传递。激活 GeLU 门控计算...", "text-yellow-400");
+                }
+                else if (p >= 65 && p < 85 && this.workflowPhase !== 4) {
+                    this.workflowPhase = 4;
+                    this.updateSamplingCandidates();
+                    this.addLog(`进入归一化概率分布计算。当前 Temperature 缩放系数: T=${this.temperature}`, "text-emerald-400");
+                }
+                else if (p >= 85 && this.workflowPhase !== 5) {
+                    this.workflowPhase = 5;
+                    
+                    // 获取最终被采样的单词并打印
+                    const selectedWord = this.samplingCandidates[this.selectedIndex].word;
+                    this.currentPromptText += selectedWord + " ";
+                    this.generatedTokenCount++;
+                    
+                    this.addLog(`Softmax 轮盘采样成功！采样输出 Token: <span class="font-bold text-emerald-400 font-mono animate-pulse">"${selectedWord}"</span>`, "text-teal-300");
+                    this.addLog(`Token 以彗星轨迹成功反向自回归回流输入端，装载进入上下文缓冲区。`, "text-pink-300 glow-text-pink");
+
+                    // 限制大小
+                    if (this.generatedTokenCount >= this.maxTokens) {
+                        this.isPlaying = false;
+                        this.addLog("🎉 已达到设定的最大 Token 生成上限限制。推理自豪停机。", "text-amber-400 font-bold");
+                    }
+                }
+            },
+            animationLoop() {
+                if (this.isPlaying) {
+                    this.flowProgress += this.timeStep * this.simSpeed;
+                    if (this.flowProgress >= 100) {
+                        this.flowProgress = 0;
+                        this.workflowPhase = 0;
+                        // 这里不再暂停，因为大模型生成是“自回归无限接龙循环”，除非超出 Token 长度
+                        if (this.generatedTokenCount >= this.maxTokens) {
+                            this.isPlaying = false;
+                        }
+                    }
+                    this.updateWorkflowPhaseByProgress();
+                    this.drawTopology();
+                }
+                requestAnimationFrame(this.animationLoop);
+            },
+            drawTopology() {
+                const svg = document.getElementById('svg-topology');
+                if(!svg) return;
+
+                // 主向连线
+                const paths = [
+                    { from: Nodes.prompt, to: Nodes.token, stroke: "#EC4899" },
+                    { from: Nodes.token, to: Nodes.attention, stroke: "#A855F7" },
+                    { from: Nodes.attention, to: Nodes.ffn, stroke: "#F43F5E" },
+                    { from: Nodes.ffn, to: Nodes.softmax, stroke: "#FBBF24" }
+                ];
+
+                let pathsHtml = '';
+                paths.forEach(p => {
+                    pathsHtml += `<path d="M ${p.from.px},${p.from.py} L ${p.to.px},${p.to.py}" fill="none" stroke="${p.stroke}" stroke-width="1.8" opacity="0.25" />`;
+                });
+
+                // 核心炫酷自回归回流轨道 (从末端的 Softmax 划出一道大拱弧反向飘回顶端 Prompt 节点)
+                // 使用二次贝塞尔曲线形成一个横跨全屏的彩虹发光反馈带
+                const rejectCtrlX = (Nodes.softmax.px + Nodes.prompt.px) / 2;
+                const rejectCtrlY = Nodes.prompt.py - 140; // 向上大拱起
+                const autoregFeedbackPath = `M ${Nodes.softmax.px},${Nodes.softmax.py - 10} Q ${rejectCtrlX},${rejectCtrlY} ${Nodes.prompt.px},${Nodes.prompt.py - 10}`;
+                
+                pathsHtml += `<path d="${autoregFeedbackPath}" fill="none" stroke="rgba(236,72,153,0.15)" stroke-width="1.5" stroke-dasharray="4,4" />`;
+
+                // 激活状态连线
+                let activePathHtml = '';
+                const p = this.flowProgress;
+                if (this.isPlaying) {
+                    if (p < 15) {
+                        activePathHtml += `<path d="M ${Nodes.prompt.px},${Nodes.prompt.py} L ${Nodes.token.px},${Nodes.token.py}" fill="none" stroke="#EC4899" stroke-width="2.5" opacity="0.8" marker-end="url(#arrow-pink)" />`;
+                    } else if (p >= 15 && p < 35) {
+                        activePathHtml += `<path d="M ${Nodes.token.px},${Nodes.token.py} L ${Nodes.attention.px},${Nodes.attention.py}" fill="none" stroke="#A855F7" stroke-width="2.5" opacity="0.8" />`;
+                    } else if (p >= 35 && p < 65) {
+                        activePathHtml += `<path d="M ${Nodes.attention.px},${Nodes.attention.py} L ${Nodes.ffn.px},${Nodes.ffn.py}" fill="none" stroke="#F43F5E" stroke-width="2.5" opacity="0.8" />`;
+                    } else if (p >= 65 && p < 85) {
+                        activePathHtml += `<path d="M ${Nodes.ffn.px},${Nodes.ffn.py} L ${Nodes.softmax.px},${Nodes.softmax.py}" fill="none" stroke="#FBBF24" stroke-width="2.5" opacity="0.8" />`;
+                    } else if (p >= 85) {
+                        // 回流状态高亮高发光
+                        activePathHtml += `<path d="${autoregFeedbackPath}" fill="none" stroke="#EC4899" stroke-width="2.5" opacity="0.9" marker-end="url(#arrow-feedback)" />`;
+                    }
+                }
+
+                // 粒子动力学绘制
+                let particleHtml = '';
+                if (this.isPlaying) {
+                    let particlePos = { x: 0, y: 0 };
+                    let particleColor = "#EC4899";
+                    if (p < 15) {
+                        particlePos = this.lerp(Nodes.prompt, Nodes.token, p / 15);
+                    } else if (p >= 15 && p < 35) {
+                        // 在自注意力神经层中，绘制全连接网格比对线以及在其上流过的无数多头高亮电冲动小粒子
+                        const t = (p - 15) / 20;
+                        particlePos = this.lerp(Nodes.token, Nodes.attention, t);
+                        particleColor = "#A855F7";
+                        
+                        // 绘制 4 个在自注意力节点周围围绕连线的高亮粒子
+                        const angle = performance.now() * 0.015;
+                        const subNodes = [
+                            { x: Nodes.attention.px - 30, y: Nodes.attention.py - 30 },
+                            { x: Nodes.attention.px + 30, y: Nodes.attention.py - 20 },
+                            { x: Nodes.attention.px + 20, y: Nodes.attention.py + 30 },
+                            { x: Nodes.attention.px - 30, y: Nodes.attention.py + 25 }
+                        ];
+                        subNodes.forEach((sn, sIdx) => {
+                            particleHtml += `<circle cx="${sn.x}" cy="${sn.y}" r="3.5" fill="#F43F5E" class="glow-purple" />`;
+                            particleHtml += `<line x1="${Nodes.attention.px}" y1="${Nodes.attention.py}" x2="${sn.x}" y2="${sn.y}" stroke="rgba(244,63,94,0.45)" stroke-width="1.2" />`;
+                            // 互相连线模拟注意力加权关联
+                            const nextSn = subNodes[(sIdx + 1) % 4];
+                            particleHtml += `<line x1="${sn.x}" y1="${sn.y}" x2="${nextSn.x}" y2="${nextSn.y}" stroke="rgba(168,85,247,0.25)" stroke-width="0.8" />`;
+                        });
+                    } else if (p >= 35 && p < 65) {
+                        particlePos = this.lerp(Nodes.attention, Nodes.ffn, (p - 35) / 30);
+                        particleColor = "#F43F5E";
+                    } else if (p >= 65 && p < 85) {
+                        particlePos = this.lerp(Nodes.ffn, Nodes.softmax, (p - 65) / 20);
+                        particleColor = "#FBBF24";
+                    } else if (p >= 85) {
+                        // 自回归反向回流彗星粒子
+                        const t = (p - 85) / 15;
+                        // 沿贝塞尔曲线坐标进行二次插值
+                        particlePos = this.interpolateQuadratic(Nodes.softmax, Nodes.prompt, t);
+                        particleColor = "#EC4899";
+                        
+                        // 增加彗星拖尾尾气效果
+                        for (let i = 1; i <= 3; i++) {
+                            const delayT = Math.max(0, t - (i * 0.05));
+                            const tailPos = this.interpolateQuadratic(Nodes.softmax, Nodes.prompt, delayT);
+                            particleHtml += `<circle cx="${tailPos.x}" cy="${tailPos.y}" r="${4 - i}" fill="#EC4899" opacity="${0.8 - i * 0.2}" />`;
+                        }
+                    }
+
+                    particleHtml += `<circle cx="${particlePos.x}" cy="${particlePos.y}" r="5" fill="${particleColor}" class="glow-purple" />`;
+                    particleHtml += `<circle cx="${particlePos.x}" cy="${particlePos.y}" r="8.5" fill="none" stroke="${particleColor}" stroke-width="1.5" opacity="0.6" />`;
+                }
+
+                // 物理节点绘制
+                let nodesHtml = '';
+                Object.keys(Nodes).forEach(k => {
+                    const node = Nodes[k];
+                    let r = 12;
+                    let strokeWidth = 2.5;
+                    let strokeColor = node.color;
+
+                    if (this.isPlaying) {
+                        if (k === 'prompt' && p < 15) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'prompt' && p >= 85) { r = 15; strokeColor = "#EC4899"; } // 回流命中震动高亮
+                        else if (k === 'token' && p >= 15 && p < 35) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'attention' && p >= 15 && p < 35) { r = 16; strokeColor = "#FFF"; }
+                        else if (k === 'ffn' && p >= 35 && p < 65) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'softmax' && p >= 65) { r = 15; strokeColor = "#FFF"; }
+                    }
+
+                    nodesHtml += `
+                        <g>
+                            <circle cx="${node.px}" cy="${node.py}" r="${r + 5}" fill="none" stroke="${node.color}" stroke-width="1" opacity="0.2" />
+                            <circle cx="${node.px}" cy="${node.py}" r="${r}" fill="#0A0312" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+                            <circle cx="${node.px}" cy="${node.py}" r="4.5" fill="${node.color}" />
+                            <text x="${node.px}" y="${node.py - r - 12}" fill="#94A3B8" font-size="9.5" font-weight="600" text-anchor="middle">${node.name}</text>
+                        </g>
+                    `;
+                });
+
+                svg.innerHTML = `
+                    <defs>
+                        <marker id="arrow-pink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#EC4899" />
+                        </marker>
+                        <marker id="arrow-feedback" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#EC4899" />
+                        </marker>
+                    </defs>
+                    ${pathsHtml}
+                    ${activePathHtml}
+                    ${particleHtml}
+                    ${nodesHtml}
+                `;
+            },
+            lerp(n1, n2, t) {
+                return {
+                    x: n1.px + (n2.px - n1.px) * t,
+                    y: n1.py + (n2.py - n1.py) * t
+                };
+            },
+            interpolateQuadratic(n1, n2, t) {
+                const ctrlX = (n1.px + n2.px) / 2;
+                const ctrlY = n1.py - 140; // 向上拱起
+                
+                const x = (1-t)*(1-t)*n1.px + 2*(1-t)*t*ctrlX + t*t*n2.px;
+                const y = (1-t)*(1-t)*n1.py + 2*(1-t)*t*ctrlY + t*t*n2.py;
+                return { x, y };
+            },
+
+            // 测验
+            submitQuizAnswer(oIdx) {
+                if (this.quizAnswered) return;
+                this.selectedOptionIdx = oIdx;
+                this.quizAnswered = true;
+                const question = this.quizQuestions[this.currentQuestionIdx];
+                if (oIdx === question.a) {
+                    this.quizFeedback = "🎉 回答正确！" + question.explain;
+                    this.quizFeedbackCorrect = true;
+                } else {
+                    this.quizFeedback = "❌ 回答错误。" + question.explain;
+                    this.quizFeedbackCorrect = false;
+                }
+            },
+            getOptionClass(oIdx) {
+                if (!this.quizAnswered) {
+                    return 'bg-purple-950/20 border-purple-900/40 text-purple-200 hover:bg-purple-900/20 hover:border-pink-500/50';
+                }
+                const question = this.quizQuestions[this.currentQuestionIdx];
+                if (oIdx === question.a) {
+                    return 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
+                }
+                if (oIdx === this.selectedOptionIdx) {
+                    return 'bg-rose-950/40 border-rose-500/50 text-rose-300';
+                }
+                return 'bg-slate-950/20 border-slate-900 text-slate-500 opacity-60';
+            },
+            nextQuestion() {
+                this.selectedOptionIdx = null;
+                this.quizAnswered = false;
+                this.quizFeedback = '';
+                if (this.currentQuestionIdx < this.quizQuestions.length - 1) {
+                    this.currentQuestionIdx++;
+                } else {
+                    this.currentQuestionIdx = 0;
+                }
+            }
+        }
+    });
+
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+</body>
+</html>

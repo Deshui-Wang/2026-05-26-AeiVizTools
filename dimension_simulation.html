@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高维空间多维投影交互实验室 - AetherViz Master</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#22D3EE',
+                            teal: '#14B8A6',
+                            purple: '#A78BFA',
+                            amber: '#FBBF24',
+                            rose: '#FB7185',
+                            dark: '#060A14',
+                            navy: '#0F172A',
+                            panel: 'rgba(15, 23, 42, 0.7)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <!-- CSS Styles -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #22D3EE 0%, #14B8A6 50%, #A78BFA 100%);
+            --bg-gradient: radial-gradient(circle at top, #0A1124 0%, #050811 75%, #020306 100%);
+            --glass-bg: rgba(6, 10, 20, 0.75);
+            --glass-border: rgba(34, 211, 238, 0.2);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 10, 20, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(34, 211, 238, 0.25);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.5);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 发光霓虹 */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+        }
+        .glow-text-cyan {
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+        }
+
+        /* 自定义滑块 */
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #22D3EE;
+            cursor: pointer;
+            box-shadow: 0 0 8px #22D3EE;
+            transition: transform 0.1s;
+        }
+        .custom-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.3);
+        }
+
+        /* 网格背景 */
+        .cyber-grid {
+            background-image: 
+                radial-gradient(rgba(34, 211, 238, 0.08) 1px, transparent 1px),
+                radial-gradient(rgba(167, 139, 250, 0.04) 1px, transparent 1px);
+            background-size: 24px 24px, 48px 48px;
+        }
+
+        /* 维度选择卡激活 */
+        .tab-btn-active {
+            background: rgba(34, 211, 238, 0.15);
+            border-color: #22D3EE;
+            color: #22D3EE;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.2);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-cyan-500/20 bg-[#060A14]/95 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-cyan-400 to-purple-500 flex items-center justify-center font-bold text-slate-950 glow-cyan">🌌</div>
+            <div>
+                <h1 class="text-sm font-bold bg-gradient-to-r from-cyan-400 via-teal-300 to-purple-400 bg-clip-text text-transparent uppercase tracking-wider font-mono">
+                    高维空间维度探索实验室 <span class="text-xs font-normal text-cyan-500/60 normal-case ml-1">Multidimensional Projection Lab</span>
+                </h1>
+            </div>
+        </div>
+
+        <!-- 维度一键切换 Tab -->
+        <div class="flex items-center gap-1.5 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+            <button onclick="switchDimension(1)" id="tab-dim-1" class="tab-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">1D 一维</button>
+            <button onclick="switchDimension(2)" id="tab-dim-2" class="tab-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">2D 二维</button>
+            <button onclick="switchDimension(3)" id="tab-dim-3" class="tab-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono tab-btn-active">3D 三维</button>
+            <button onclick="switchDimension(4)" id="tab-dim-4" class="tab-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">4D 四维</button>
+            <button onclick="switchDimension(5)" id="tab-dim-5" class="tab-btn px-3 py-1.5 rounded-lg border border-transparent text-slate-400 text-xs font-bold hover:text-slate-200 transition-all font-mono">5D 五维</button>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button id="btn-reset" onclick="resetSimulator()" class="px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 text-xs font-medium hover:bg-cyan-500/20 active:scale-95 transition-all">
+                重置实验
+            </button>
+            <button id="btn-play" onclick="togglePlay()" class="px-3 py-1.5 rounded-lg bg-cyan-400 text-slate-950 text-xs font-bold hover:bg-cyan-300 active:scale-95 transition-all">
+                暂停模拟
+            </button>
+        </div>
+    </header>
+
+    <!-- 主展示区 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧讲解面板 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-cyan-500/15 bg-[#060A14]/90 flex flex-col p-5 overflow-y-auto gap-4 z-40 relative">
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-cyan-500/10">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                    🎯 空间探索目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2 leading-relaxed">
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" checked disabled class="mt-0.5 rounded cursor-pointer accent-cyan-500">
+                        <span>直观感知不同几何维度的升维构建与空间特征。</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-2" class="accent-cyan-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-2" class="cursor-pointer hover:text-slate-300 transition-colors">观察四维超正方体在三维投影中的“自穿透旋转”。</label>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <input type="checkbox" id="goal-3" class="accent-cyan-500 w-3.5 h-3.5 mt-0.5 rounded cursor-pointer">
+                        <label for="goal-3" class="cursor-pointer hover:text-slate-300 transition-colors">掌握五维空间通过多级透视矩阵降维投影的拓扑网格。</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 维度理论与公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 border-cyan-500/10">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5" id="theory-title">
+                    📝 维度拓扑定义
+                </h3>
+                <div class="bg-slate-900/60 rounded-lg p-3 border border-slate-800 text-center">
+                    <div id="latex-formula" class="text-xs text-slate-100 py-1 font-mono"></div>
+                </div>
+                <p id="theory-desc" class="text-[10.5px] text-slate-400 leading-relaxed">
+                    加载中...
+                </p>
+            </section>
+
+            <!-- 维度直觉与思想实验 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 border-cyan-500/10">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+                    💡 降维思想实验
+                </h3>
+                <div class="text-[11px] text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-amber-300 font-semibold">❓ 扁平国（Flatland）寓言</span>
+                        <p class="mt-1 text-slate-400">生活在二维平面的“扁平人”无法看到上方的三维球体。当球体穿过平面时，扁平人只能看到一个大小先变大再变小的“圆圈”截面，并误以为是神迹。这说明高维在低维的表现通常是动态的切片。</p>
+                    </div>
+                    <div class="border-t border-slate-800/80 pt-2.5">
+                        <span class="text-purple-300 font-semibold">🔬 空间旋转的真正奥秘</span>
+                        <p class="mt-1 text-slate-400">在三维中，我们绕一条“轴”旋转。但在四维和更高维中，旋转是绕一个“面”进行的。例如绕 $X$-$W$ 面旋转时，物体的三维投影会产生内外穿梭的流动奇观。</p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央渲染画布 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 3D Canvas 容器（用于 3D/4D/5D） -->
+            <div id="canvas-container" class="absolute inset-0 z-0 bg-slate-950/20"></div>
+
+            <!-- SVG 交互画布（用于 1D/2D） -->
+            <svg id="svg-canvas" class="absolute inset-0 z-10 w-full h-full pointer-events-none hidden cyber-grid"></svg>
+
+            <!-- 左上角 HUD 看板 -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[260px]">
+                <!-- 实时系统物理看板 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-cyan-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">实时系统物理传感器</h4>
+                    <div class="grid grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]">仿真时间 (t)</span>
+                            <span id="hud-time" class="font-bold text-slate-200 font-mono">0.00s</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-500 block text-[9px]" id="hud-var-title">自转角速度</span>
+                            <span id="hud-var-val" class="font-bold text-slate-200 font-mono">0.02 rad/s</span>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800 flex justify-between items-center text-[11px]">
+                        <span class="text-slate-500 text-[9px]">投影能量强度 (E)</span>
+                        <span id="hud-energy" class="font-bold text-cyan-400 font-mono">1.00</span>
+                    </div>
+                </div>
+
+                <!-- 拓扑计数看板 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-purple-400 flex flex-col gap-2 bg-[#060A14]/85">
+                    <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400">空间几何拓扑参数</h4>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">顶点数 (V)</span>
+                            <span id="topo-v" class="font-bold text-cyan-400 font-mono">0</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">棱边数 (E)</span>
+                            <span id="topo-e" class="font-bold text-cyan-400 font-mono">0</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">面数 (F)</span>
+                            <span id="topo-f" class="font-bold text-purple-400 font-mono">0</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-900 pb-1">
+                            <span class="text-slate-400">胞数 (C)</span>
+                            <span id="topo-c" class="font-bold text-purple-400 font-mono">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧截面投影仪（右上角） -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[300px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-purple-500 flex flex-col gap-2.5 bg-[#060A14]/85">
+                    <h4 class="text-xs font-semibold text-purple-400 flex items-center justify-between">
+                        <span>🔍 降维切面波动分析仪</span>
+                        <span class="text-[9px] text-slate-500 font-mono">2D Slice</span>
+                    </h4>
+                    <!-- 截面波形图 SVG -->
+                    <div class="h-[120px] bg-slate-950/80 rounded-lg relative overflow-hidden border border-slate-900">
+                        <svg id="svg-slice-chart" class="w-full h-full"></svg>
+                    </div>
+                    <p id="slice-desc" class="text-[10px] text-slate-400 leading-relaxed">
+                        当高维形体在空间中移动和旋转时，其在三维或二维切片上的体积与边缘波动规律。
+                    </p>
+                </div>
+            </div>
+
+            <!-- 底部滑动调整器 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-5 items-center justify-between glass-panel rounded-2xl p-5 border border-cyan-500/20 bg-[#060A14]/90 pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block text-[9px] uppercase">控制轴状态</span>
+                        <span id="txt-mode" class="text-cyan-400 font-medium font-mono">交互投射模式</span>
+                    </div>
+                </div>
+
+                <!-- 滑动控制 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span id="slider-1-label" class="text-slate-300 font-semibold">🔴 控制因子 1</span>
+                            <span id="val-slider-1" class="font-mono text-cyan-400">1.0</span>
+                        </div>
+                        <input id="slider-1" type="range" min="0" max="100" step="1" value="50" class="custom-slider" oninput="handleSliderChange(1, this.value)">
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span id="slider-2-label" class="text-slate-300 font-semibold">🟢 控制因子 2</span>
+                            <span id="val-slider-2" class="font-mono text-cyan-400">1.0</span>
+                        </div>
+                        <input id="slider-2" type="range" min="0" max="100" step="1" value="50" class="custom-slider" oninput="handleSliderChange(2, this.value)">
+                    </div>
+                </div>
+
+                <!-- 倍率选择 -->
+                <div class="flex items-center gap-2">
+                    <select id="select-speed" onchange="changeTimeSpeed(this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none cursor-pointer hover:border-cyan-500 transition-colors font-mono">
+                        <option value="0.2">0.2x 慢速</option>
+                        <option value="0.5">0.5x 缓速</option>
+                        <option value="1.0" selected>1.0x 正常</option>
+                        <option value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 诊断小测验面板 -->
+            <div id="quiz-panel" class="absolute bottom-32 right-5 z-30 w-[350px] glass-panel border border-cyan-500/20 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col bg-[#060A14]/95">
+                <div class="h-10 border-b border-cyan-500/15 bg-slate-900/50 px-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-cyan-400 flex items-center gap-1.5">
+                        ⚡ 多维空间诊断小测验
+                    </span>
+                    <button onclick="toggleQuizPanel()" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
+                        ✕
+                    </button>
+                </div>
+                
+                <div id="quiz-content" class="p-4 flex flex-col gap-3 text-xs">
+                    <div class="bg-slate-950/70 p-3 rounded-lg border border-slate-800">
+                        <span id="quiz-question-num" class="text-[10px] text-cyan-400 uppercase block mb-1">问题 1 of 3</span>
+                        <p id="quiz-question" class="text-slate-200 font-medium leading-relaxed"></p>
+                    </div>
+                    <div id="quiz-options" class="flex flex-col gap-2"></div>
+                    <div id="quiz-feedback" class="hidden p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"></div>
+                </div>
+            </div>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button id="btn-quiz-fab" onclick="toggleQuizPanel()" class="hidden absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-cyan-400 text-cyan-400 flex items-center justify-center hover:scale-110 glow-cyan active:scale-95 transition-all" title="展开小测验">
+                💡
+            </button>
+
+        </div>
+    </main>
+
+    <!-- Three.js (WebGL 库) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- 逻辑脚本 -->
+    <script>
+        // --- 1. 全局系统状态 ---
+        const State = {
+            currentDim: 3,         // 当前探索维度 (1D - 5D)
+            isPlaying: true,       // 模拟器是否运行中
+            time: 0,               // 仿真时刻 t
+            speedMultiplier: 1.0,  // 时间流动倍率
+
+            // 1D 参数
+            amp1D: 2.5,            // 1D波动振幅
+            freq1D: 2.0,           // 1D波动频率
+
+            // 2D 参数
+            polygonSides: 5,       // 2D多边形边数 (12表示圆形)
+            rot2D: 0.0,            // 2D自转角
+            scale2D: 1.0,          // 2D几何缩放
+
+            // 3D/4D/5D 参数
+            rotSpeed: 0.6,         // 3D/4D/5D 自转速度乘数
+            perspectiveDist: 3.5,  // 高维投影视距 (D4/D5)
+            highRotXW: 0.5,        // 4D 轴 XW 旋转速度
+            highRotYW: 0.4,        // 4D 轴 YW 旋转速度
+            highRotXV: 0.3,        // 5D 轴 XV 旋转速度
+            highRotYV: 0.2,        // 5D 轴 YV 旋转速度
+
+            // 测验模块状态
+            currentQuizIdx: 0,
+            quizAnswered: false
+        };
+
+        // 三维 WebGL 上下文变量
+        let scene, camera, renderer;
+        let points3D, lines3D; // Three.js 对象
+        let starField;         // 宇宙背景微尘粒子
+        let animationFrameId = null;
+
+        // 一维/二维画布与切面分析仪节点
+        const svgCanvas = document.getElementById('svg-canvas');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // --- 2. 各维度数学拓扑定义与公式表 ---
+        const DimensionData = {
+            1: {
+                title: "1D 一维数轴 (Line Segment)",
+                formula: "x(t) = A \\cos(\\omega t + \\phi)",
+                desc: "一维空间仅具有一个自由度（X 轴）。在一维中，几何体只能是一个点或一条线段。这里呈现的是一个在数轴上受谐振力作用做往复简谐振动的质点，是构建更高维度空间波动的起点基石。",
+                v: 2, e: 1, f: 0, c: 0,
+                s1Label: "🔴 波动振幅 (A)", s1Min: 1.0, s1Max: 4.5, s1Val: 2.5, s1Step: 0.1,
+                s2Label: "🟢 谐振频率 (\\omega)", s2Min: 0.5, s2Max: 5.0, s2Val: 2.0, s2Step: 0.1
+            },
+            2: {
+                title: "2D 二维平面 (Polygon / Circle)",
+                formula: "P_i = (R \\cos\\theta_i, R \\sin\\theta_i)",
+                desc: "二维空间拥有两个互相垂直的坐标轴（X 和 Y）。任何平面内的几何图形均可被看作是二维物体。你可以通过滑块在正三角形、正方形、正五边形直至完美的圆之间平滑过渡，并观察平面欧氏旋转的矩阵变换。",
+                v: 5, e: 5, f: 1, c: 0,
+                s1Label: "🔴 多边形边数 (N)", s1Min: 3, s1Max: 12, s1Val: 5, s1Step: 1,
+                s2Label: "🟢 二维缩放因子 (S)", s2Min: 0.5, s2Max: 2.0, s2Val: 1.0, s2Step: 0.05
+            },
+            3: {
+                title: "3D 三维立体 (Cube / Torus)",
+                formula: "V_{cube} = a^3, \\; V_{torus} = 2\\pi^2 R r^2",
+                desc: "我们所生活的实体宇宙空间便是三维的（具有 X, Y, Z 三轴）。几何体不仅有面积，更具有了体积和空间深度。这里提供了高密度的粒子流网格，可自如切换成立方体或圆环体，并支持任意 3D 欧拉旋转。",
+                v: 8, e: 12, f: 6, c: 1,
+                s1Label: "🔴 三维自转速率 (\\omega_r)", s1Min: 0.1, s1Max: 2.0, s1Val: 0.6, s1Step: 0.05,
+                s2Label: "🟢 空间圆环细度 (R)", s2Min: 1.0, s2Max: 3.0, s2Val: 1.8, s2Step: 0.1
+            },
+            4: {
+                title: "4D 四维超立方体 (Tesseract)",
+                formula: "X_{3D} = \\frac{X_{4D}}{d_4 - w}, \\; V = 2^4 = 16",
+                desc: "四维空间引入了第四个空间轴——W 轴（超深度）。超立方体（Tesseract）拥有 16 个顶点、32 条棱边和 8 个三维立方体胞。随着 4D 轴向（如 X-W 面）旋转，超立方体会在三维空间投射出魔幻般的自穿透交替膨胀效果。",
+                v: 16, e: 32, f: 24, c: 8,
+                s1Label: "🔴 4D 轴 X-W 旋转角速度", s1Min: 0.0, s1Max: 1.5, s1Val: 0.5, s1Step: 0.05,
+                s2Label: "🟢 4D 轴 Y-W 旋转角速度", s2Min: 0.0, s2Max: 1.5, s2Val: 0.4, s2Step: 0.05
+            },
+            5: {
+                title: "5D 五维超立方体 (Penteract)",
+                formula: "X_{4D} = \\frac{X_{5D}}{d_5 - v}, \\; V = 2^5 = 32",
+                desc: "五维空间增加了第五空间轴——V 轴。五维超正方体（Penteract）包含 32 个顶点和高达 80 条棱边。我们将 5D 点在双重高阶旋转矩阵作用下依次投影到 4D，再到 3D。这呈现出极度繁复且璀璨的神经网络光阵，探索几何的终极维度。",
+                v: 32, e: 80, f: 80, c: 40,
+                s1Label: "🔴 5D 轴 X-V 旋转速度", s1Min: 0.0, s1Max: 1.5, s1Val: 0.3, s1Step: 0.05,
+                s2Label: "🟢 5D 轴 Y-V 旋转速度", s2Min: 0.0, s2Max: 1.5, s2Val: 0.2, s2Step: 0.05
+            }
+        };
+
+        // --- 3. 初始化与维度切换控制 ---
+        function initSimulator() {
+            // 渲染 Katex 公式
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ]
+            });
+
+            // 初始化 Three.js WebGL 环境
+            initWebGL();
+
+            // 切换到默认的三维空间
+            switchDimension(3);
+
+            // 初始化诊断测验
+            initQuiz();
+
+            // 开启物理仿真循环
+            animate();
+        }
+
+        function switchDimension(dim) {
+            State.currentDim = dim;
+
+            // 更新导航 Tab 高亮样式
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('tab-btn-active');
+            });
+            document.getElementById(`tab-dim-${dim}`).classList.add('tab-btn-active');
+
+            // 3.1 理论说明更新
+            const data = DimensionData[dim];
+            document.getElementById('theory-title').innerText = `🌌 ${data.title}`;
+            document.getElementById('theory-desc').innerText = data.desc;
+            
+            // 使用 Katex 动态排版公式
+            const formulaContainer = document.getElementById('latex-formula');
+            katex.render(data.formula, formulaContainer, { throwOnError: false });
+
+            // 3.2 拓扑传感器数值同步
+            document.getElementById('topo-v').innerText = data.v;
+            document.getElementById('topo-e').innerText = data.e;
+            document.getElementById('topo-f').innerText = data.f;
+            document.getElementById('topo-c').innerText = data.c;
+
+            // 3.3 底部交互滑块标签与数值重载
+            const s1 = document.getElementById('slider-1');
+            const s2 = document.getElementById('slider-2');
+            
+            document.getElementById('slider-1-label').innerText = s1.previousElementSibling.firstElementChild.innerText = s1.previousElementSibling.firstElementChild.innerText = data.s1Label;
+            document.getElementById('slider-2-label').innerText = s2.previousElementSibling.firstElementChild.innerText = s2.previousElementSibling.firstElementChild.innerText = data.s2Label;
+
+            s1.min = data.s1Min; s1.max = data.s1Max; s1.step = data.s1Step; s1.value = data.s1Val;
+            s2.min = data.s2Min; s2.max = data.s2Max; s2.step = data.s2Step; s2.value = data.s2Val;
+
+            document.getElementById('val-slider-1').innerText = Number(data.s1Val).toFixed(2);
+            document.getElementById('val-slider-2').innerText = Number(data.s2Val).toFixed(2);
+
+            // 3.4 根据维度显隐 SVG / Canvas 视窗
+            if (dim === 1 || dim === 2) {
+                svgCanvas.classList.remove('hidden');
+                canvasContainer.style.display = 'none';
+            } else {
+                svgCanvas.classList.add('hidden');
+                canvasContainer.style.display = 'block';
+                // 重建 WebGL 几何体
+                buildWebGLGeometry();
+            }
+
+            // 更新物理状态传感器
+            updateHUDText();
+        }
+
+        // --- 4. 交互滑块事件派发器 ---
+        function handleSliderChange(sliderIdx, val) {
+            const dim = State.currentDim;
+            const parsedVal = parseFloat(val);
+            
+            if (sliderIdx === 1) {
+                document.getElementById('val-slider-1').innerText = parsedVal.toFixed(2);
+                if (dim === 1) State.amp1D = parsedVal;
+                else if (dim === 2) {
+                    State.polygonSides = Math.round(parsedVal);
+                    // 同步更新顶点和棱边拓扑参数
+                    const sides = State.polygonSides;
+                    document.getElementById('topo-v').innerText = sides === 12 ? '∞' : sides;
+                    document.getElementById('topo-e').innerText = sides === 12 ? '∞' : sides;
+                }
+                else if (dim === 3) State.rotSpeed = parsedVal;
+                else if (dim === 4) State.highRotXW = parsedVal;
+                else if (dim === 5) State.highRotXV = parsedVal;
+            } else {
+                document.getElementById('val-slider-2').innerText = parsedVal.toFixed(2);
+                if (dim === 1) State.freq1D = parsedVal;
+                else if (dim === 2) State.scale2D = parsedVal;
+                else if (dim === 3) {
+                    // 圆环半径调整，重建 3D 几何
+                    State.perspectiveDist = parsedVal; // 用作 3D 的尺寸缩放
+                    buildWebGLGeometry();
+                }
+                else if (dim === 4) State.highRotYW = parsedVal;
+                else if (dim === 5) State.highRotYV = parsedVal;
+            }
+        }
+
+        // --- 5. WebGL Three.js 三维渲染引擎 ---
+        function initWebGL() {
+            const width = canvasContainer.clientWidth || 800;
+            const height = canvasContainer.clientHeight || 600;
+
+            // 1. 场景与背景
+            scene = new THREE.Scene();
+            
+            // 2. 摄像机
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            camera.position.set(0, 0, 5.5);
+
+            // 3. 渲染器
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            canvasContainer.appendChild(renderer.domElement);
+
+            // 4. 环境光与发光点光源
+            const ambientLight = new THREE.AmbientLight(0x0a1530, 1.5);
+            scene.add(ambientLight);
+
+            const pointLight1 = new THREE.PointLight(0x22D3EE, 2, 50);
+            pointLight1.position.set(5, 5, 5);
+            scene.add(pointLight1);
+
+            const pointLight2 = new THREE.PointLight(0xA78BFA, 2.5, 50);
+            pointLight2.position.set(-5, -5, 5);
+            scene.add(pointLight2);
+
+            // 5. 飘浮背景微尘粒子
+            const starsGeom = new THREE.BufferGeometry();
+            const starsCount = 350;
+            const starsPos = new Float32Array(starsCount * 3);
+            for (let i = 0; i < starsCount * 3; i += 3) {
+                starsPos[i] = (Math.random() - 0.5) * 12;     // X
+                starsPos[i+1] = (Math.random() - 0.5) * 12;   // Y
+                starsPos[i+2] = (Math.random() - 0.5) * 12;   // Z
+            }
+            starsGeom.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+            
+            // 微尘材质（璀璨发光小斑点）
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0x22D3EE,
+                size: 0.03,
+                transparent: true,
+                opacity: 0.45,
+                blending: THREE.AdditiveBlending
+            });
+            starField = new THREE.Points(starsGeom, starMaterial);
+            scene.add(starField);
+
+            // 监听窗口尺寸自适应
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        // 3D/4D/5D 几何网格构建
+        function buildWebGLGeometry() {
+            // 清理场景中旧的几何体
+            if (points3D) scene.remove(points3D);
+            if (lines3D) scene.remove(lines3D);
+
+            const dim = State.currentDim;
+
+            // 5.1 三维立体几何体（圆环体或立方体）
+            if (dim === 3) {
+                // 根据滑块2的大小参数构建圆环体
+                const ringRadius = State.perspectiveDist || 1.8;
+                const torusGeometry = new THREE.TorusGeometry(ringRadius * 0.7, 0.35, 16, 64);
+                
+                // 3D 线框材质 - 蓝紫双色菲涅尔发光线段
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: 0x22D3EE,
+                    transparent: true,
+                    opacity: 0.6,
+                    blending: THREE.AdditiveBlending
+                });
+                const torusWireframe = new THREE.WireframeGeometry(torusGeometry);
+                lines3D = new THREE.LineSegments(torusWireframe, lineMat);
+
+                // 3D 发光粒子材质
+                const ptsMat = new THREE.PointsMaterial({
+                    color: 0xA78BFA,
+                    size: 0.05,
+                    transparent: true,
+                    opacity: 0.85,
+                    blending: THREE.AdditiveBlending
+                });
+                points3D = new THREE.Points(torusGeometry, ptsMat);
+
+                scene.add(lines3D);
+                scene.add(points3D);
+            }
+            // 5.2 四维超立方体 (Tesseract) 结构配置
+            else if (dim === 4) {
+                // 4D 包含 16 个顶点，在 4D 坐标中进行数学投影
+                // 这里只初始化空的三维顶点缓冲和连线缓冲，在 animate 阶段动态计算投影坐标
+                const numPoints = 16;
+                const ptsGeom = new THREE.BufferGeometry();
+                const posArr = new Float32Array(numPoints * 3);
+                ptsGeom.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+
+                const ptsMat = new THREE.PointsMaterial({
+                    color: 0x22D3EE,
+                    size: 0.075,
+                    transparent: true,
+                    opacity: 0.9,
+                    blending: THREE.AdditiveBlending
+                });
+                points3D = new THREE.Points(ptsGeom, ptsMat);
+
+                // 连线拓扑：4D 超立方体的 32 条棱边
+                const lineGeom = new THREE.BufferGeometry();
+                const lineIndices = [];
+                // 如果两个顶点的二进制表示只有 1 位不同，则连接它们
+                for (let i = 0; i < 16; i++) {
+                    for (let j = i + 1; j < 16; j++) {
+                        const diff = i ^ j;
+                        if ((diff & (diff - 1)) === 0) { // 只有一位为 1
+                            lineIndices.push(i, j);
+                        }
+                    }
+                }
+                const linePosArr = new Float32Array(lineIndices.length * 3);
+                lineGeom.setAttribute('position', new THREE.BufferAttribute(linePosArr, 3));
+
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: 0xA78BFA,
+                    transparent: true,
+                    opacity: 0.55,
+                    blending: THREE.AdditiveBlending
+                });
+                lines3D = new THREE.LineSegments(lineGeom, lineMat);
+
+                scene.add(points3D);
+                scene.add(lines3D);
+            }
+            // 5.3 五维超正方体 (Penteract) 结构配置
+            else if (dim === 5) {
+                // 32 个顶点
+                const numPoints = 32;
+                const ptsGeom = new THREE.BufferGeometry();
+                const posArr = new Float32Array(numPoints * 3);
+                ptsGeom.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+
+                const ptsMat = new THREE.PointsMaterial({
+                    color: 0x22D3EE,
+                    size: 0.065,
+                    transparent: true,
+                    opacity: 0.95,
+                    blending: THREE.AdditiveBlending
+                });
+                points3D = new THREE.Points(ptsGeom, ptsMat);
+
+                // 80 条棱边拓扑
+                const lineGeom = new THREE.BufferGeometry();
+                const lineIndices = [];
+                for (let i = 0; i < 32; i++) {
+                    for (let j = i + 1; j < 32; j++) {
+                        const diff = i ^ j;
+                        if ((diff & (diff - 1)) === 0) { // 二进制仅 1 位差异
+                            lineIndices.push(i, j);
+                        }
+                    }
+                }
+                const linePosArr = new Float32Array(lineIndices.length * 3);
+                lineGeom.setAttribute('position', new THREE.BufferAttribute(linePosArr, 3));
+
+                const lineMat = new THREE.LineBasicMaterial({
+                    color: 0xA78BFA,
+                    transparent: true,
+                    opacity: 0.45,
+                    blending: THREE.AdditiveBlending
+                });
+                lines3D = new THREE.LineSegments(lineGeom, lineMat);
+
+                scene.add(points3D);
+                scene.add(lines3D);
+            }
+        }
+
+        // --- 6. 高维坐标数学投影算法引擎 ---
+
+        // 6.1 四维超正方体 (Tesseract) 旋转投射
+        // 输入：16个顶点在 4D 坐标下 (±1, ±1, ±1, ±1)
+        // 旋转：绕 3D 平面自转 + 绕 4D 旋转轴 (XW, YW) 旋转
+        // 输出：投射至 3D 空间的坐标
+        function project4D(time) {
+            const vertices4D = [];
+            // 初始化超正方体的 16 个 4D 顶点坐标
+            for (let x = -1; x <= 1; x += 2) {
+                for (let y = -1; y <= 1; y += 2) {
+                    for (let z = -1; z <= 1; z += 2) {
+                        for (let w = -1; w <= 1; w += 2) {
+                            vertices4D.push({ x, y, z, w });
+                        }
+                    }
+                }
+            }
+
+            // 4D 旋转角度
+            const thetaXW = time * State.highRotXW;
+            const thetaYW = time * State.highRotYW;
+            const thetaXYZ = time * State.rotSpeed * 0.5; // 基础 3D 旋转
+
+            const projected3D = [];
+            const scale = 1.35; // 缩放幅度
+
+            vertices4D.forEach(v => {
+                let x = v.x;
+                let y = v.y;
+                let z = v.z;
+                let w = v.w;
+
+                // 1. 绕 X-W 轴旋转
+                const cosXW = Math.cos(thetaXW);
+                const sinXW = Math.sin(thetaXW);
+                let x1 = x * cosXW - w * sinXW;
+                let w1 = x * sinXW + w * cosXW;
+
+                // 2. 绕 Y-W 轴旋转
+                const cosYW = Math.cos(thetaYW);
+                const sinYW = Math.sin(thetaYW);
+                let y1 = y * cosYW - w1 * sinYW;
+                let w2 = y * sinYW + w1 * cosYW;
+
+                // 3. 执行 4D -> 3D 透视投影
+                // 透视因子系数：D_4 / (D_4 - w_depth)
+                const d4 = State.perspectiveDist || 2.5;
+                const factor = 1 / (d4 - w2);
+
+                let x3d = x1 * factor * scale;
+                let y3d = y1 * factor * scale;
+                let z3d = z * factor * scale;
+
+                // 4. 增加 3D 旋转使画面视角更生动多样
+                const cos3D = Math.cos(thetaXYZ);
+                const sin3D = Math.sin(thetaXYZ);
+                
+                // 绕 3D Y轴旋转
+                let rx = x3d * cos3D - z3d * sin3D;
+                let rz = x3d * sin3D + z3d * cos3D;
+                
+                // 绕 3D X轴旋转
+                let ry = y3d * cos3D - rz * sin3D;
+                let rz2 = y3d * sin3D + rz * cos3D;
+
+                projected3D.push(new THREE.Vector3(rx, ry, rz2));
+            });
+
+            return projected3D;
+        }
+
+        // 6.2 五维超立方体 (Penteract) 旋转投影
+        // 顶点：32个 (±1, ±1, ±1, ±1, ±1)
+        // 旋转：5D 轴 XV, YV 旋转 + 4D 轴 XW 旋转 + 3D 欧拉旋转
+        // 输出：投射至 3D 空间的坐标
+        function project5D(time) {
+            const vertices5D = [];
+            for (let x = -1; x <= 1; x += 2) {
+                for (let y = -1; y <= 1; y += 2) {
+                    for (let z = -1; z <= 1; z += 2) {
+                        for (let w = -1; w <= 1; w += 2) {
+                            for (let v = -1; v <= 1; v += 2) {
+                                vertices5D.push({ x, y, z, w, v });
+                            }
+                        }
+                    }
+                }
+            }
+
+            const thetaXV = time * State.highRotXV;
+            const thetaYV = time * State.highRotYV;
+            const thetaXW = time * State.highRotXW * 0.7; // 4D 辅助旋转
+            const thetaXYZ = time * State.rotSpeed * 0.4;
+
+            const projected3D = [];
+            const scale = 1.3;
+
+            vertices5D.forEach(pt => {
+                let x = pt.x;
+                let y = pt.y;
+                let z = pt.z;
+                let w = pt.w;
+                let v = pt.v;
+
+                // 1. 5D 旋转：绕 X-V 面旋转
+                const cosXV = Math.cos(thetaXV);
+                const sinXV = Math.sin(thetaXV);
+                let x1 = x * cosXV - v * sinXV;
+                let v1 = x * sinXV + v * cosXV;
+
+                // 2. 5D 旋转：绕 Y-V 面旋转
+                const cosYV = Math.cos(thetaYV);
+                const sinYV = Math.sin(thetaYV);
+                let y1 = y * cosYV - v1 * sinYV;
+                let v2 = y * sinYV + v1 * cosYV;
+
+                // 3. 5D -> 4D 透视投影
+                const d5 = State.perspectiveDist || 2.5;
+                const factor5 = 1 / (d5 - v2);
+                let x4d = x1 * factor5;
+                let y4d = y1 * factor5;
+                let z4d = z * factor5;
+                let w4d = w * factor5;
+
+                // 4. 4D 旋转：绕 X-W 平面旋转
+                const cosXW = Math.cos(thetaXW);
+                const sinXW = Math.sin(thetaXW);
+                let x4d_rot = x4d * cosXW - w4d * sinXW;
+                let w4d_rot = x4d * sinXW + w4d * cosXW;
+
+                // 5. 4D -> 3D 透视投影
+                const d4 = 2.0; // 固定 4D 视距
+                const factor4 = 1 / (d4 - w4d_rot);
+
+                let x3d = x4d_rot * factor4 * scale;
+                let y3d = y4d * factor4 * scale;
+                let z3d = z4d * factor4 * scale;
+
+                // 6. 3D 基础姿态转动以获得良好视觉空间感
+                const cos3D = Math.cos(thetaXYZ);
+                const sin3D = Math.sin(thetaXYZ);
+                
+                // 绕 Y 轴
+                let rx = x3d * cos3D - z3d * sin3D;
+                let rz = x3d * sin3D + z3d * cos3D;
+                // 绕 X 轴
+                let ry = y3d * cos3D - rz * sin3D;
+                let rz2 = y3d * sin3D + rz * cos3D;
+
+                projected3D.push(new THREE.Vector3(rx, ry, rz2));
+            });
+
+            return projected3D;
+        }
+
+        // --- 7. SVG 渲染引擎 (1D/2D) ---
+        function renderSVGScene() {
+            if (State.currentDim !== 1 && State.currentDim !== 2) return;
+
+            const w = svgCanvas.clientWidth || 800;
+            const h = svgCanvas.clientHeight || 600;
+            const cx = w / 2;
+            const cy = h / 2;
+
+            if (State.currentDim === 1) {
+                // --- 一维简谐振动绘制 ---
+                const amp = State.amp1D * 60; // 放大像素
+                const freq = State.freq1D;
+                
+                // 计算当前时刻质点 X 坐标
+                const xVal = amp * Math.cos(freq * State.time);
+
+                // 数轴刻度绘制
+                let axisTicks = '';
+                for (let i = -5; i <= 5; i++) {
+                    const tx = cx + i * 60;
+                    axisTicks += `
+                        <line x1="${tx}" y1="${cy - 8}" x2="${tx}" y2="${cy + 8}" stroke="#22D3EE" stroke-width="1.5" opacity="0.8" />
+                        <text x="${tx}" y="${cy + 24}" fill="#64748B" font-size="11" font-family="monospace" text-anchor="middle">${i}</text>
+                    `;
+                }
+
+                // 质点运动轨迹光晕扩散动画
+                const rippleRadius = 25 + 15 * Math.sin(State.time * 6);
+                const rippleOpacity = 0.5 - 0.2 * Math.sin(State.time * 6);
+
+                svgCanvas.innerHTML = `
+                    <!-- 1. 数轴主体线段 -->
+                    <line x1="${cx - 320}" y1="${cy}" x2="${cx + 320}" y2="${cy}" stroke="rgba(34,211,238,0.3)" stroke-width="3" stroke-linecap="round" />
+                    
+                    <!-- 2. 数轴刻度线与文字 -->
+                    ${axisTicks}
+
+                    <!-- 3. 发光粒子扩散波纹 -->
+                    <circle cx="${cx + xVal}" cy="${cy}" r="${rippleRadius}" fill="none" stroke="#22D3EE" stroke-width="1.5" opacity="${rippleOpacity}" />
+                    
+                    <!-- 4. 振动质点核心 (大发光点) -->
+                    <circle cx="${cx + xVal}" cy="${cy}" r="9" fill="#22D3EE" class="glow-cyan" />
+                    <circle cx="${cx + xVal}" cy="${cy}" r="3" fill="#FFF" />
+
+                    <!-- 坐标向量标注 -->
+                    <path d="M ${cx},${cy - 25} L ${cx + xVal},${cy - 25}" fill="none" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="3,3" />
+                    <text x="${cx + xVal / 2}" y="${cy - 32}" fill="#A78BFA" font-size="11" font-weight="bold" font-family="monospace" text-anchor="middle">x = ${(xVal / 60).toFixed(2)}</text>
+                `;
+
+            } else if (State.currentDim === 2) {
+                // --- 二维多边形平面变换与自转 ---
+                const sides = State.polygonSides;
+                const scale = State.scale2D * 120; // 平面基础尺寸半径
+                
+                // 更新自转角度
+                if (State.isPlaying) {
+                    State.rot2D += 0.015 * State.speedMultiplier;
+                }
+
+                let polyPath = '';
+                
+                if (sides === 12) {
+                    // 12 边形代表圆形，以极坐标同心网格增强科技感
+                    polyPath = `<circle cx="${cx}" cy="${cy}" r="${scale}" fill="rgba(34,211,238,0.06)" stroke="#22D3EE" stroke-width="2.5" />`;
+                } else {
+                    // 构建正 N 边形顶点
+                    const pts = [];
+                    for (let i = 0; i < sides; i++) {
+                        const angle = (i * 2 * Math.PI / sides) + State.rot2D;
+                        const px = cx + scale * Math.cos(angle);
+                        const py = cy + scale * Math.sin(angle);
+                        pts.push(`${px},${py}`);
+                    }
+                    polyPath = `<polygon points="${pts.join(' ')}" fill="rgba(34,211,238,0.06)" stroke="#22D3EE" stroke-width="2.5" />`;
+                }
+
+                // 二维极坐标雷达放射网格背景
+                let radarGrid = '';
+                for (let r = 40; r <= 160; r += 40) {
+                    radarGrid += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(167,139,250,0.08)" stroke-width="0.8" />`;
+                }
+                for (let a = 0; a < 360; a += 45) {
+                    const rad = a * Math.PI / 180;
+                    radarGrid += `<line x1="${cx}" y1="${cy}" x2="${cx + 180 * Math.cos(rad)}" y2="${cy + 180 * Math.sin(rad)}" fill="none" stroke="rgba(167,139,250,0.05)" stroke-width="0.8" />`;
+                }
+
+                svgCanvas.innerHTML = `
+                    <!-- 1. 极坐标雷达背景网格 -->
+                    ${radarGrid}
+                    
+                    <!-- 2. 二维变换多边形 -->
+                    ${polyPath}
+
+                    <!-- 3. 圆心与极径指针 -->
+                    <circle cx="${cx}" cy="${cy}" r="3" fill="#FFF" />
+                    <line x1="${cx}" y1="${cy}" x2="${cx + scale * Math.cos(State.rot2D)}" y2="${cy + scale * Math.sin(State.rot2D)}" stroke="#A78BFA" stroke-width="1.5" stroke-dasharray="3,2" />
+                    
+                    <!-- 顶点发光圆圈 -->
+                    <circle cx="${cx + scale * Math.cos(State.rot2D)}" cy="${cy + scale * Math.sin(State.rot2D)}" r="6" fill="#A78BFA" />
+
+                    <!-- 数据标注 -->
+                    <text x="${cx + 10}" y="${cy - 10}" fill="#64748B" font-size="10" font-family="monospace">Origin(0,0)</text>
+                `;
+            }
+        }
+
+        // --- 8. 降维切面波动分析仪 (右侧波形走势) ---
+        function drawSliceWaveform() {
+            const svg = document.getElementById('svg-slice-chart');
+            if (!svg) return;
+
+            const w = svg.clientWidth || 300;
+            const h = svg.clientHeight || 120;
+
+            const dim = State.currentDim;
+            let pts = [];
+
+            // 根据当前维度及时间参数，动态采样绘制一条复杂的立体切面体积波动曲线
+            for (let i = 0; i <= w; i += 4) {
+                const xVal = i;
+                let yVal = h / 2;
+
+                // 物理波动解算
+                if (dim === 1) {
+                    yVal = h/2 + 25 * Math.cos((i * 0.08) - (State.time * State.freq1D));
+                } else if (dim === 2) {
+                    // 正多边形旋转时，切线宽度的起伏变化规律
+                    const sides = State.polygonSides;
+                    const rot = State.rot2D + (i * 0.02);
+                    const R = 35;
+                    const r = R * Math.cos(Math.PI / sides) / Math.cos((Math.abs(rot) % (2*Math.PI/sides)) - Math.PI/sides);
+                    yVal = h/2 + (r - R * 0.9) * 4;
+                } else if (dim === 3) {
+                    yVal = h/2 + 20 * Math.sin(i * 0.05 + State.time * 2.5) * Math.cos(i * 0.02 + State.time);
+                } else if (dim === 4) {
+                    // 四维超立方体穿过三维空间时，截面多胞体体积变化曲线
+                    const t = State.time * State.highRotXW + (i * 0.04);
+                    yVal = h/2 + 18 * (Math.sin(t) + Math.cos(t * 1.5) * 0.4);
+                } else if (dim === 5) {
+                    // 五维双重透视投影的杂乱神经网络波动
+                    const t = State.time * State.highRotXV + (i * 0.05);
+                    yVal = h/2 + 22 * (Math.sin(t * 1.2) * Math.cos(t * 0.8) + 0.3 * Math.sin(t * 3.0));
+                }
+
+                pts.push(`${xVal},${yVal}`);
+            }
+
+            svg.innerHTML = `
+                <!-- 底部填充半透明渐变区域 -->
+                <path d="M 0,${h} L ${pts.join(' L ')} L ${w},${h} Z" fill="rgba(167,139,250,0.06)" />
+                <!-- 核心波动线 -->
+                <path d="M ${pts.join(' L ')}" fill="none" stroke="#A78BFA" stroke-width="1.8" />
+                
+                <!-- 切片瞬时分析指示器点 -->
+                <circle cx="${w - 30}" cy="${pts[Math.floor(pts.length - 8)].split(',')[1]}" r="4.5" fill="#22D3EE" class="glow-cyan" />
+            `;
+        }
+
+        // --- 9. 主逻辑仿真及渲染循环 ---
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            // 9.1 更新仿真时间
+            if (State.isPlaying) {
+                State.time += 0.015 * State.speedMultiplier;
+            }
+
+            const dim = State.currentDim;
+
+            // 9.2 SVG 维度的实时更新
+            if (dim === 1 || dim === 2) {
+                renderSVGScene();
+            } 
+            // 9.3 WebGL 高维几何的实时投影计算
+            else {
+                if (renderer && scene && camera) {
+                    // 星空背景尘埃微幅晃动自转
+                    if (starField) {
+                        starField.rotation.y = State.time * 0.05;
+                        starField.rotation.x = State.time * 0.03;
+                    }
+
+                    if (dim === 4 && points3D && lines3D) {
+                        // 计算 4D 顶点的三维投影点
+                        const newVertices = project4D(State.time);
+                        
+                        // 更新 Three.js 顶点缓冲
+                        const posAttr = points3D.geometry.attributes.position;
+                        const linePosAttr = lines3D.geometry.attributes.position;
+                        const lineIndices = [];
+                        
+                        // 获取 4D 边的拓扑顶点对
+                        for (let i = 0; i < 16; i++) {
+                            posAttr.setXYZ(i, newVertices[i].x, newVertices[i].y, newVertices[i].z);
+                            for (let j = i + 1; j < 16; j++) {
+                                const diff = i ^ j;
+                                if ((diff & (diff - 1)) === 0) {
+                                    lineIndices.push(i, j);
+                                }
+                            }
+                        }
+                        posAttr.needsUpdate = true;
+
+                        // 更新边线缓冲
+                        let idx = 0;
+                        for (let k = 0; k < lineIndices.length; k += 2) {
+                            const pA = newVertices[lineIndices[k]];
+                            const pB = newVertices[lineIndices[k+1]];
+                            linePosAttr.setXYZ(idx++, pA.x, pA.y, pA.z);
+                            linePosAttr.setXYZ(idx++, pB.x, pB.y, pB.z);
+                        }
+                        linePosAttr.needsUpdate = true;
+                    } 
+                    else if (dim === 5 && points3D && lines3D) {
+                        // 计算 5D 顶点的三维投影
+                        const newVertices = project5D(State.time);
+                        const posAttr = points3D.geometry.attributes.position;
+                        const linePosAttr = lines3D.geometry.attributes.position;
+                        const lineIndices = [];
+
+                        for (let i = 0; i < 32; i++) {
+                            posAttr.setXYZ(i, newVertices[i].x, newVertices[i].y, newVertices[i].z);
+                            for (let j = i + 1; j < 32; j++) {
+                                const diff = i ^ j;
+                                if ((diff & (diff - 1)) === 0) {
+                                    lineIndices.push(i, j);
+                                }
+                            }
+                        }
+                        posAttr.needsUpdate = true;
+
+                        let idx = 0;
+                        for (let k = 0; k < lineIndices.length; k += 2) {
+                            const pA = newVertices[lineIndices[k]];
+                            const pB = newVertices[lineIndices[k+1]];
+                            linePosAttr.setXYZ(idx++, pA.x, pA.y, pA.z);
+                            linePosAttr.setXYZ(idx++, pB.x, pB.y, pB.z);
+                        }
+                        linePosAttr.needsUpdate = true;
+                    }
+                    else if (dim === 3 && points3D && lines3D) {
+                        // 3D 几何体的标准自旋
+                        const spd = State.rotSpeed * 0.015;
+                        points3D.rotation.y += spd;
+                        points3D.rotation.x += spd * 0.6;
+                        lines3D.rotation.y += spd;
+                        lines3D.rotation.x += spd * 0.6;
+                    }
+
+                    // 渲染 WebGL 帧
+                    renderer.render(scene, camera);
+                }
+            }
+
+            // 9.4 切面分析仪波形渲染
+            drawSliceWaveform();
+
+            // 更新顶部和面板 HUD 数值
+            updateHUDText();
+        }
+
+        // --- 10. 交互控制器函数组 ---
+        function togglePlay() {
+            State.isPlaying = !State.isPlaying;
+            document.getElementById('btn-play').innerText = State.isPlaying ? "暂停模拟" : "开始模拟";
+        }
+
+        function resetSimulator() {
+            State.time = 0;
+            State.rot2D = 0.0;
+            if (points3D && lines3D) {
+                points3D.rotation.set(0, 0, 0);
+                lines3D.rotation.set(0, 0, 0);
+            }
+            switchDimension(State.currentDim);
+        }
+
+        function changeTimeSpeed(val) {
+            State.speedMultiplier = parseFloat(val);
+        }
+
+        function updateHUDText() {
+            document.getElementById('hud-time').innerText = `${State.time.toFixed(2)}s`;
+            
+            const dim = State.currentDim;
+            // 实时显示自旋转速度
+            if (dim === 1) {
+                document.getElementById('hud-var-title').innerText = "质点波动频率";
+                document.getElementById('hud-var-val').innerText = `${State.freq1D.toFixed(2)} Hz`;
+                document.getElementById('hud-energy').innerText = (State.amp1D * State.amp1D * State.freq1D * 0.1).toFixed(2);
+            } else if (dim === 2) {
+                document.getElementById('hud-var-title').innerText = "自转角位移";
+                document.getElementById('hud-var-val').innerText = `${(State.rot2D % (2*Math.PI)).toFixed(2)} rad`;
+                document.getElementById('hud-energy').innerText = (State.scale2D * State.scale2D).toFixed(2);
+            } else {
+                document.getElementById('hud-var-title').innerText = "3D 视口自转速度";
+                document.getElementById('hud-var-val').innerText = `${State.rotSpeed.toFixed(2)} rad/s`;
+                // 计算高维能量：角速度平方和的数学表征
+                let energy = State.rotSpeed * State.rotSpeed;
+                if (dim === 4) energy += State.highRotXW * State.highRotXW + State.highRotYW * State.highRotYW;
+                if (dim === 5) energy += State.highRotXV * State.highRotXV + State.highRotYV * State.highRotYV;
+                document.getElementById('hud-energy').innerText = energy.toFixed(2);
+            }
+        }
+
+        function onWindowResize() {
+            if (State.currentDim >= 3 && camera && renderer && canvasContainer) {
+                const width = canvasContainer.clientWidth;
+                const height = canvasContainer.clientHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            }
+        }
+
+        // --- 11. 诊断互动小测验数据与引擎 ---
+        const QuizQuestions = [
+            {
+                question: "四维超正方体 (Tesseract) 在四维空间中包含多少个三维的立方体胞 (Cell) ？",
+                options: ["4个", "6个", "8个 (正确答案)", "16个"],
+                correct: 2,
+                feedback: "👍 恭喜你答对啦！超立方体有 8 个立方体胞，24 个正方形面，32 条边，16 个顶点。它是三维立方体在第四维度的精确平移拉伸产物。"
+            },
+            {
+                question: "当一个四维凸多胞体穿过我们的三维世界时，我们所看到的截面会发生什么？",
+                options: ["一个恒定大小的三维立体", "会看到一个大小和形状随时间变化的动态三维立体", "什么也看不到，三维是完全隐形的", "会看到一条一维线段"],
+                correct: 1,
+                feedback: "🎉 答对啦！正如球体穿过二维扁平面时二维人会看到大小渐变的圆一样，高维图形穿过低维空间时会呈现为动态膨胀收缩的三维多面体。"
+            },
+            {
+                question: "在四维欧拉特征公式中，顶点数 V、棱边数 E、面数 F、胞数 C 之间具有什么交替守恒规律？",
+                options: ["V - E + F - C = 0", "V + E - F + C = 2", "V - E + F - C = 1", "V + E + F + C = 128"],
+                correct: 0,
+                feedback: "💡 太棒了！在四维欧拉示性数公式中，$V - E + F - C = 0$ 是适用于所有四维凸多胞体（如超立方体：16-32+24-8 = 0）的完美几何拓扑定理！"
+            }
+        ];
+
+        function initQuiz() {
+            State.currentQuizIdx = 0;
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            document.getElementById('quiz-question-num').innerText = `问题 ${State.currentQuizIdx + 1} of ${QuizQuestions.length}`;
+            document.getElementById('quiz-question').innerText = quiz.question;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            quiz.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:bg-cyan-500/10 hover:border-cyan-500/30 text-left transition-all hover:scale-[1.01]";
+                btn.innerText = opt;
+                btn.onclick = () => submitQuizAnswer(idx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            State.quizAnswered = false;
+        }
+
+        function submitQuizAnswer(idx) {
+            if (State.quizAnswered) return;
+            State.quizAnswered = true;
+
+            const quiz = QuizQuestions[State.currentQuizIdx];
+            const feedbackBox = document.getElementById('quiz-feedback');
+            feedbackBox.classList.remove('hidden');
+
+            if (idx === quiz.correct) {
+                feedbackBox.className = "p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `${quiz.feedback} <button onclick="nextQuizQuestion()" class="mt-2 block px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold text-[10px] hover:scale-105 transition-all">下一题</button>`;
+            } else {
+                feedbackBox.className = "p-2.5 rounded-lg border border-rose-500/30 bg-rose-950/20 text-rose-400 text-[11px] leading-relaxed transition-all";
+                feedbackBox.innerHTML = `❌ 回答错误，别气馁！再仔细阅读左边的降维偏离说明并重新选择吧。`;
+                State.quizAnswered = false; // 允许重新选择
+            }
+        }
+
+        function nextQuizQuestion() {
+            State.currentQuizIdx = (State.currentQuizIdx + 1) % QuizQuestions.length;
+            showQuizQuestion();
+        }
+
+        function toggleQuizPanel() {
+            const panel = document.getElementById('quiz-panel');
+            const fab = document.getElementById('btn-quiz-fab');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                fab.classList.add('hidden');
+            } else {
+                panel.classList.add('hidden');
+                fab.classList.remove('hidden');
+            }
+        }
+
+        // 初始化
+        window.onload = initSimulator;
+    </script>
+</body>
+</html>

@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库与数据结构对 AI 知识库的赋能 - AI可视化教学生成器</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Element Plus -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus/dist/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/element-plus"></script>
+    
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Font Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #14B8A6 0%, #06B6D4 50%, #6366F1 100%);
+            --bg-gradient: linear-gradient(180deg, #030712 0%, #0B1528 60%, #030712 100%);
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(20, 184, 166, 0.25);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        body {
+            font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #E2E8F0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.3);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(34, 211, 238, 0.6);
+        }
+
+        /* 玻璃拟态面板 */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 极客网格科技感背景 */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(20, 184, 166, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 184, 166, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glow-teal {
+            box-shadow: 0 0 20px rgba(20, 184, 166, 0.5);
+        }
+        .glow-text-cyan {
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.6);
+        }
+
+        /* Element Plus 覆盖 */
+        .el-slider {
+            --el-slider-main-bg-color: #14B8A6;
+            --el-slider-runway-bg-color: rgba(255, 255, 255, 0.08);
+            --el-slider-stop-bg-color: rgba(255, 255, 255, 0.15);
+        }
+        .el-slider__button {
+            border: 2px solid #22D3EE !important;
+            background-color: #030712 !important;
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none">
+<div id="app" class="flex flex-col h-full">
+
+    <!-- 顶部导航栏 -->
+    <header class="h-16 shrink-0 border-b border-teal-500/30 bg-slate-950/90 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-teal-500 to-indigo-500 flex items-center justify-center font-bold text-slate-950 glow-teal">🧬</div>
+            <div>
+                <h1 class="text-base font-extrabold bg-gradient-to-r from-teal-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent uppercase tracking-wider">
+                    知识库赋能动力学 <span class="text-xs font-normal text-cyan-400/80 normal-case ml-1">Database & Data Structures in AI KB</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <el-button size="small" type="primary" plain @click="resetSimulation">重置检索流</el-button>
+            <el-button size="small" type="success" plain @click="triggerRandomQuery">发起随机知识问答</el-button>
+        </div>
+    </header>
+
+    <!-- 主交互区域 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏 (Vue3 驱动交互) -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-teal-500/20 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-teal-400 rounded-sm"></span> 学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2" v-for="(goal, idx) in goals" :key="idx">
+                        <input type="checkbox" :id="'goal-'+idx" class="accent-teal w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" v-model="goal.checked">
+                        <label :for="'goal-'+idx" class="leading-relaxed cursor-pointer hover:text-teal-300 transition-colors">{{ goal.text }}</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 核心数据结构状态公式 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-teal-400 rounded-sm"></span> 向量相似度数学模型
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-teal-950/60 text-center flex flex-col gap-2">
+                    <div id="latex-cos-formula" class="text-[12px] text-teal-300 font-medium"></div>
+                    <div class="border-t border-teal-950/80 pt-2 mt-1 flex flex-col gap-1.5 text-[10px] text-left text-slate-400">
+                        <div id="latex-hnsw-complex"></div>
+                        <div id="latex-ivf-bucket"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 原理生动解释 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3">
+                <h3 class="text-xs font-bold text-teal-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-teal-400 rounded-sm"></span> 经典数据结构如何拯救大模型？
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-teal-300 font-semibold">🔍 HNSW（分层导航小世界）：多维图索引</span>
+                        <p class="mt-1 text-slate-400">大模型没有长期记忆，RAG利用向量索引解决。HNSW 借鉴了计算机网络“小世界”和数据结构“跳表”的思路，将向量图分层。粒子在顶层宽跳跃，底层精定位，实现 $O(\log N)$ 的极致检索性能。</p>
+                    </div>
+                    <div class="border-t border-teal-950/40 pt-2">
+                        <span class="text-cyan-300 font-semibold">📁 B+ 树与元数据过滤：联合检索</span>
+                        <p class="mt-1 text-slate-400">在实际AI知识库中，不仅有高维向量，还有创建时间、分类等关系型元数据。经典关系数据库的 <b>B+ 树</b> 用于秒级元数据筛选，与向量 HNSW 结合实现混合多维过滤，这是现代化数据库的心脏。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400">
+                <div class="flex justify-between items-center text-[10px] text-slate-600">
+                    <span>学科领域：数据库与人工智能</span>
+                    <span>AI-Viz r5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央主交互区域 -->
+        <div class="flex-1 h-full relative flex flex-col">
+            <!-- 向量空间 SVG 拓扑图 -->
+            <div id="canvas-container" class="absolute inset-0 z-0 cyber-grid">
+                <svg id="svg-topology" class="w-full h-full text-slate-600"></svg>
+            </div>
+
+            <!-- 数据状态 HUD (左上角) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-teal-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">向量检索库实时 HUD</h4>
+                    
+                    <div class="bg-slate-950/70 p-2.5 rounded border border-teal-950/60 text-xs flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>系统核心状态:</span>
+                            <span class="font-bold uppercase" :class="phaseClass">{{ phaseText }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>查询检索延迟:</span>
+                            <span class="font-bold text-teal-400 font-mono">{{ calculatedLatency }} ms</span>
+                        </div>
+                        <div class="border-t border-teal-950/80 my-0.5"></div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>估计知识召回率:</span>
+                            <span class="font-bold text-cyan-400 font-mono">{{ calculatedRecall }} %</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>索引内存消耗:</span>
+                            <span class="font-mono font-bold text-indigo-400">{{ calculatedMemory }} MB</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>相似度阈值命中:</span>
+                            <span class="font-mono font-bold text-emerald-400" v-if="workflowPhase >= 4">匹配成功 (89.5%)</span>
+                            <span class="font-mono font-bold text-slate-500" v-else>待评估</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 问答对话与终端日志 (右上角) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-teal-400 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-teal-400 flex items-center justify-between">
+                        <span>💬 大模型检索问答模拟</span>
+                        <span class="text-[10px] text-slate-500">知识溯源</span>
+                    </h4>
+                    <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-900 text-xs flex flex-col gap-1 text-slate-300 leading-relaxed min-h-[50px]">
+                        <span class="text-cyan-400 font-semibold" v-if="currentQuery">{{ currentQuery.question }}</span>
+                        <span class="text-slate-500 font-semibold" v-else>待启动问答</span>
+                        <p class="text-[11px] text-slate-400 mt-1" v-if="workflowPhase >= 5 && currentQuery">
+                            <span class="text-emerald-400">【召回知识分块】</span>{{ currentQuery.answer }}
+                        </p>
+                        <p class="text-[11px] text-slate-500 mt-1" v-else>点击底部播放，或手动触发随机知识问答进行高维探索。</p>
+                    </div>
+                </div>
+
+                <!-- 终端流式日志 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-cyan-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-cyan-400 flex items-center justify-between">
+                        <span>💻 向量数据库底层执行日志</span>
+                        <span class="text-[10px] text-slate-500">Console Logs</span>
+                    </h4>
+                    <!-- 终端日志框 -->
+                    <div id="terminal-log" class="h-[120px] bg-slate-950/90 rounded-lg p-2 overflow-y-auto border border-teal-950/40 font-mono text-[10px] leading-relaxed text-teal-400 flex flex-col gap-1">
+                        <div>&gt;_ System: Vector Index Space Ready. HNSW layers = 4.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-teal-500/20">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button @click="togglePlay" class="w-12 h-12 rounded-full bg-gradient-to-r from-teal-500 to-indigo-500 text-slate-950 flex items-center justify-center glow-teal hover:scale-105 active:scale-95 transition-all">
+                        <!-- Play Icon -->
+                        <svg v-if="!isPlaying" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon -->
+                        <svg v-else class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button @click="stepForward" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300" title="单步节点执行">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs">
+                        <span class="text-slate-500 block">时空仿真引擎</span>
+                        <span class="text-amber-400 font-medium" v-if="isPlaying">仿真运行中</span>
+                        <span class="text-slate-400 font-medium" v-else>已暂停</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 1 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-teal-400 font-semibold">🧬 向量维度 (D-Dimension)</span>
+                            <span class="font-mono text-slate-300">{{ dimension }} dims</span>
+                        </div>
+                        <el-slider v-model="dimension" :min="64" :max="1536" :step="64" @change="onParamChange"></el-slider>
+                    </div>
+
+                    <!-- 参数 2 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-cyan-400 font-semibold">⚙️ IVF 倒排聚类中心数 (K)</span>
+                            <span class="font-mono text-slate-300">{{ centroids }} clusters</span>
+                        </div>
+                        <el-slider v-model="centroids" :min="16" :max="256" :step="16" @change="onParamChange"></el-slider>
+                    </div>
+
+                    <!-- 参数 3 -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-indigo-400 font-semibold">⛓️ HNSW 搜索广度 (efSearch)</span>
+                            <span class="font-mono text-slate-300">{{ efSearch }} nodes</span>
+                        </div>
+                        <el-slider v-model="efSearch" :min="8" :max="128" :step="8" @change="onParamChange"></el-slider>
+                    </div>
+                </div>
+
+                <!-- 运行倍速 -->
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">运行速度</span>
+                    <select v-model="simSpeed" class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1 outline-none cursor-pointer hover:border-teal-500 transition-colors">
+                        <option :value="0.5">0.5x 慢速</option>
+                        <option :value="1.0">1.0x 正常</option>
+                        <option :value="2.0">2.0x 快速</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <transition name="slide-up">
+                <div v-if="showQuiz" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-teal-500/30 rounded-2xl overflow-hidden flex flex-col">
+                    <div class="h-10 border-b border-teal-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-teal-400 flex items-center gap-1.5">
+                            ⚡ AI 知识库与数据结构测验
+                        </span>
+                        <button @click="showQuiz = false" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">✕</button>
+                    </div>
+                    
+                    <div class="p-4 flex flex-col gap-3 text-xs">
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-teal-500 uppercase block mb-1">问题 {{ currentQuestionIdx + 1 }} of {{ quizQuestions.length }}</span>
+                            <p class="text-slate-200 font-medium leading-relaxed">{{ quizQuestions[currentQuestionIdx].q }}</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button v-for="(opt, oIdx) in quizQuestions[currentQuestionIdx].o" :key="oIdx"
+                                    @click="submitQuizAnswer(oIdx)"
+                                    class="w-full text-left p-2.5 rounded-lg border text-[11px] transition-all"
+                                    :class="getOptionClass(oIdx)">
+                                {{ opt }}
+                            </button>
+                        </div>
+                        <div v-if="quizFeedback" class="p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"
+                             :class="quizFeedbackCorrect ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/60 border-rose-500/40 text-rose-300'">
+                            {{ quizFeedback }}
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-2 border-t border-slate-800 pt-2" v-if="quizAnswered">
+                            <span class="text-[10px] text-slate-500">回答完毕</span>
+                            <button @click="nextQuestion" class="px-3 py-1 rounded bg-teal-500 text-slate-950 font-bold hover:bg-cyan-400 active:scale-95 transition-all text-[10px]">
+                                {{ currentQuestionIdx < quizQuestions.length - 1 ? '下一题' : '重新开始' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button v-if="!showQuiz" @click="showQuiz = true" class="absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-teal-400 text-teal-400 flex items-center justify-center hover:scale-110 glow-teal active:scale-95 transition-all" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- 底部状态条 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-600 flex items-center justify-between px-6 border-t border-slate-900">
+        <span>在海量的高维空间中，每一条小世界边网的飞跃，都是经典图算法为大模型安插的记忆信标。</span>
+        <span class="text-teal-500/80">由 AI可视化教学生成器 为你生成 ❤️</span>
+    </footer>
+
+</div>
+
+<!-- Script Block -->
+<script>
+    const { createApp } = Vue;
+
+    // 拓扑图节点配置 (以比例定格，实现全自适应渲染)
+    const Nodes = {
+        query: { id: "nd-query", name: "📥 输入查询 (User Query)", cx: 0.15, cy: 0.5, color: "#22D3EE" },
+        emb: { id: "nd-emb", name: "🧬 文本向量化 (Embedding)", cx: 0.32, cy: 0.5, color: "#14B8A6" },
+        btree: { id: "nd-btree", name: "📁 B+树元数据索引", cx: 0.52, cy: 0.26, color: "#A78BFA" },
+        hnsw: { id: "nd-hnsw", name: "🕸️ HNSW 高维向量探索", cx: 0.52, cy: 0.5, color: "#EC4899" },
+        filter: { id: "nd-filter", name: "⚖️ 余弦相似度评估闸门", cx: 0.72, cy: 0.5, color: "#FBBF24" },
+        llm: { id: "nd-llm", name: "🧠 LLM 知识融合生成", cx: 0.9, cy: 0.5, color: "#34D399" }
+    };
+
+    const app = createApp({
+        data() {
+            return {
+                goals: [
+                    { text: "掌握高维空间检索中，向量维度对内存占用及计算延迟的映射关系。", checked: true },
+                    { text: "理解 HNSW 算法“小世界分层网络”如何通过类似于跳表的方式定位近邻节点。", checked: true },
+                    { text: "学习传统数据库中的 B+ 树索引与向量倒排聚类（IVF）的协同联合过滤原理。", checked: false }
+                ],
+                // 仿真核心控制参数
+                isPlaying: false,
+                dimension: 128,      // 向量维度
+                centroids: 64,       // IVF 聚类中心数
+                efSearch: 32,        // HNSW 搜索步数
+                simSpeed: 1.0,
+                timeStep: 0.2,       // 控制流畅度
+                flowProgress: 0.0,
+                workflowPhase: 0,    // 0: 空闲, 1: Embedding, 2: B+树过滤, 3: HNSW图检索, 4: 相似度评估, 5: 成功融合
+
+                // HUD 统计与显示
+                calculatedLatency: 1.8,
+                calculatedRecall: 91.2,
+                calculatedMemory: 16.4,
+
+                // 问答库
+                queries: [
+                    { question: "问：中国封建社会的经济制度有什么特点？", answer: "【分块内容】中国古代经济以小农经济为主体，具备高度自给自足属性，元数据建立于‘历史-政治制度’分类下。" },
+                    { question: "问：光合作用是怎样的化学反应，需要什么催化？", answer: "【分块内容】光合作用主要依靠叶绿素吸收光能，将水和二氧化碳转化为葡萄糖并释放氧气。相关度评分：0.92。" },
+                    { question: "问：简述大模型中的 RAG 相比微调的优越性是什么？", answer: "【分块内容】RAG 具备零样本事实纠正能力，允许实时热更新外部数据（无需昂贵微调），并在检索链中建立知识可溯源通道。" }
+                ],
+                currentQuery: null,
+
+                // 测验
+                showQuiz: true,
+                currentQuestionIdx: 0,
+                selectedOptionIdx: null,
+                quizAnswered: false,
+                quizFeedback: '',
+                quizFeedbackCorrect: false,
+                quizQuestions: [
+                    {
+                        q: "在向量数据库检索中，如果单纯增加 HNSW 搜索深度参数 (efSearch)，系统性能会怎么变化？",
+                        o: [
+                            "A. 检索召回率降低，延迟减少",
+                            "B. 检索召回率增加，但延迟和计算开销会变大",
+                            "C. 检索召回率和内存消耗同时减少",
+                            "D. 对检索没有任何实质性影响"
+                        ],
+                        a: 1,
+                        explain: "正确答案为 B。增加 efSearch 意味着检索时探索的近邻图节点更多，因此召回率提升，但相应的比对次数上升，延迟也会增大。"
+                    },
+                    {
+                        q: "现代化 AI 知识库中，为什么需要把经典的 B+ 树索引与向量检索（如 HNSW）进行混合过滤？",
+                        o: [
+                            "A. 因为向量数据库不能存储字符串",
+                            "B. 仅仅是为了让大模型读取文件更快",
+                            "C. 用 B+ 树筛选元数据（例如创建时间、类型），结合向量距离检索，实现高维混合过滤",
+                            "D. 向量相似度公式基于 B+ 树计算"
+                        ],
+                        a: 2,
+                        explain: "正确答案为 C。经典的 B+ 树非常擅长关系型精确匹配过滤（如：只查最近3天的文档），然后在此基础上跑向量检索，才能保证业务约束。"
+                    },
+                    {
+                        q: "当向量维度（Dimension）从 128 大幅提高到 1536 时，以下说法正确的是？",
+                        o: [
+                            "A. 高维空间的余弦相似度计算变得极度简单",
+                            "B. 索引所消耗的物理内存和计算吞吐延迟将显著增加",
+                            "C. 图检索不会再发生高维“维度灾难”",
+                            "D. 大模型读取的知识分块内容会成倍减少"
+                        ],
+                        a: 1,
+                        explain: "正确答案为 B。维度大幅增加意味着每个向量的浮点数数量暴增，不仅每个向量占用的内存增大，距离度量计算的开销也会大幅提升。"
+                    }
+                ]
+            };
+        },
+        computed: {
+            phaseText() {
+                const phases = ["系统就绪", "查询编码 (Embedding)...", "B+树条件预过滤...", "HNSW小世界图探索...", "评估相似度余弦阈值...", "大模型融合输出完成"];
+                return phases[this.workflowPhase];
+            },
+            phaseClass() {
+                const classes = [
+                    "text-slate-400 font-bold",
+                    "text-cyan-400 font-bold glow-text-cyan",
+                    "text-indigo-400 font-bold",
+                    "text-rose-400 font-bold",
+                    "text-amber-400 font-bold",
+                    "text-emerald-400 font-bold"
+                ];
+                return classes[this.workflowPhase];
+            }
+        },
+        mounted() {
+            this.currentQuery = this.queries[0];
+            this.calculateMetrics();
+            
+            // 初始化 KaTeX 渲染
+            this.renderMath();
+            
+            // 初始化 SVG 拓扑图与粒子
+            window.addEventListener('resize', this.initTopology);
+            this.initTopology();
+
+            // 启动定时仿真渲染循环
+            this.animationLoop();
+        },
+        unmounted() {
+            window.removeEventListener('resize', this.initTopology);
+        },
+        methods: {
+            // KaTeX 公式渲染
+            renderMath() {
+                this.$nextTick(() => {
+                    const cosDiv = document.getElementById('latex-cos-formula');
+                    if (cosDiv) {
+                        katex.render("Cos(\\theta) = \\frac{\\mathbf{A} \\cdot \\mathbf{B}}{\\|\\mathbf{A}\\| \\|\\mathbf{B}\\|} = \\frac{\\sum_{i=1}^d a_i b_i}{\\sqrt{\\sum a_i^2} \\sqrt{\\sum b_i^2}}", cosDiv, { displayMode: true, throwOnError: false });
+                    }
+
+                    const complexDiv = document.getElementById('latex-hnsw-complex');
+                    if (complexDiv) {
+                        katex.render("HNSW\\,Search\\,Complexity: O(\\log N)", complexDiv, { displayMode: false, throwOnError: false });
+                    }
+
+                    const ivfDiv = document.getElementById('latex-ivf-bucket');
+                    if (ivfDiv) {
+                        katex.render("IVF\\,Search\\,Space: K \\ll N \\text{ clusters}", ivfDiv, { displayMode: false, throwOnError: false });
+                    }
+                });
+            },
+            // 参数调整后，自动重算 HUD 指标
+            calculateMetrics() {
+                // 检索延迟随维度增加、K中心点变化、HNSW搜索广度增大而增高
+                this.calculatedLatency = (2.2 * (this.dimension / 128) * (this.efSearch / 32) * 0.4 + 0.5).toFixed(1);
+                
+                // 召回率与 efSearch 深度、聚类中心度正相关，与维度增加引起的检索难度成弱微调
+                this.calculatedRecall = Math.min(99.8, (82 + (this.efSearch / 128) * 12 + (this.centroids / 256) * 5)).toFixed(1);
+                
+                // 内存占用正比于维度和聚类中心
+                this.calculatedMemory = ((this.dimension * this.centroids * 4) / 1024 / 2.5 + 4.2).toFixed(1);
+            },
+            onParamChange() {
+                this.calculateMetrics();
+                this.addLog(`系统控制参数已变更。当前维度:${this.dimension} | efSearch:${this.efSearch}`, "text-amber-400");
+                this.renderMath(); // 重新渲染数学公式
+            },
+            togglePlay() {
+                this.isPlaying = !this.isPlaying;
+                this.addLog(this.isPlaying ? "仿真时空运动引擎激活..." : "仿真引擎手动挂起.", this.isPlaying ? "text-emerald-400" : "text-slate-400");
+            },
+            stepForward() {
+                this.isPlaying = false;
+                this.flowProgress = (this.flowProgress + 15) % 100;
+                this.updateWorkflowPhaseByProgress();
+                this.addLog(`手动单步执行节点, 当前进度: ${this.flowProgress.toFixed(0)}%`, "text-cyan-300");
+                this.drawTopology();
+            },
+            resetSimulation() {
+                this.flowProgress = 0.0;
+                this.workflowPhase = 0;
+                this.isPlaying = false;
+                this.addLog("重置检索管道，等待查询渗入...", "text-slate-400");
+                this.drawTopology();
+            },
+            triggerRandomQuery() {
+                const idx = Math.floor(Math.random() * this.queries.length);
+                this.currentQuery = this.queries[idx];
+                this.flowProgress = 0.0;
+                this.workflowPhase = 1;
+                this.isPlaying = true;
+                this.addLog(`触发随机提问: "${this.currentQuery.question}"`, "text-cyan-300");
+            },
+            // 日志流
+            addLog(msg, colorClass = "") {
+                const logBox = document.getElementById('terminal-log');
+                if(!logBox) return;
+
+                const div = document.createElement('div');
+                if (colorClass) div.className = colorClass;
+                div.innerHTML = `&gt;_ ${msg}`;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+            // SVG 拓扑初始化与拉伸处理
+            initTopology() {
+                const svg = document.getElementById('svg-topology');
+                if(!svg) return;
+
+                const w = svg.clientWidth;
+                const h = svg.clientHeight;
+
+                // 物理坐标转换
+                Object.keys(Nodes).forEach(k => {
+                    const node = Nodes[k];
+                    node.px = w * node.cx;
+                    node.py = h * node.cy;
+                });
+
+                this.drawTopology();
+            },
+            updateWorkflowPhaseByProgress() {
+                const p = this.flowProgress;
+                if (p < 15 && this.workflowPhase !== 1) {
+                    this.workflowPhase = 1;
+                    this.addLog("启动大模型输入查询解析，生成多维高维稠密 Embedding...", "text-cyan-300");
+                } 
+                else if (p >= 15 && p < 35 && this.workflowPhase !== 2) {
+                    this.workflowPhase = 2;
+                    this.addLog("执行 B+ 树关系过滤条件拦截。过滤未授权元数据...", "text-indigo-400");
+                }
+                else if (p >= 35 && p < 65 && this.workflowPhase !== 3) {
+                    this.workflowPhase = 3;
+                    this.addLog(`开始探索 HNSW 小世界分层连通图网格。搜索深度: ef=${this.efSearch}`, "text-rose-400");
+                    this.addLog(`HNSW 从 L4 层入口点飞跃跳表...定位临近聚类，进入最近邻判定`, "text-slate-400");
+                }
+                else if (p >= 65 && p < 85 && this.workflowPhase !== 4) {
+                    this.workflowPhase = 4;
+                    this.addLog("计算候选数据集与 Query 的余弦相似度。激活余弦度量算法...", "text-amber-400");
+                    this.addLog(`计算公式: Cosine Similarity 浮点积比对. 匹配成功!`, "text-teal-300");
+                }
+                else if (p >= 85 && this.workflowPhase !== 5) {
+                    this.workflowPhase = 5;
+                    this.addLog("成功召回最相关的知识分块，整合输入大模型上下文，执行流式输出！", "text-emerald-400");
+                }
+            },
+            animationLoop() {
+                if (this.isPlaying) {
+                    this.flowProgress += this.timeStep * this.simSpeed;
+                    if (this.flowProgress >= 100) {
+                        this.flowProgress = 0;
+                        this.workflowPhase = 0;
+                        this.isPlaying = false; // 运行一圈后自动暂停，等待再次触发
+                        this.addLog("当前检索回路完成，大模型响应完毕。", "text-slate-500");
+                    }
+                    this.updateWorkflowPhaseByProgress();
+                    this.drawTopology();
+                }
+                requestAnimationFrame(this.animationLoop);
+            },
+            drawTopology() {
+                const svg = document.getElementById('svg-topology');
+                if(!svg) return;
+
+                // 生成连线路径
+                const paths = [
+                    { from: Nodes.query, to: Nodes.emb, stroke: "#22D3EE" },
+                    { from: Nodes.emb, to: Nodes.btree, stroke: "#A78BFA" },
+                    { from: Nodes.emb, to: Nodes.hnsw, stroke: "#EC4899" },
+                    { from: Nodes.btree, to: Nodes.filter, stroke: "#A78BFA" },
+                    { from: Nodes.hnsw, to: Nodes.filter, stroke: "#EC4899" },
+                    { from: Nodes.filter, to: Nodes.llm, stroke: "#34D399" }
+                ];
+
+                let pathsHtml = '';
+                paths.forEach(p => {
+                    pathsHtml += `<path d="M ${p.from.px},${p.from.py} L ${p.to.px},${p.to.py}" fill="none" stroke="${p.stroke}" stroke-width="1.5" opacity="0.25" />`;
+                });
+
+                // 绘制当前正在激活的导电路线
+                let activePathHtml = '';
+                const p = this.flowProgress;
+                if (this.isPlaying) {
+                    if (p < 15) {
+                        activePathHtml += `<path d="M ${Nodes.query.px},${Nodes.query.py} L ${Nodes.emb.px},${Nodes.emb.py}" fill="none" stroke="#22D3EE" stroke-width="2.5" opacity="0.8" marker-end="url(#arrow-cyan)" />`;
+                    } else if (p >= 15 && p < 35) {
+                        activePathHtml += `<path d="M ${Nodes.emb.px},${Nodes.emb.py} L ${Nodes.btree.px},${Nodes.btree.py}" fill="none" stroke="#A78BFA" stroke-width="2.5" opacity="0.8" />`;
+                    } else if (p >= 35 && p < 65) {
+                        activePathHtml += `<path d="M ${Nodes.emb.px},${Nodes.emb.py} L ${Nodes.hnsw.px},${Nodes.hnsw.py}" fill="none" stroke="#EC4899" stroke-width="2.5" opacity="0.8" />`;
+                    } else if (p >= 65 && p < 85) {
+                        activePathHtml += `
+                            <path d="M ${Nodes.btree.px},${Nodes.btree.py} L ${Nodes.filter.px},${Nodes.filter.py}" fill="none" stroke="#A78BFA" stroke-width="2.5" opacity="0.8" />
+                            <path d="M ${Nodes.hnsw.px},${Nodes.hnsw.py} L ${Nodes.filter.px},${Nodes.filter.py}" fill="none" stroke="#EC4899" stroke-width="2.5" opacity="0.8" />
+                        `;
+                    } else if (p >= 85) {
+                        activePathHtml += `<path d="M ${Nodes.filter.px},${Nodes.filter.py} L ${Nodes.llm.px},${Nodes.llm.py}" fill="none" stroke="#34D399" stroke-width="2.5" opacity="0.8" marker-end="url(#arrow-green)" />`;
+                    }
+                }
+
+                // 粒子绘制
+                let particleHtml = '';
+                if (this.isPlaying) {
+                    let particlePos = { x: 0, y: 0 };
+                    let particleColor = "#22D3EE";
+                    if (p < 15) {
+                        particlePos = this.lerp(Nodes.query, Nodes.emb, p / 15);
+                    } else if (p >= 15 && p < 35) {
+                        particlePos = this.lerp(Nodes.emb, Nodes.btree, (p - 15) / 20);
+                        particleColor = "#A78BFA";
+                    } else if (p >= 35 && p < 65) {
+                        // 在 HNSW 图检索阶段，绘制多个子粒子进行“网络跳跃扩散”检索的炫酷动画
+                        const t = (p - 35) / 30;
+                        particlePos = this.lerp(Nodes.emb, Nodes.hnsw, t);
+                        particleColor = "#EC4899";
+                        
+                        // 绘制 3 个在 HNSW 节点周围跳跃探索的小雷达波纹粒子
+                        const angle = performance.now() * 0.01;
+                        for(let i=0; i<3; i++) {
+                            const r = 20 * Math.sin(t * Math.PI);
+                            const px = Nodes.hnsw.px + r * Math.cos(angle + (i * Math.PI * 2 / 3));
+                            const py = Nodes.hnsw.py + r * Math.sin(angle + (i * Math.PI * 2 / 3));
+                            particleHtml += `<circle cx="${px}" cy="${py}" r="3" fill="#EC4899" opacity="0.8" />`;
+                            particleHtml += `<line x1="${Nodes.hnsw.px}" y1="${Nodes.hnsw.py}" x2="${px}" y2="${py}" stroke="rgba(236,72,153,0.3)" stroke-width="1" />`;
+                        }
+                    } else if (p >= 65 && p < 85) {
+                        // 双源汇合
+                        const t = (p - 65) / 20;
+                        const p1 = this.lerp(Nodes.btree, Nodes.filter, t);
+                        const p2 = this.lerp(Nodes.hnsw, Nodes.filter, t);
+                        particleHtml += `<circle cx="${p1.x}" cy="${p1.y}" r="4.5" fill="#A78BFA" class="glow-teal" />`;
+                        particleHtml += `<circle cx="${p2.x}" cy="${p2.y}" r="4.5" fill="#EC4899" class="glow-teal" />`;
+                        particlePos = p1; // 假装主要粒子
+                    } else if (p >= 85) {
+                        particlePos = this.lerp(Nodes.filter, Nodes.llm, (p - 85) / 15);
+                        particleColor = "#34D399";
+                    }
+
+                    if (p < 65 || p >= 85) {
+                        particleHtml += `<circle cx="${particlePos.x}" cy="${particlePos.y}" r="5" fill="${particleColor}" class="glow-teal" />`;
+                        particleHtml += `<circle cx="${particlePos.x}" cy="${particlePos.y}" r="8" fill="none" stroke="${particleColor}" stroke-width="1.5" opacity="0.6" />`;
+                    }
+                }
+
+                // 节点渲染
+                let nodesHtml = '';
+                Object.keys(Nodes).forEach(k => {
+                    const node = Nodes[k];
+                    let r = 12;
+                    let strokeWidth = 2.5;
+                    let strokeColor = node.color;
+                    let glowFilter = '';
+
+                    // 激活态节点高亮
+                    if (this.isPlaying) {
+                        if (k === 'query' && p < 15) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'emb' && p >= 15 && p < 35) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'btree' && p >= 15 && p < 35) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'hnsw' && p >= 35 && p < 65) { r = 15; strokeColor = "#FFF"; }
+                        else if (k === 'filter' && p >= 65 && p < 85) { r = 14; strokeColor = "#FFF"; }
+                        else if (k === 'llm' && p >= 85) { r = 15; strokeColor = "#FFF"; }
+                    }
+
+                    nodesHtml += `
+                        <g>
+                            <!-- 节点外圈 -->
+                            <circle cx="${node.px}" cy="${node.py}" r="${r + 5}" fill="none" stroke="${node.color}" stroke-width="1" opacity="0.25" />
+                            <!-- 节点球体 -->
+                            <circle cx="${node.px}" cy="${node.py}" r="${r}" fill="#030712" stroke="${strokeColor}" stroke-width="${strokeWidth}" />
+                            <!-- 核心小圆点 -->
+                            <circle cx="${node.px}" cy="${node.py}" r="4.5" fill="${node.color}" />
+                            <!-- 文字标签 -->
+                            <text x="${node.px}" y="${node.py - r - 12}" fill="#94A3B8" font-size="9" font-weight="600" text-anchor="middle">${node.name}</text>
+                        </g>
+                    `;
+                });
+
+                svg.innerHTML = `
+                    <defs>
+                        <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#22D3EE" />
+                        </marker>
+                        <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                          <path d="M 0 1 L 10 5 L 0 9 z" fill="#34D399" />
+                        </marker>
+                    </defs>
+                    <!-- 基础轨道 -->
+                    ${pathsHtml}
+                    <!-- 激活路线 -->
+                    ${activePathHtml}
+                    <!-- 数据粒子 -->
+                    ${particleHtml}
+                    <!-- 物理节点 -->
+                    ${nodesHtml}
+                `;
+            },
+            lerp(n1, n2, t) {
+                return {
+                    x: n1.px + (n2.px - n1.px) * t,
+                    y: n1.py + (n2.py - n1.py) * t
+                };
+            },
+
+            // 测验交互
+            submitQuizAnswer(oIdx) {
+                if (this.quizAnswered) return;
+                this.selectedOptionIdx = oIdx;
+                this.quizAnswered = true;
+                const question = this.quizQuestions[this.currentQuestionIdx];
+                if (oIdx === question.a) {
+                    this.quizFeedback = "🎉 回答正确！" + question.explain;
+                    this.quizFeedbackCorrect = true;
+                } else {
+                    this.quizFeedback = "❌ 回答错误。" + question.explain;
+                    this.quizFeedbackCorrect = false;
+                }
+            },
+            getOptionClass(oIdx) {
+                if (!this.quizAnswered) {
+                    return 'bg-slate-900/40 border-slate-700/60 text-slate-300 hover:bg-slate-800 hover:border-teal-500/50';
+                }
+                const question = this.quizQuestions[this.currentQuestionIdx];
+                if (oIdx === question.a) {
+                    return 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300';
+                }
+                if (oIdx === this.selectedOptionIdx) {
+                    return 'bg-rose-950/40 border-rose-500/50 text-rose-300';
+                }
+                return 'bg-slate-950/20 border-slate-850 text-slate-500 opacity-60';
+            },
+            nextQuestion() {
+                this.selectedOptionIdx = null;
+                this.quizAnswered = false;
+                this.quizFeedback = '';
+                if (this.currentQuestionIdx < this.quizQuestions.length - 1) {
+                    this.currentQuestionIdx++;
+                } else {
+                    this.currentQuestionIdx = 0;
+                }
+            }
+        }
+    });
+
+    app.use(ElementPlus);
+    app.mount('#app');
+</script>
+</body>
+</html>

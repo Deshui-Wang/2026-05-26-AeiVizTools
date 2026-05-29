@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大模型训练与梯度收敛物理实验室 - AetherViz Studio</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Three.js (r128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Font Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-emerald: #10B981;
+            --primary-cyan: #06B6D4;
+            --primary-indigo: #6366F1;
+            --bg-gradient: radial-gradient(circle at top, #0A0F1D 0%, #04060B 75%, #010204 100%);
+            --glass-bg: rgba(8, 14, 28, 0.75);
+            --glass-border: rgba(99, 102, 241, 0.18);
+            --glass-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.75);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 赛博朋克暗夜网格 */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.02) 1px, transparent 1px);
+            background-size: 35px 35px;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* OOM 红色警报呼吸灯 */
+        .oom-alert {
+            animation: oom-pulse 0.8s infinite alternate;
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4) !important;
+        }
+
+        @keyframes oom-pulse {
+            0% {
+                background: rgba(28, 8, 8, 0.85);
+            }
+            100% {
+                background: rgba(65, 10, 10, 0.95);
+            }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(8, 14, 28, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.25);
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+
+        /* FFN发光特效 */
+        .glow-text-emerald {
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+        .glow-text-rose {
+            text-shadow: 0 0 8px rgba(244, 63, 94, 0.6);
+        }
+
+        /* 过渡动画 */
+        .slide-up-enter-active, .slide-up-leave-active {
+            transition: all 0.3s ease-out;
+        }
+        .slide-up-enter-from, .slide-up-leave-to {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden select-none cyber-grid">
+<div id="app" class="flex flex-col h-full relative">
+
+    <!-- 顶部状态栏 HUD -->
+    <header class="h-16 shrink-0 border-b border-indigo-500/20 bg-slate-950/85 px-6 flex items-center justify-between z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-slate-950">⚡</div>
+            <div>
+                <h1 class="text-base font-extrabold bg-gradient-to-r from-indigo-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+                    大模型训练与梯度收敛物理实验室 <span class="text-xs font-normal text-indigo-400/80 normal-case ml-1">LLM Training & Loss Landscape Simulator</span>
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button @click="resetTraining" class="px-3.5 py-1.5 rounded-lg text-xs font-bold border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/25 hover:border-indigo-500/50 text-indigo-300 transition-all hover:scale-105 active:scale-95 shadow-[0_0_10px_rgba(99,102,241,0.15)]">🔄 重置训练参数</button>
+            <button @click="shuffleData" class="px-3.5 py-1.5 rounded-lg text-xs font-bold border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/25 hover:border-emerald-500/50 text-emerald-300 transition-all hover:scale-105 active:scale-95 shadow-[0_0_10px_rgba(16,185,129,0.15)]">🎲 打乱洗牌训练集</button>
+        </div>
+    </header>
+
+    <!-- 主视窗交互 -->
+    <main class="flex flex-1 relative overflow-hidden">
+        
+        <!-- 左侧边栏：物理学背景与数学模型 -->
+        <aside class="w-[360px] h-full shrink-0 border-r border-indigo-500/10 bg-slate-950/80 flex flex-col p-5 overflow-y-auto gap-5 z-40 relative">
+            
+            <!-- 学习目标 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 pointer-events-auto">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 训练学习目标
+                </h3>
+                <ul class="text-xs text-slate-300 flex flex-col gap-2">
+                    <li class="flex items-start gap-2" v-for="(goal, idx) in goals" :key="idx">
+                        <input type="checkbox" :id="'goal-'+idx" class="accent-indigo w-3.5 h-3.5 mt-0.5 rounded cursor-pointer" v-model="goal.checked">
+                        <label :for="'goal-'+idx" class="leading-relaxed cursor-pointer hover:text-cyan-300 transition-colors">{{ goal.text }}</label>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 深度学习训练数学方程 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 pointer-events-auto">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 梯度优化数学模型
+                </h3>
+                <div class="bg-slate-950/60 rounded-lg p-3 border border-indigo-950/60 text-center flex flex-col gap-2.5">
+                    <div id="latex-gradient-formula" class="text-[12px] text-indigo-300 font-medium"></div>
+                    <div class="border-t border-indigo-950/80 pt-2 mt-1 flex flex-col gap-2 text-[10px] text-left text-slate-400 leading-relaxed">
+                        <div id="latex-momentum-formula"></div>
+                        <div id="latex-scaling-law"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 科普原理物理比拟 -->
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-3 pointer-events-auto">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                    <span class="inline-block w-1.5 h-3 bg-cyan-400 rounded-sm"></span> 梯度下降的“重力比拟”
+                </h3>
+                <div class="text-xs text-slate-300 flex flex-col gap-3 leading-relaxed">
+                    <div>
+                        <span class="text-cyan-300 font-semibold">⛰️ 损失函数曲面：高山险谷</span>
+                        <p class="mt-1 text-slate-400">大模型的训练本质上像是一场<b>“盲人下山游戏”</b>。高山代表高损失（神经网络预测得极其不准），深谷代表低损失（模型极其聪明）。寻找最优参数的过程，就是通过微积分计算斜坡的倾斜方向（梯度），让代表参数的小球沿着斜度最陡峭的负梯度方向滑落。</p>
+                    </div>
+                    <div class="border-t border-indigo-950/40 pt-2">
+                        <span class="text-indigo-300 font-semibold">🚀 优化器：给下山小球加“惯性”</span>
+                        <p class="mt-1 text-slate-400">普通的 <b>SGD（随机梯度下降）</b> 很容易让小球卡在“马鞍形山谷（鞍点）”动弹不得。而工业界标配的 <b>AdamW</b> 则给小球加上了物理动量（像惯性一样能滑过平缓的鞍点）和自适应轮子，自动在平坦地形加速，在陡峭地形减速，确保高维参数稳定收敛。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="glass-panel rounded-xl p-4 flex flex-col gap-2 mt-auto text-xs text-slate-400 pointer-events-auto">
+                <div class="flex justify-between items-center text-[10px] text-slate-600">
+                    <span>学科方向：深度学习超参控制</span>
+                    <span>AetherViz CS-v5.0</span>
+                </div>
+            </section>
+        </aside>
+
+        <!-- 中央主视窗：3D 损失超曲面与梯度小球 -->
+        <div class="flex-1 h-full relative flex flex-col z-10">
+            
+            <!-- Three.js 3D 画布容器 -->
+            <div id="three-container" class="absolute inset-0 z-0 bg-[#02040a] cursor-grab active:cursor-grabbing"></div>
+
+            <!-- 数据状态 HUD (左上角) -->
+            <div class="absolute top-5 left-5 z-20 flex flex-col gap-4 pointer-events-none w-[280px]">
+                
+                <!-- 设备与显存负载 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-cyan-400 flex flex-col gap-2.5"
+                     :class="{'oom-alert': isOOM}">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex justify-between items-center">
+                        <span>🖥️ GPU 物理资源监测</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                              :class="isOOM ? 'bg-red-500 text-white' : 'bg-emerald-500/20 text-emerald-400'">
+                            {{ isOOM ? 'OOM 崩溃' : '设备运行正常' }}
+                        </span>
+                    </h4>
+                    
+                    <div class="bg-slate-950/70 p-2.5 rounded border border-indigo-950/60 text-xs flex flex-col gap-2">
+                        <!-- 显存进度条 -->
+                        <div class="flex flex-col gap-1">
+                            <div class="flex justify-between text-[10px] text-slate-400">
+                                <span>GPU VRAM 显存占用:</span>
+                                <span class="font-mono font-bold" :class="isOOM ? 'text-red-400' : 'text-indigo-300'">{{ parseFloat(vramUsage).toFixed(1) }}%</span>
+                            </div>
+                            <div class="h-1.5 w-full bg-slate-900 rounded overflow-hidden">
+                                <div class="h-full bg-gradient-to-r transition-all duration-300"
+                                     :class="isOOM ? 'from-red-600 to-rose-500' : 'from-indigo-500 to-cyan-400'"
+                                     :style="{ width: vramUsage + '%' }"></div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-indigo-950/80 my-0.5"></div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>当前训练状态:</span>
+                            <span class="font-mono font-bold uppercase" :class="statusClass">{{ statusText }}</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>计算吞吐量 (Throughput):</span>
+                            <span class="font-mono font-bold text-emerald-400">{{ calculatedThroughput }} tokens/s</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span>训练数据混洗状态:</span>
+                            <span class="font-mono font-bold text-indigo-400">{{ dataShuffled ? '已完全打乱 (Shuffle)' : '顺序采样' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 梯度物理引擎状态诊断 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-l-4 border-l-indigo-500 flex flex-col gap-2"
+                     v-if="!isOOM">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">⚖️ 梯度物理引擎诊断</h4>
+                    <div class="bg-slate-950/70 p-2.5 rounded border border-indigo-950/60 text-[11px] flex flex-col gap-1.5 font-mono">
+                        <div class="flex justify-between text-slate-300">
+                            <span>当前参数权重 W_x:</span>
+                            <span class="text-cyan-300 font-bold">{{ parseFloat(ballPos.x).toFixed(3) }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>当前参数权重 W_y:</span>
+                            <span class="text-cyan-300 font-bold">{{ parseFloat(ballPos.y).toFixed(3) }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>瞬时偏导梯度 |∇L|:</span>
+                            <span class="font-bold" :class="gradientGlowClass">{{ parseFloat(calculatedGradient).toFixed(4) }}</span>
+                        </div>
+                        <div class="flex justify-between text-slate-300">
+                            <span>收敛最优距离:</span>
+                            <span class="text-indigo-400 font-bold">{{ parseFloat(optimalDistance).toFixed(3) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 动态 Loss 曲线折线看板与终端日志 (右上角) -->
+            <div class="absolute top-5 right-5 z-20 flex flex-col gap-4 pointer-events-none w-[320px]">
+                
+                <!-- 实时折线曲线图 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-indigo-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-indigo-400 flex items-center justify-between">
+                        <span>📈 实时训练损失收敛看板 (Loss)</span>
+                        <span class="text-[10px] text-slate-500">Epoch: {{ currentEpoch }} | Step: {{ currentStep }}</span>
+                    </h4>
+                    <div class="bg-slate-950/80 p-2 rounded-lg border border-indigo-950/50 flex flex-col items-center relative">
+                        <canvas id="loss-canvas" width="280" height="110" class="w-full h-[110px]"></canvas>
+                        <!-- 图例 -->
+                        <div class="flex justify-center gap-4 text-[9px] text-slate-400 mt-1">
+                            <div class="flex items-center gap-1">
+                                <span class="w-2.5 h-0.5 bg-emerald-400 inline-block"></span>
+                                <span>Train Loss ({{ parseFloat(trainLoss).toFixed(4) }})</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2.5 h-0.5 bg-indigo-400 inline-block"></span>
+                                <span>Validation Loss ({{ parseFloat(valLoss).toFixed(4) }})</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 终端流式日志 -->
+                <div class="glass-panel rounded-xl p-4 pointer-events-auto border-t-2 border-t-cyan-500 flex flex-col gap-2">
+                    <h4 class="text-xs font-semibold text-cyan-400 flex items-center justify-between">
+                        <span>💻 神经网络优化日志</span>
+                        <span class="text-[10px] text-slate-500">Console Logs</span>
+                    </h4>
+                    <!-- 终端日志框 -->
+                    <div id="terminal-log" class="h-[90px] bg-slate-950/90 rounded-lg p-2.5 overflow-y-auto border border-indigo-950/40 font-mono text-[10px] leading-relaxed text-indigo-300 flex flex-col gap-1">
+                        <div>&gt;_ System: Hyperparameters initialized. Waiting for optimization start...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部控制面板 -->
+            <div class="absolute bottom-5 left-5 right-5 z-20 flex flex-wrap gap-4 items-center justify-between glass-panel rounded-2xl p-5 border border-indigo-500/20 pointer-events-auto">
+                <!-- 播放控制器 -->
+                <div class="flex items-center gap-3">
+                    <button @click="toggleTraining" 
+                            :disabled="isOOM"
+                            class="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 text-slate-950 flex items-center justify-center glow-purple hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
+                        <!-- Play Icon -->
+                        <svg v-if="!isTraining" class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        <!-- Pause Icon -->
+                        <svg v-else class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                    </button>
+                    <button @click="stepTraining" 
+                            :disabled="isOOM"
+                            class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center active:scale-95 transition-all text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+                            title="单步迭代梯度">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    </button>
+                    <div class="text-xs font-medium">
+                        <span class="text-slate-500 block">训练自回归演化</span>
+                        <span class="text-indigo-400 font-semibold" v-if="isTraining">正在梯度收敛中...</span>
+                        <span class="text-slate-400 font-medium" v-else>挂起中</span>
+                    </div>
+                </div>
+
+                <!-- 滑动参数调整器 -->
+                <div class="flex-1 flex gap-6 items-center px-4 min-w-[500px]">
+                    <!-- 参数 1: 学习率 -->
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-indigo-400 font-semibold flex items-center gap-1">
+                                🌡️ 学习率 Learning Rate (η)
+                            </span>
+                            <span class="font-mono text-slate-300 font-bold" :class="{'text-rose-400': learningRate >= 0.8}">
+                                {{ parseFloat(learningRate).toFixed(3) }}
+                                <span class="text-[9px]" v-if="learningRate >= 0.8">(危险LR)</span>
+                            </span>
+                        </div>
+                        <input type="range" 
+                               v-model.number="learningRate" 
+                               min="0.01" 
+                               max="1.2" 
+                               step="0.01" 
+                               @input="onParamChange"
+                               class="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-900 border border-indigo-950 accent-indigo-500 focus:outline-none">
+                    </div>
+
+                    <!-- 参数 2: 批大小 -->
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-cyan-400 font-semibold">📏 批大小 Batch Size (VRAM)</span>
+                            <span class="font-mono text-slate-300 font-bold" :class="{'text-red-400': batchSize >= 512}">
+                                {{ batchSize }}
+                                <span class="text-[9px]" v-if="batchSize >= 512">(OOM警告)</span>
+                            </span>
+                        </div>
+                        <input type="range" 
+                               v-model.number="batchSize" 
+                               min="16" 
+                               max="512" 
+                               step="16" 
+                               @input="onParamChange"
+                               class="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-900 border border-cyan-950 accent-cyan-500 focus:outline-none">
+                    </div>
+
+                    <!-- 参数 3: 数据集规模 -->
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-emerald-400 font-semibold">🧬 数据集规模 (防止过拟合)</span>
+                            <span class="font-mono text-slate-300 font-bold" :class="{'text-yellow-400': datasetSize <= 64}">
+                                {{ datasetSize }} 样本
+                                <span class="text-[9px]" v-if="datasetSize <= 64">(易过拟合)</span>
+                            </span>
+                        </div>
+                        <input type="range" 
+                               v-model.number="datasetSize" 
+                               min="16" 
+                               max="512" 
+                               step="16" 
+                               @input="onParamChange"
+                               class="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-slate-900 border border-emerald-950 accent-emerald-500 focus:outline-none">
+                    </div>
+
+                    <!-- 优化器选择 -->
+                    <div class="flex flex-col gap-1.5 w-[110px]">
+                        <span class="text-[10px] text-slate-500 uppercase tracking-wider block">优化算法</span>
+                        <select v-model="optimizer" 
+                                @change="onParamChange"
+                                class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer hover:border-indigo-500 transition-colors w-full">
+                            <option value="AdamW">AdamW (自适应)</option>
+                            <option value="SGD_Momentum">SGD + 动量</option>
+                            <option value="SGD">普通 SGD</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 可折叠小测验面板 -->
+            <transition name="slide-up">
+                <div v-if="showQuiz" class="absolute bottom-32 right-5 z-30 w-[360px] glass-panel border border-indigo-500/30 rounded-2xl overflow-hidden flex flex-col pointer-events-auto">
+                    <div class="h-10 border-b border-indigo-500/20 bg-slate-900/90 px-4 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-cyan-400 flex items-center gap-1.5">
+                            ⚡ AI 大模型训练超参测验
+                        </span>
+                        <button @click="showQuiz = false" class="w-6 h-6 rounded flex items-center justify-center text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">✕</button>
+                    </div>
+                    
+                    <div class="p-4 flex flex-col gap-3 text-xs">
+                        <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+                            <span class="text-[10px] text-indigo-400 uppercase block mb-1">问题 {{ currentQuestionIdx + 1 }} of {{ quizQuestions.length }}</span>
+                            <p class="text-slate-200 font-medium leading-relaxed">{{ quizQuestions[currentQuestionIdx].q }}</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button v-for="(opt, oIdx) in quizQuestions[currentQuestionIdx].o" :key="oIdx"
+                                    @click="submitQuizAnswer(oIdx)"
+                                    class="w-full text-left p-2.5 rounded-lg border text-[11px] transition-all"
+                                    :class="getOptionClass(oIdx)">
+                                {{ opt }}
+                            </button>
+                        </div>
+                        <div v-if="quizFeedback" class="p-2.5 rounded-lg border text-[11px] leading-relaxed transition-all"
+                             :class="quizFeedbackCorrect ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-rose-950/60 border-rose-500/40 text-rose-300'">
+                            {{ quizFeedback }}
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-2 border-t border-slate-800 pt-2" v-if="quizAnswered">
+                            <span class="text-[10px] text-slate-500">回答完毕</span>
+                            <button @click="nextQuestion" class="px-3 py-1 rounded bg-indigo-500 text-slate-950 font-bold hover:bg-cyan-400 active:scale-95 transition-all text-[10px]">
+                                {{ currentQuestionIdx < quizQuestions.length - 1 ? '下一题' : '重新开始' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+
+            <!-- 测验折叠后的悬浮发光按钮 -->
+            <button v-if="!showQuiz" @click="showQuiz = true" class="absolute bottom-32 right-5 z-30 w-12 h-12 rounded-full glass-panel border border-cyan-400 text-cyan-400 flex items-center justify-center hover:scale-110 glow-purple active:scale-95 transition-all pointer-events-auto" title="展开测验">
+                <svg class="w-5 h-5 fill-none stroke-current" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </button>
+
+        </div>
+    </main>
+
+    <!-- 底部状态条 -->
+    <footer class="h-8 shrink-0 bg-slate-950 text-[10px] text-slate-600 flex items-center justify-between px-6 border-t border-slate-900 z-50">
+        <span>从随机初始化的平庸高地，到万次微调的梯度深谷，每一次参数滑行都是为了探寻智能收敛的物理最优解。</span>
+        <span class="text-indigo-500/80">由 AetherViz Studio 物理实验室 提供 🧠</span>
+    </footer>
+
+</div>
+
+<!-- Script Block -->
+<script>
+    const { createApp } = Vue;
+
+    const app = createApp({
+        data() {
+            return {
+                goals: [
+                    { text: "掌握神经网络反向传播与微积分偏导梯度下降（重力比拟）的动力学规律。", checked: true },
+                    { text: "理解 SGD 随机梯度下降极易卡死在鞍点，而 AdamW 自适应优化器利用一阶二阶矩冲出鞍点的科学原理。", checked: true },
+                    { text: "观察过拟合现象：理解当数据集样本极小、Epoch 过大时 Validation Loss 折线反弹的成因。", checked: false }
+                ],
+                // 超参设置
+                learningRate: 0.15,
+                batchSize: 128,
+                datasetSize: 256,
+                optimizer: 'AdamW',
+                dataShuffled: true,
+
+                // 物理状态
+                isTraining: false,
+                isOOM: false,
+                isGradientExploded: false,
+                currentEpoch: 0,
+                currentStep: 0,
+                ballPos: { x: -6.0, y: 5.5, z: 0 },
+                ballVelocity: { x: 0, y: 0 },
+                
+                // 优化器内部状态 (AdamW 一阶二阶矩)
+                adamState: {
+                    m: { x: 0, y: 0 },
+                    v: { x: 0, y: 0 },
+                    t: 0
+                },
+                
+                // 训练曲线数据
+                trainLoss: 2.85,
+                valLoss: 2.92,
+                lossHistory: [],
+
+                // 物理测算指标
+                calculatedGradient: 0,
+                optimalDistance: 10,
+                vramUsage: 15.0,
+                calculatedThroughput: 0,
+
+                // 测验
+                showQuiz: true,
+                currentQuestionIdx: 0,
+                selectedOptionIdx: null,
+                quizAnswered: false,
+                quizFeedback: '',
+                quizFeedbackCorrect: false,
+                quizQuestions: [
+                    {
+                        q: "在大模型训练中，如果强行把 Batch Size 批大小调到极大（如大出物理显存上限），最可能直接触发的灾难性警告是？",
+                        o: [
+                            "A. Overfitting (过拟合)",
+                            "B. OOM (Out Of Memory 显存溢出溢死)",
+                            "C. Gradient Vanishing (梯度消失)",
+                            "D. Dataset Leakage (数据集泄露)"
+                        ],
+                        a: 1,
+                        explain: "正确答案为 B。Batch Size 直接决定了单次前向传播中被一次性读入 GPU 显存做矩阵乘法的激活值大小。超出硬件上限就会爆发 OOM 强行中断训练。"
+                    },
+                    {
+                        q: "在梯度下降的高山险谷物理比拟中，为什么 SGD 优化器比 AdamW 容易在“马鞍面（鞍点）”停滞动弹不得？",
+                        o: [
+                            "A. 因为普通 SGD 只是单纯沿着最陡的负梯度下滑，而在鞍点处偏导梯度接近于 0，没有下滑推力",
+                            "B. 普通 SGD 故意在鞍点休息以便降低显存占用",
+                            "C. AdamW 消耗 of GPU 计算量太大所以能加热空气使小球热胀冷缩",
+                            "D. 鞍点处重力方向反转了"
+                        ],
+                        a: 0,
+                        explain: "正确答案为 A。在鞍点处，一维方向是极小值，另一个方向是极大值，瞬时偏导梯度刚好等于 0。SGD 由于缺乏一阶动量惯性，会在该平坦区彻底卡死，而 AdamW 具备历史动量冲力，能轻易滑过该区域。"
+                    },
+                    {
+                        q: "当出现过拟合 (Overfitting) 时，损失曲线看板表现出什么关键的图形突变？",
+                        o: [
+                            "A. Train Loss 和 Validation Loss 曲线平行向下平稳收敛",
+                            "B. 两条曲线都直线往上飙升导致梯度爆炸",
+                            "C. 随着训练步数深入，Train Loss 指数级下行逼近 0，而 Validation Loss 却中途见底并产生戏剧性的反弹回升",
+                            "D. 曲线突然变成了心电图形状的震荡波"
+                        ],
+                        a: 2,
+                        explain: "正确答案为 C。过拟合意味着模型过度背诵了训练集样本，导致在训练集上 Loss 极低，但在未见过的验证集 Validation Loss 上丧失了泛化能力，曲线开始掉头向上。"
+                    }
+                ]
+            };
+        },
+        computed: {
+            statusText() {
+                if (this.isOOM) return 'GPU 显存崩溃 (OOM)';
+                if (this.isGradientExploded) return '梯度爆炸 (Loss=NaN)';
+                return this.isTraining ? '正在训练收敛...' : '训练挂起中';
+            },
+            statusClass() {
+                if (this.isOOM) return 'text-red-400 glow-text-rose animate-pulse';
+                if (this.isGradientExploded) return 'text-yellow-400 animate-bounce';
+                return this.isTraining ? 'text-emerald-400 glow-text-emerald' : 'text-slate-400';
+            },
+            gradientGlowClass() {
+                if (this.calculatedGradient > 0.8) return 'text-rose-400 font-bold glow-text-rose';
+                if (this.calculatedGradient < 0.05) return 'text-emerald-400 font-medium glow-text-emerald';
+                return 'text-cyan-300 font-medium';
+            }
+        },
+        watch: {
+            batchSize() {
+                this.calculateVramLoad();
+            }
+        },
+        mounted() {
+            this.renderMath();
+            this.initThree();
+            this.initLossCanvas();
+            this.calculateVramLoad();
+            
+            window.addEventListener('resize', this.onResize);
+            
+            // 物理渲染主循环
+            this.animate();
+        },
+        unmounted() {
+            window.removeEventListener('resize', this.onResize);
+            if (this.renderer) {
+                this.renderer.dispose();
+            }
+        },
+        methods: {
+            renderMath() {
+                this.$nextTick(() => {
+                    const gradDiv = document.getElementById('latex-gradient-formula');
+                    if (gradDiv) {
+                        katex.render("SGD\\,Gradient\\,Step: W_{t+1} = W_t - \\eta \\nabla L(W_t)", gradDiv, { displayMode: true, throwOnError: false });
+                    }
+                    const momDiv = document.getElementById('latex-momentum-formula');
+                    if (momDiv) {
+                        katex.render("AdamW\\,Update: m_t = \\beta_1 m_{t-1} + (1-\\beta_1)g_t", momDiv, { displayMode: false, throwOnError: false });
+                    }
+                    const scalingDiv = document.getElementById('latex-scaling-law');
+                    if (scalingDiv) {
+                        katex.render("Power-law: L(N, D) = \\left(\\frac{N_c}{N}\\right)^{\\alpha_N} + \\left(\\frac{D_c}{D}\\right)^{\\alpha_D}", scalingDiv, { displayMode: false, throwOnError: false });
+                    }
+                });
+            },
+
+            // 3D Three.js 初始化
+            initThree() {
+                const container = document.getElementById('three-container');
+                if (!container) return;
+
+                let width = container.clientWidth;
+                let height = container.clientHeight;
+                
+                // Fallback 防御
+                if (width === 0 || height === 0) {
+                    width = window.innerWidth - 360;
+                    height = window.innerHeight - 64;
+                }
+
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x02040a, 0.035);
+
+                this.camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+                this.camera.position.set(0, 11, 15);
+                this.camera.lookAt(0, -1, 0);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(width, height);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                container.appendChild(this.renderer.domElement);
+
+                // 光源
+                const ambientLight = new THREE.AmbientLight(0x0f172a, 0.6);
+                this.scene.add(ambientLight);
+
+                const dirLight = new THREE.DirectionalLight(0x6366f1, 1.2);
+                dirLight.position.set(5, 12, 8);
+                this.scene.add(dirLight);
+
+                const pointLight = new THREE.PointLight(0x06b6d4, 1.5, 20);
+                pointLight.position.set(0, 2, 0);
+                this.scene.add(pointLight);
+
+                // 1. 构建损失曲面
+                const gridSegments = 65;
+                const size = 15;
+                const geometry = new THREE.PlaneGeometry(size, size, gridSegments, gridSegments);
+                
+                const pos = geometry.attributes.position;
+                for (let i = 0; i < pos.count; i++) {
+                    const x = pos.getX(i);
+                    const y = pos.getY(i);
+                    const z = this.getLossFunctionHeight(x, y);
+                    pos.setZ(i, z);
+                }
+                pos.needsUpdate = true; // 激活顶点更新！
+                geometry.computeVertexNormals();
+
+                // 赛博蓝高亮不依赖光的 Basic 线框材质，100% 绝对兼容渲染
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x6366f1,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.65
+                });
+
+                const solidMat = new THREE.MeshStandardMaterial({
+                    color: 0x090d16,
+                    roughness: 0.5,
+                    metalness: 0.6,
+                    flatShading: true,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.rotation.x = -Math.PI / 2;
+                this.scene.add(this.mesh);
+
+                const solidMesh = new THREE.Mesh(geometry, solidMat);
+                solidMesh.rotation.x = -Math.PI / 2;
+                solidMesh.position.y = -0.05;
+                this.scene.add(solidMesh);
+
+                // 2. 小球
+                const ballGeo = new THREE.SphereGeometry(0.38, 32, 32);
+                const ballMat = new THREE.MeshBasicMaterial({
+                    color: 0xf43f5e,
+                    toneMapped: false
+                });
+                this.ballMesh = new THREE.Mesh(ballGeo, ballMat);
+                this.scene.add(this.ballMesh);
+
+                const ringGeo = new THREE.RingGeometry(0.5, 0.55, 32);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: 0xf43f5e,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = -Math.PI / 2;
+                ring.position.y = 0.05;
+                this.ballMesh.add(ring);
+
+                // 3. 最优解地标
+                const markerGeo = new THREE.CylinderGeometry(0.01, 0.4, 1.2, 4);
+                const markerMat = new THREE.MeshBasicMaterial({
+                    color: 0x10b981,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.8
+                });
+                this.optimumMarker = new THREE.Mesh(markerGeo, markerMat);
+                const optH = this.getLossFunctionHeight(0, 0);
+                this.optimumMarker.position.set(0, optH + 0.6, 0);
+                this.scene.add(this.optimumMarker);
+
+                // 4. 手工编写“零外部依赖”原生轨道控制器
+                this.initCustomOrbitControls(container);
+
+                this.update3DBallPosition();
+            },
+
+            initCustomOrbitControls(container) {
+                let isDragging = false;
+                let previousMousePosition = { x: 0, y: 0 };
+                
+                this.cameraRadius = 18.6;
+                this.cameraTheta = 0.0;
+                this.cameraPhi = Math.PI / 3.0;
+                
+                const minPhi = 0.08;
+                const maxPhi = Math.PI / 2.15;
+                const minRadius = 5.0;
+                const maxRadius = 25.0;
+
+                const updateCameraPosition = () => {
+                    this.camera.position.x = this.cameraRadius * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
+                    this.camera.position.y = this.cameraRadius * Math.cos(this.cameraPhi);
+                    this.camera.position.z = this.cameraRadius * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
+                    this.camera.lookAt(0, -0.6, 0);
+                };
+
+                container.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+
+                    this.cameraTheta -= deltaX * 0.006;
+                    this.cameraPhi = Math.max(minPhi, Math.min(maxPhi, this.cameraPhi - deltaY * 0.006));
+
+                    previousMousePosition = { x: e.clientX, y: e.clientY };
+                    updateCameraPosition();
+                });
+
+                window.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+                
+                container.addEventListener('mouseleave', () => {
+                    isDragging = false;
+                });
+
+                container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    this.cameraRadius = Math.max(minRadius, Math.min(maxRadius, this.cameraRadius + e.deltaY * 0.015));
+                    updateCameraPosition();
+                }, { passive: false });
+
+                updateCameraPosition();
+            },
+
+            // 损失函数方程 z = f(x,y)
+            getLossFunctionHeight(x, y) {
+                return -1.8 * Math.cos(x * 0.9) * Math.sin(y * 0.9) + 0.06 * (x * x + y * y) - 1.0;
+            },
+
+            getGradient(x, y) {
+                const gradX = 1.62 * Math.sin(x * 0.9) * Math.sin(y * 0.9) + 0.12 * x;
+                const gradY = -1.62 * Math.cos(x * 0.9) * Math.cos(y * 0.9) + 0.12 * y;
+                return { x: gradX, y: gradY };
+            },
+
+            stepTrainingPhysics() {
+                if (this.isOOM || this.isGradientExploded) return;
+
+                const grad = this.getGradient(this.ballPos.x, this.ballPos.y);
+                this.calculatedGradient = Math.sqrt(grad.x * grad.x + grad.y * grad.y);
+                
+                const noiseScale = Math.max(0, (512 - this.datasetSize) / 512) * 0.15;
+                const noiseX = (Math.random() - 0.5) * noiseScale;
+                const noiseY = (Math.random() - 0.5) * noiseScale;
+
+                const lr = parseFloat(this.learningRate);
+                
+                if (this.optimizer === 'SGD') {
+                    this.ballVelocity.x = -lr * (grad.x + noiseX);
+                    this.ballVelocity.y = -lr * (grad.y + noiseY);
+                    
+                    this.ballPos.x += this.ballVelocity.x;
+                    this.ballPos.y += this.ballVelocity.y;
+
+                } else if (this.optimizer === 'SGD_Momentum') {
+                    const beta = 0.9;
+                    this.ballVelocity.x = beta * this.ballVelocity.x - lr * (grad.x + noiseX);
+                    this.ballVelocity.y = beta * this.ballVelocity.y - lr * (grad.y + noiseY);
+                    
+                    this.ballPos.x += this.ballVelocity.x * 0.45;
+                    this.ballPos.y += this.ballVelocity.y * 0.45;
+
+                } else if (this.optimizer === 'AdamW') {
+                    const beta1 = 0.9;
+                    const beta2 = 0.999;
+                    const eps = 1e-8;
+                    
+                    this.adamState.t += 1;
+                    
+                    this.adamState.m.x = beta1 * this.adamState.m.x + (1 - beta1) * (grad.x + noiseX);
+                    this.adamState.m.y = beta1 * this.adamState.m.y + (1 - beta1) * (grad.y + noiseY);
+                    
+                    this.adamState.v.x = beta2 * this.adamState.v.x + (1 - beta2) * Math.pow(grad.x + noiseX, 2);
+                    this.adamState.v.y = beta2 * this.adamState.v.y + (1 - beta2) * Math.pow(grad.y + noiseY, 2);
+                    
+                    const mHatX = this.adamState.m.x / (1 - Math.pow(beta1, this.adamState.t));
+                    const mHatY = this.adamState.m.y / (1 - Math.pow(beta1, this.adamState.t));
+                    
+                    const vHatX = this.adamState.v.x / (1 - Math.pow(beta2, this.adamState.t));
+                    const vHatY = this.adamState.v.y / (1 - Math.pow(beta2, this.adamState.t));
+                    
+                    this.ballPos.x -= lr * mHatX / (Math.sqrt(vHatX) + eps);
+                    this.ballPos.y -= lr * mHatY / (Math.sqrt(vHatY) + eps);
+                }
+
+                const limit = 7.4;
+                if (Math.abs(this.ballPos.x) > limit || Math.abs(this.ballPos.y) > limit) {
+                    this.isGradientExploded = true;
+                    this.isTraining = false;
+                    this.trainLoss = NaN;
+                    this.valLoss = NaN;
+                    this.addLog("💥 WARNING: 梯度出现 Nan 溢出！神经网络梯度爆炸 (Gradient Explosion)！原因：Learning Rate 设得太高，参数在重力滑行中激增崩溃！", "text-rose-400 font-bold glow-text-rose");
+                    this.addLog("建议：请调小学习率并重置网络。", "text-amber-300");
+                }
+
+                const optimalX = 0.0;
+                const optimalY = 1.83;
+                const dx = this.ballPos.x - optimalX;
+                const dy = this.ballPos.y - optimalY;
+                this.optimalDistance = Math.sqrt(dx*dx + dy*dy);
+
+                this.update3DBallPosition();
+                this.calculateLiveLoss();
+            },
+
+            update3DBallPosition() {
+                if (!this.ballMesh) return;
+                const z = this.getLossFunctionHeight(this.ballPos.x, this.ballPos.y);
+                this.ballMesh.position.set(this.ballPos.x, z + 0.38, this.ballPos.y);
+            },
+
+            calculateLiveLoss() {
+                if (this.isGradientExploded) return;
+
+                const distScale = Math.min(2.5, this.optimalDistance * 0.35);
+                
+                let overfittingFactor = 0;
+                if (this.datasetSize <= 80 && this.currentStep > 90) {
+                    overfittingFactor = (this.currentStep - 90) * 0.012 * (128 / this.datasetSize);
+                }
+
+                const epochNoise = (Math.random() - 0.5) * 0.005;
+
+                this.trainLoss = Math.max(0.04, 0.12 + distScale + epochNoise);
+                this.valLoss = Math.max(0.14, 0.18 + distScale + overfittingFactor + epochNoise);
+
+                this.lossHistory.push({
+                    train: this.trainLoss,
+                    val: this.valLoss
+                });
+                
+                if (this.lossHistory.length > 50) {
+                    this.lossHistory.shift();
+                }
+
+                this.drawLossChart();
+            },
+
+            calculateVramLoad() {
+                if (this.isOOM) return;
+
+                const baseVram = 12.0;
+                const batchScale = Math.pow(this.batchSize, 1.35) * 0.018;
+                this.vramUsage = baseVram + batchScale;
+                this.calculatedThroughput = Math.round(this.batchSize * 32.5 + Math.random() * 50);
+
+                if (this.vramUsage >= 98.0) {
+                    this.isOOM = true;
+                    this.isTraining = false;
+                    this.calculatedThroughput = 0;
+                    this.vramUsage = 100.0;
+                    this.addLog("🚨 Out Of Memory (OOM) 灾难：GPU 显存被批大小撑满！", "text-red-400 font-bold glow-text-rose animate-pulse");
+                    this.addLog("大模型前向权重激活值占满 GPU 显存！训练被系统强制挂起阻断。", "text-rose-300");
+                    this.addLog("建议：请调小批大小 (Batch Size < 256) 并重置神经网络。", "text-cyan-300");
+                }
+            },
+
+            initLossCanvas() {
+                this.lossHistory = [];
+                for (let i = 0; i < 20; i++) {
+                    const decay = Math.exp(-i * 0.1) * 1.5;
+                    this.lossHistory.push({
+                        train: 1.2 + decay + Math.random() * 0.02,
+                        val: 1.3 + decay + Math.random() * 0.02
+                    });
+                }
+                this.drawLossChart();
+            },
+
+            drawLossChart() {
+                const canvas = document.getElementById('loss-canvas');
+                if (!canvas) return;
+
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width;
+                const h = canvas.height;
+
+                ctx.clearRect(0, 0, w, h);
+
+                ctx.strokeStyle = 'rgba(99, 102, 241, 0.08)';
+                ctx.lineWidth = 1;
+                for (let x = 30; x < w; x += 40) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+                for (let y = 15; y < h; y += 25) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+
+                if (this.lossHistory.length < 2) return;
+
+                let maxLoss = 0.1;
+                this.lossHistory.forEach(d => {
+                    if (!isNaN(d.train) && d.train > maxLoss) maxLoss = d.train;
+                    if (!isNaN(d.val) && d.val > maxLoss) maxLoss = d.val;
+                });
+                maxLoss *= 1.15;
+
+                const paddingLeft = 10;
+                const paddingRight = 10;
+                const plotWidth = w - paddingLeft - paddingRight;
+
+                // 2. 绘制 Train Loss (绿色)
+                ctx.beginPath();
+                ctx.lineWidth = 2.2;
+                ctx.strokeStyle = '#10B981';
+                
+                this.lossHistory.forEach((d, idx) => {
+                    if (isNaN(d.train)) return;
+                    const x = paddingLeft + (idx / (this.lossHistory.length - 1)) * plotWidth;
+                    const y = h - (d.train / maxLoss) * h * 0.85 - 5;
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                // 3. 绘制 Validation Loss (靛蓝色)
+                ctx.beginPath();
+                ctx.lineWidth = 2.2;
+                ctx.strokeStyle = '#6366F1';
+                
+                this.lossHistory.forEach((d, idx) => {
+                    if (isNaN(d.val)) return;
+                    const x = paddingLeft + (idx / (this.lossHistory.length - 1)) * plotWidth;
+                    const y = h - (d.val / maxLoss) * h * 0.85 - 5;
+                    if (idx === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            },
+
+            toggleTraining() {
+                if (this.isOOM || this.isGradientExploded) return;
+                this.isTraining = !this.isTraining;
+                this.addLog(this.isTraining ? "梯度物理寻优引擎激活，正在解算反向传播参数步长..." : "挂起梯度迭代。", this.isTraining ? "text-emerald-400 glow-text-emerald" : "text-slate-500");
+            },
+
+            stepTraining() {
+                if (this.isOOM || this.isGradientExploded) return;
+                this.isTraining = false;
+                this.currentStep++;
+                if (this.currentStep % 20 === 0) {
+                    this.currentEpoch++;
+                }
+                this.stepTrainingPhysics();
+                this.addLog(`单步迭代完成。Step: ${this.currentStep} | 偏导梯度 |∇L|: ${parseFloat(this.calculatedGradient).toFixed(4)}`, "text-cyan-300");
+            },
+
+            resetTraining() {
+                this.ballPos = { x: -6.0 + (Math.random() - 0.5) * 1.5, y: 5.5 + (Math.random() - 0.5) * 1.5, z: 0 };
+                this.ballVelocity = { x: 0, y: 0 };
+                this.adamState = { m: { x: 0, y: 0 }, v: { x: 0, y: 0 }, t: 0 };
+                
+                this.isTraining = false;
+                this.isOOM = false;
+                this.isGradientExploded = false;
+                this.currentEpoch = 0;
+                this.currentStep = 0;
+                this.trainLoss = 2.85;
+                this.valLoss = 2.92;
+                
+                this.addLog("🔄 重置模型参数，模型参数已恢复至初始随机高维山坡位置。", "text-indigo-400");
+                this.initLossCanvas();
+                this.calculateVramLoad();
+                this.update3DBallPosition();
+            },
+
+            shuffleData() {
+                this.dataShuffled = true;
+                this.addLog("🎲 Mini-batch 洗牌算法启动！训练数据样本完成洗牌重组，防止权重更新梯度僵化。", "text-emerald-400 glow-text-emerald");
+            },
+
+            onParamChange() {
+                this.calculateVramLoad();
+                this.addLog(`超参变更：Learning Rate: ${parseFloat(this.learningRate).toFixed(3)} | Batch Size: ${this.batchSize} | 优化器: ${this.optimizer}`, "text-cyan-300");
+            },
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+
+                if (this.isTraining) {
+                    this.currentStep++;
+                    if (this.currentStep % 20 === 0) {
+                        this.currentEpoch++;
+                        this.addLog(`Epoch ${this.currentEpoch} 达成。正在运行洗牌打乱，Loss 逐步收敛。`, "text-slate-400");
+                    }
+                    this.stepTrainingPhysics();
+                }
+
+                if (this.optimumMarker) {
+                    this.optimumMarker.rotation.y += 0.015;
+                }
+                
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            },
+
+            onResize() {
+                const container = document.getElementById('three-container');
+                if (!container || !this.renderer || !this.camera) return;
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                this.camera.aspect = w / h;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(w, h);
+            },
+
+            addLog(msg, colorClass = "") {
+                const logBox = document.getElementById('terminal-log');
+                if(!logBox) return;
+
+                const div = document.createElement('div');
+                if (colorClass) div.className = colorClass;
+                div.innerHTML = `&gt;_ ${msg}`;
+                logBox.appendChild(div);
+                logBox.scrollTop = logBox.scrollHeight;
+            },
+
+            submitQuizAnswer(idx) {
+                if (this.quizAnswered) return;
+                this.selectedOptionIdx = idx;
+                this.quizAnswered = true;
+                
+                const currentQuiz = this.quizQuestions[this.currentQuestionIdx];
+                if (idx === currentQuiz.a) {
+                    this.quizFeedbackCorrect = true;
+                    this.quizFeedback = `🟢 回答正确！${currentQuiz.explain}`;
+                    this.addLog("🎓 超参测验：恭喜您回答正确！获得深度学习初级勋章。", "text-emerald-400 glow-text-emerald");
+                } else {
+                    this.quizFeedbackCorrect = false;
+                    this.quizFeedback = `🔴 回答错误。${currentQuiz.explain}`;
+                    this.addLog("🎓 超参测验：回答错误，建议仔细阅读左侧下山物理比拟科普。", "text-rose-400");
+                }
+            },
+
+            getOptionClass(idx) {
+                if (!this.quizAnswered) {
+                    return 'border-slate-800 bg-slate-900/40 text-slate-300 hover:bg-indigo-500/10 hover:border-indigo-500/40 cursor-pointer';
+                }
+                const currentQuiz = this.quizQuestions[this.currentQuestionIdx];
+                if (idx === currentQuiz.a) {
+                    return 'border-emerald-500/50 bg-emerald-950/40 text-emerald-300 font-bold';
+                }
+                if (this.selectedOptionIdx === idx) {
+                    return 'border-rose-500/50 bg-rose-950/40 text-rose-300';
+                }
+                return 'border-slate-900 bg-slate-950/20 text-slate-500 opacity-60';
+            },
+
+            nextQuestion() {
+                this.quizAnswered = false;
+                this.selectedOptionIdx = null;
+                this.quizFeedback = '';
+                this.currentQuestionIdx = (this.currentQuestionIdx + 1) % this.quizQuestions.length;
+            }
+        }
+    });
+
+    app.mount('#app');
+</script>
+</body>
+</html>

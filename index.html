@@ -300,6 +300,13 @@
                         <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px]">科学</span>
                     </button>
                 </li>
+                <li>
+                    <button onclick="loadOfficialPage('llm_training.html')"
+                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-indigo-500/10 bg-indigo-500/5 hover:bg-indigo-500/15 hover:border-indigo-500/30 transition-all text-left text-xs">
+                        <span class="text-slate-200 font-medium">⚡ 大模型训练与梯度收敛实验室</span>
+                        <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px]">计算</span>
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -2583,7 +2590,14 @@
         }
 
         function exportCurrentHTML() {
-            if (!AppState.generatedCode) return;
+            if (!AppState.generatedCode) {
+                alert('当前无生成代码可供导出。');
+                return;
+            }
+            if (AppState.generatedCode.startsWith('<!-- 内置官方案例预览 -->')) {
+                alert('您当前正在浏览内置官方精选实验室，您可以在项目源代码的本地根目录下直接获取对应 HTML 独立文件，或使用浏览器右键“另存为”保存此页面！');
+                return;
+            }
             downloadHTMLFile(AppState.generatedTitle, AppState.generatedCode);
         }
 
@@ -2665,6 +2679,9 @@
             } else if (fileName === 'seasons_simulation.html') {
                 officialTitle = '🌞 昼夜早晚与四季更替实验室';
                 officialSubtitle = '学科方向：天体物理黄赤交角自转模拟';
+            } else if (fileName === 'llm_training.html') {
+                officialTitle = '⚡ 大模型训练与梯度收敛物理实验室';
+                officialSubtitle = '学科方向：计算机科学深度学习超参控制';
             }
 
             document.getElementById('preview-title').textContent = officialTitle;
@@ -2677,6 +2694,23 @@
             saveBtn.className = saveBtn.className.replace(/text-slate-950/g, 'text-slate-400');
 
             document.getElementById('preview-iframe').src = fileName;
+
+            // 异步加载该静态物理文件的源码，以便打通右上角“导出 HTML 独立文件”按钮
+            fetch(fileName)
+                .then(res => {
+                    if (!res.ok) throw new Error('网络请求异常');
+                    return res.text();
+                })
+                .then(code => {
+                    AppState.generatedCode = code;
+                    AppState.generatedTitle = officialTitle;
+                })
+                .catch(err => {
+                    console.warn('官方案例源码预装载失败 (可能处于跨域或纯本地打开环境):', err);
+                    // 降级策略：在没有服务端容器纯本地双击 index.html 且存在 CORS 跨域限制时，允许继续预览，点击导出时给予友好提示
+                    AppState.generatedCode = '<!-- 内置官方案例预览 -->';
+                    AppState.generatedTitle = officialTitle;
+                });
         }
 
         function loadSavedHistoryItem(id) {

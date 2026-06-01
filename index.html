@@ -307,6 +307,13 @@
                         <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px]">计算</span>
                     </button>
                 </li>
+                <li>
+                    <button onclick="loadOfficialPage('discrete_mathematics.html')"
+                        class="w-full flex items-center justify-between p-2.5 rounded-lg border border-teal-500/10 bg-teal-500/5 hover:bg-teal-500/15 hover:border-teal-500/30 transition-all text-left text-xs">
+                        <span class="text-slate-200 font-medium">🕸️ 离散数学原理与图论实验室</span>
+                        <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-400 text-[10px]">数学</span>
+                    </button>
+                </li>
             </ul>
         </div>
 
@@ -2682,6 +2689,9 @@
             } else if (fileName === 'llm_training.html') {
                 officialTitle = '⚡ 大模型训练与梯度收敛物理实验室';
                 officialSubtitle = '学科方向：计算机科学深度学习超参控制';
+            } else if (fileName === 'discrete_mathematics.html') {
+                officialTitle = '🕸️ 离散数学原理与图论实验室';
+                officialSubtitle = '学科方向：计算机科学离散结构与算法模拟';
             }
 
             document.getElementById('preview-title').textContent = officialTitle;

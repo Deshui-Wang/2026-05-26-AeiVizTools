@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>离散数学原理与图论实验室 - AetherViz Studio</title>
+    
+    <!-- Tailwind CSS v3.4+ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <!-- KaTeX CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- Google Font Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-teal: #14B8A6;
+            --primary-cyan: #06B6D4;
+            --primary-indigo: #6366F1;
+            --primary-purple: #A855F7;
+            --bg-gradient: radial-gradient(circle at top, #060B16 0%, #020306 75%, #000000 100%);
+            --glass-bg: rgba(6, 11, 22, 0.85);
+            --glass-border: rgba(20, 184, 166, 0.18);
+            --glass-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.85);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-gradient);
+            color: #F8FAFC;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 赛博朋克深邃几何网格 */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(rgba(20, 184, 166, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 184, 166, 0.02) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 霓虹发光文本 */
+        .glow-text-teal {
+            text-shadow: 0 0 10px rgba(20, 184, 166, 0.6);
+        }
+        .glow-text-purple {
+            text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+        }
+        .glow-text-rose {
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
+        }
+
+        /* 赛博感极速滚动条 */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 11, 22, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(20, 184, 166, 0.25);
+            border-radius: 2px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(20, 184, 166, 0.5);
+        }
+
+        /* 霓虹按钮动效 */
+        .neon-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .neon-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(20, 184, 166, 0.2), transparent);
+            transition: 0.5s;
+        }
+        .neon-btn:hover::before {
+            left: 100%;
+        }
+
+        /* 针对Katex排版进行的美化 */
+        .katex-display {
+            margin: 0.5em 0 !important;
+        }
+        .katex {
+            font-size: 1.05em;
+        }
+    </style>
+</head>
+<body class="cyber-grid relative select-none">
+
+    <!-- 顶部绚丽光晕阴影 -->
+    <div class="absolute top-[-10%] left-[20%] w-[45vw] h-[35vh] rounded-full bg-teal-500/5 blur-[120px] pointer-events-none z-0"></div>
+    <div class="absolute bottom-[-10%] right-[10%] w-[40vw] h-[40vh] rounded-full bg-purple-500/5 blur-[130px] pointer-events-none z-0"></div>
+
+    <div id="app" class="h-full w-full flex flex-col relative z-10" v-cloak>
+        
+        <!-- 头部导航 -->
+        <header class="h-16 border-b border-teal-500/10 bg-slate-950/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-teal-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                    <span class="text-slate-950 font-bold text-lg leading-none">M</span>
+                </div>
+                <div>
+                    <h1 class="text-sm font-semibold tracking-wider font-['Outfit'] text-slate-100 flex items-center gap-2">
+                        DISCRETE STRUCTURES LAB
+                        <span class="px-2 py-0.5 rounded-full border border-teal-500/30 bg-teal-500/10 text-[9px] text-teal-400 font-bold tracking-normal glow-text-teal">
+                            离散数学原理与结构实验室
+                        </span>
+                    </h1>
+                    <p class="text-[10px] text-slate-500">计算机科学原理课件 · 拓扑图论/数理逻辑/偏序关系</p>
+                </div>
+            </div>
+
+            <!-- 顶部快捷切换 -->
+            <div class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/60 border border-slate-800">
+                <button 
+                    v-for="tab in tabs" 
+                    :key="tab.id"
+                    @click="switchTab(tab.id)"
+                    :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 flex items-center gap-1.5', 
+                      currentTab === tab.id ? 'bg-teal-500/15 border border-teal-500/30 text-teal-400 font-semibold' : 'text-slate-400 hover:text-slate-200 border border-transparent']"
+                >
+                    <span>{{ tab.icon }}</span>
+                    <span>{{ tab.name }}</span>
+                </button>
+            </div>
+
+            <!-- 控制按钮 -->
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-md shadow-emerald-500/50"></span>
+                <span class="text-[10px] text-emerald-400 font-semibold tracking-wider font-mono">ENGINE ONLINE</span>
+            </div>
+        </header>
+
+        <!-- 主面板区 -->
+        <div class="flex-1 min-h-0 w-full flex">
+            
+            <!-- 左侧 HUD 参数控制栏 -->
+            <aside class="w-[380px] border-r border-slate-900 bg-slate-950/45 p-5 flex flex-col gap-4 shrink-0 overflow-y-auto z-20">
+                
+                <!-- 模块一：图论实验室控制面板 -->
+                <div v-if="currentTab === 'graph'" class="flex flex-col gap-4">
+                    <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
+                        <span class="text-teal-400 text-lg">🕸️</span>
+                        <h2 class="text-xs font-bold tracking-wider text-slate-200 uppercase">图论控制台</h2>
+                    </div>
+
+                    <!-- 预设模板 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">几何图论拓扑预设</label>
+                        <div class="grid grid-cols-2 gap-2 mt-1">
+                            <button @click="loadGraphTemplate('petersen')" class="py-1.5 px-2 bg-slate-900 border border-slate-800 hover:border-teal-500/40 hover:bg-teal-500/5 text-[10px] rounded-lg text-slate-300 transition-all font-medium">⭐ 佩特森图 (Petersen)</button>
+                            <button @click="loadGraphTemplate('klein')" class="py-1.5 px-2 bg-slate-900 border border-slate-800 hover:border-teal-500/40 hover:bg-teal-500/5 text-[10px] rounded-lg text-slate-300 transition-all font-medium">🌌 克莱因拓扑环</button>
+                            <button @click="loadGraphTemplate('tree')" class="py-1.5 px-2 bg-slate-900 border border-slate-800 hover:border-teal-500/40 hover:bg-teal-500/5 text-[10px] rounded-lg text-slate-300 transition-all font-medium">🌴 树状二叉结构</button>
+                            <button @click="loadGraphTemplate('grid')" class="py-1.5 px-2 bg-slate-900 border border-slate-800 hover:border-teal-500/40 hover:bg-teal-500/5 text-[10px] rounded-lg text-slate-300 transition-all font-medium">🧱 赛博网格拓扑</button>
+                        </div>
+                    </div>
+
+                    <!-- 交互模式 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-2.5">
+                        <div class="flex justify-between items-center">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">视图与几何引擎</label>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[9px] text-slate-500">3D透视</span>
+                                <input type="checkbox" v-model="graphSettings.enable3D" class="w-7 h-4 rounded-full bg-slate-800 border-none text-teal-500 accent-teal-500 cursor-pointer">
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
+                            <span class="text-[9px] text-slate-500">拓扑自动展开 (力导向重力场)</span>
+                            <div class="flex gap-2">
+                                <button @click="toggleForceLayout" :class="['flex-1 py-1.5 text-[10px] font-bold rounded-lg border transition-all', graphSettings.forceEnabled ? 'bg-teal-500/20 text-teal-300 border-teal-500/40 glow-text-teal' : 'bg-slate-900 text-slate-400 border-slate-800']">
+                                    {{ graphSettings.forceEnabled ? '⏸ 暂停重力场' : '▶ 启用力导向' }}
+                                </button>
+                                <button @click="clearGraph" class="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 text-rose-400 text-[10px] font-bold rounded-lg transition-all">
+                                    🗑 清空画布
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 算法实验室 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-3">
+                        <label class="text-[10px] text-teal-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span>⚡</span> 算法运行中心
+                        </label>
+                        
+                        <div class="flex flex-col gap-2 border-b border-slate-900 pb-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-slate-300 font-medium">1. 最短路径寻路 (Dijkstra)</span>
+                                <span class="text-[9px] text-slate-500">点击画布节点选起点</span>
+                            </div>
+                            <div class="flex gap-1.5 items-center">
+                                <select v-model="dijkstraStart" class="flex-1 bg-slate-900/90 border border-slate-800 text-[10px] text-slate-200 px-2 py-1.5 rounded-lg outline-none focus:border-teal-500/50">
+                                    <option :value="null">-- 起点 --</option>
+                                    <option v-for="node in graphData.nodes" :key="node.id" :value="node.id">节点 {{ node.label }}</option>
+                                </select>
+                                <select v-model="dijkstraEnd" class="flex-1 bg-slate-900/90 border border-slate-800 text-[10px] text-slate-200 px-2 py-1.5 rounded-lg outline-none focus:border-teal-500/50">
+                                    <option :value="null">-- 终点 --</option>
+                                    <option v-for="node in graphData.nodes" :key="node.id" :value="node.id">节点 {{ node.label }}</option>
+                                </select>
+                                <button @click="runDijkstra" class="px-3 py-1.5 bg-teal-500/25 border border-teal-500/40 text-teal-300 text-[10px] font-bold rounded-lg hover:bg-teal-500/35 transition-all">寻优</button>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1.5 border-b border-slate-900 pb-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-slate-300 font-medium">2. 最小生成树 (MST - Kruskal)</span>
+                            </div>
+                            <button @click="runMST" class="w-full py-1.5 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 text-[10px] font-bold rounded-lg transition-all">
+                                🌲 计算并高亮最小生成树
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-1.5">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-slate-300 font-medium">3. 旅行商问题 (TSP) 粒子收敛</span>
+                                <span class="text-[9px] text-slate-500">遗传收敛</span>
+                            </div>
+                            <button @click="runTSP" :class="['w-full py-1.5 text-[10px] font-bold rounded-lg border transition-all', tspRunning ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 animate-pulse' : 'bg-slate-900 text-amber-400 border-slate-800 hover:border-amber-500/30 hover:bg-amber-500/5']">
+                                {{ tspRunning ? '⏳ TSP 遗传粒子震荡收敛中...' : '🧬 随机生成点并启动 TSP 收敛' }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 属性面板 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">图统计属性看板</label>
+                        <div class="flex flex-col gap-1 text-[10px] text-slate-400 font-mono mt-1">
+                            <div class="flex justify-between py-1 border-b border-slate-900"><span class="text-slate-500">顶点阶数 |V|:</span><span class="text-slate-200 font-bold">{{ graphData.nodes.length }} 个</span></div>
+                            <div class="flex justify-between py-1 border-b border-slate-900"><span class="text-slate-500">连线边数 |E|:</span><span class="text-slate-200 font-bold">{{ graphData.edges.length }} 条</span></div>
+                            <div class="flex justify-between py-1 border-b border-slate-900"><span class="text-slate-500">图拓扑连通分量:</span><span class="text-teal-400 font-bold">{{ calcConnectedComponents() }} 个</span></div>
+                            <div class="flex justify-between py-1"><span class="text-slate-500">最短路径欧拉判别:</span><span :class="isEulerian() ? 'text-emerald-400' : 'text-slate-500'">{{ isEulerian() ? '存在半欧拉通路' : '非欧拉图' }}</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块二：命题逻辑演算面板 -->
+                <div v-if="currentTab === 'logic'" class="flex flex-col gap-4">
+                    <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
+                        <span class="text-teal-400 text-lg">💡</span>
+                        <h2 class="text-xs font-bold tracking-wider text-slate-200 uppercase">命题逻辑输入栏</h2>
+                    </div>
+
+                    <!-- 命题输入 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-2.5">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">键入命题公式</label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                v-model="logicFormula" 
+                                class="w-full bg-slate-900 border border-slate-800 text-xs font-semibold text-teal-300 font-mono px-3 py-2.5 rounded-lg outline-none focus:border-teal-500/40"
+                                placeholder="输入命题，如 P ∧ (Q ∨ ¬R)"
+                            >
+                            <span v-if="logicError" class="text-[9px] text-rose-400 mt-1 block font-sans">{{ logicError }}</span>
+                        </div>
+                        
+                        <!-- 快捷输入键 -->
+                        <div class="flex flex-col gap-1.5">
+                            <span class="text-[9px] text-slate-500">快捷操作符</span>
+                            <div class="grid grid-cols-5 gap-1.5">
+                                <button @click="insertOp('¬')" class="py-1 bg-slate-900 border border-slate-800 hover:border-teal-500/30 text-[10px] text-teal-400 font-bold rounded-md font-mono">¬ (非)</button>
+                                <button @click="insertOp('∧')" class="py-1 bg-slate-900 border border-slate-800 hover:border-teal-500/30 text-[10px] text-teal-400 font-bold rounded-md font-mono">∧ (与)</button>
+                                <button @click="insertOp('∨')" class="py-1 bg-slate-900 border border-slate-800 hover:border-teal-500/30 text-[10px] text-teal-400 font-bold rounded-md font-mono">∨ (或)</button>
+                                <button @click="insertOp('→')" class="py-1 bg-slate-900 border border-slate-800 hover:border-teal-500/30 text-[10px] text-teal-400 font-bold rounded-md font-mono">→ (含)</button>
+                                <button @click="insertOp('↔')" class="py-1 bg-slate-900 border border-slate-800 hover:border-teal-500/30 text-[10px] text-teal-400 font-bold rounded-md font-mono">↔ (值)</button>
+                            </div>
+                            <div class="grid grid-cols-4 gap-1.5">
+                                <button @click="insertOp('P')" class="py-1 bg-slate-900 border border-slate-800 hover:border-purple-500/30 text-[10px] text-purple-300 font-bold rounded-md">P</button>
+                                <button @click="insertOp('Q')" class="py-1 bg-slate-900 border border-slate-800 hover:border-purple-500/30 text-[10px] text-purple-300 font-bold rounded-md">Q</button>
+                                <button @click="insertOp('R')" class="py-1 bg-slate-900 border border-slate-800 hover:border-purple-500/30 text-[10px] text-purple-300 font-bold rounded-md">R</button>
+                                <button @click="insertOp('S')" class="py-1 bg-slate-900 border border-slate-800 hover:border-purple-500/30 text-[10px] text-purple-300 font-bold rounded-md">S</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 主范式求解 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">数理逻辑主范式求解</label>
+                        
+                        <div class="flex flex-col gap-2 mt-1 text-[10px] font-mono">
+                            <div class="p-2 bg-slate-900/60 border border-slate-800 rounded-lg">
+                                <span class="text-[9px] text-slate-500 block mb-1">主析取范式 (PDNF - 极小项和)</span>
+                                <div class="text-teal-400 overflow-x-auto whitespace-normal max-h-16 overflow-y-auto leading-relaxed select-all" id="pdnf-katex">
+                                    {{ pdnfFormula || '等待计算...' }}
+                                </div>
+                            </div>
+
+                            <div class="p-2 bg-slate-900/60 border border-slate-800 rounded-lg">
+                                <span class="text-[9px] text-slate-500 block mb-1">主合取范式 (PCNF - 极大项积)</span>
+                                <div class="text-purple-400 overflow-x-auto whitespace-normal max-h-16 overflow-y-auto leading-relaxed select-all" id="pcnf-katex">
+                                    {{ pcnfFormula || '等待计算...' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 逻辑定律小科普 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-1.5">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">离散逻辑等价定律</label>
+                        <div class="text-[10px] text-slate-400 leading-relaxed font-sans mt-1 space-y-1">
+                            <p class="border-l-2 border-teal-500 pl-1.5"><strong class="text-slate-300">蕴涵等值律：</strong> $A \rightarrow B \equiv \neg A \vee B$</p>
+                            <p class="border-l-2 border-purple-500 pl-1.5"><strong class="text-slate-300">德·摩根律：</strong> $\neg(A \wedge B) \equiv \neg A \vee \neg B$</p>
+                            <p class="border-l-2 border-indigo-500 pl-1.5"><strong class="text-slate-300">分配律：</strong> $A \wedge (B \vee C) \equiv (A \wedge B) \vee (A \wedge C)$</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块三：关系论控制面板 -->
+                <div v-if="currentTab === 'relation'" class="flex flex-col gap-4">
+                    <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
+                        <span class="text-teal-400 text-lg">📊</span>
+                        <h2 class="text-xs font-bold tracking-wider text-slate-200 uppercase">关系与哈斯控制</h2>
+                    </div>
+
+                    <!-- 集合与关系定义 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-3">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">定义二元关系</label>
+                        
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[9px] text-slate-500">集合 A 元素 (英文逗号隔开)</span>
+                            <input 
+                                type="text" 
+                                v-model="relationInput.setA" 
+                                class="bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-200 px-2.5 py-1.5 rounded-lg outline-none focus:border-teal-500/40"
+                                placeholder="如: 1, 2, 3, 4"
+                            >
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[9px] text-slate-500">二元关系 R (括号对，逗号隔开)</span>
+                            <input 
+                                type="text" 
+                                v-model="relationInput.relR" 
+                                class="bg-slate-900 border border-slate-800 text-[10px] font-bold text-teal-400 font-mono px-2.5 py-1.5 rounded-lg outline-none focus:border-teal-500/40"
+                                placeholder="如: (1,1),(2,2),(3,3),(4,4),(1,2),(2,3),(1,3),(3,4),(2,4),(1,4)"
+                            >
+                        </div>
+                        <button @click="updateRelation" class="w-full py-1.5 bg-teal-500/25 border border-teal-500/40 hover:bg-teal-500/35 text-teal-300 text-[10px] font-bold rounded-lg transition-all">
+                            🔄 解析二元关系并计算
+                        </button>
+                    </div>
+
+                    <!-- 关系性质判定 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-2">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">关系数学性质判定</label>
+                        
+                        <div class="grid grid-cols-2 gap-2 mt-1 text-[10px]">
+                            <div class="p-1.5 bg-slate-900/60 border border-slate-800 rounded-md flex items-center justify-between">
+                                <span class="text-slate-400">自反性:</span>
+                                <span :class="relationProps.reflexive ? 'text-emerald-400 font-bold' : 'text-slate-500'">{{ relationProps.reflexive ? '✅ 满足' : '❌ 不满足' }}</span>
+                            </div>
+                            <div class="p-1.5 bg-slate-900/60 border border-slate-800 rounded-md flex items-center justify-between">
+                                <span class="text-slate-400">对称性:</span>
+                                <span :class="relationProps.symmetric ? 'text-emerald-400 font-bold' : 'text-slate-500'">{{ relationProps.symmetric ? '✅ 满足' : '❌ 不满足' }}</span>
+                            </div>
+                            <div class="p-1.5 bg-slate-900/60 border border-slate-800 rounded-md flex items-center justify-between">
+                                <span class="text-slate-400">传递性:</span>
+                                <span :class="relationProps.transitive ? 'text-emerald-400 font-bold' : 'text-slate-500'">{{ relationProps.transitive ? '✅ 满足' : '❌ 不满足' }}</span>
+                            </div>
+                            <div class="p-1.5 bg-slate-900/60 border border-slate-800 rounded-md flex items-center justify-between">
+                                <span class="text-slate-400">反对称性:</span>
+                                <span :class="relationProps.antisymmetric ? 'text-emerald-400 font-bold' : 'text-slate-500'">{{ relationProps.antisymmetric ? '✅ 满足' : '❌ 不满足' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="p-2 bg-teal-950/20 border border-teal-500/15 rounded-lg mt-2 text-[10px] text-slate-300">
+                            <span class="text-[9px] text-teal-400 font-bold uppercase block mb-1">关系结构诊断：</span>
+                            <div class="leading-relaxed font-bold glow-text-teal">
+                                {{ relationDiagnosis }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 哈斯图说明 -->
+                    <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-1.5">
+                        <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">哈斯图 (Hasse Diagram) 原理</label>
+                        <div class="text-[9px] text-slate-400 leading-relaxed font-sans mt-1 space-y-1.5">
+                            <p>哈斯图是<b>偏序关系</b>的一种极简有向无环图绘制：</p>
+                            <p>1. <b>忽略自环</b>（利用自反性）。</p>
+                            <p>2. <b>忽略可传递的间接边</b>（利用传递收缩还原偏序骨架）。</p>
+                            <p>3. 节点层级代表元素大小，大元素在上，小元素在下。线条<b>自底向上</b>即表示小于等于偏序。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 模块四：知识测验面板 -->
+                <div v-if="currentTab === 'quiz'" class="flex flex-col gap-4">
+                    <div class="flex items-center gap-2 pb-2 border-b border-slate-800">
+                        <span class="text-teal-400 text-lg">📝</span>
+                        <h2 class="text-xs font-bold tracking-wider text-slate-200 uppercase">离散极客测验</h2>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl flex flex-col gap-3">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-2">
+                            <span class="text-[10px] text-teal-400 font-bold">第 {{ currentQuizIndex + 1 }} / {{ quizData.length }} 题</span>
+                            <span class="text-[10px] text-slate-500 font-mono">得分: {{ quizScore }} 分</span>
+                        </div>
+
+                        <!-- 题干 -->
+                        <div class="text-[11px] text-slate-200 leading-relaxed font-medium mt-1 select-text" id="quiz-question-container">
+                            {{ quizData[currentQuizIndex].question }}
+                        </div>
+
+                        <!-- 选项 -->
+                        <div class="flex flex-col gap-2 mt-2">
+                            <button 
+                                v-for="(opt, idx) in quizData[currentQuizIndex].options" 
+                                :key="idx"
+                                @click="answerQuiz(idx)"
+                                :disabled="quizAnswered"
+                                :class="['w-full p-2.5 text-left text-[10px] rounded-lg border transition-all duration-200', 
+                                  getQuizOptClass(idx)]"
+                            >
+                                <span class="font-bold mr-1.5">{{ String.fromCharCode(65 + idx) }}.</span> {{ opt }}
+                            </button>
+                        </div>
+
+                        <!-- 解析 -->
+                        <div v-if="quizAnswered" class="mt-2 p-3 rounded-lg border text-[10px] leading-relaxed select-text" 
+                             :class="isCorrectAnswer ? 'bg-emerald-500/10 border-emerald-500/20 text-slate-200' : 'bg-rose-500/10 border-rose-500/20 text-slate-200'">
+                            <p class="font-bold flex items-center gap-1.5 mb-1" :class="isCorrectAnswer ? 'text-emerald-400 glow-text-teal' : 'text-rose-400 glow-text-rose'">
+                                <span>{{ isCorrectAnswer ? '✔ 回答正确！' : '❌ 回答错误！' }}</span>
+                                <span class="text-slate-400 text-[9px] font-normal">正确答案是 {{ String.fromCharCode(65 + quizData[currentQuizIndex].answer) }}</span>
+                            </p>
+                            <p class="text-slate-400" id="quiz-explanation-container">{{ quizData[currentQuizIndex].explanation }}</p>
+                        </div>
+
+                        <!-- 下一题 -->
+                        <button 
+                            v-if="quizAnswered"
+                            @click="nextQuiz"
+                            class="w-full mt-2 py-2 bg-teal-500 border border-teal-600 text-slate-950 font-bold hover:scale-[1.01] active:scale-[0.99] text-xs rounded-lg transition-all"
+                        >
+                            {{ currentQuizIndex === quizData.length - 1 ? '🎉 重新挑战' : '下一题 🚀' }}
+                        </button>
+                    </div>
+                </div>
+
+            </aside>
+
+            <!-- 右侧主交互 Canvas 画布 -->
+            <main class="flex-1 min-w-0 bg-slate-950 relative overflow-hidden flex flex-col">
+                
+                <!-- 浮动的 3D 透视环绕指示器，只在图论模式且开启 3D 时显示 -->
+                <div v-if="currentTab === 'graph' && graphSettings.enable3D" class="absolute top-4 left-4 pointer-events-none z-10 glass-panel px-3 py-1.5 rounded-lg text-[9px] text-teal-400 font-mono flex items-center gap-2 glow-text-teal">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping"></span>
+                    <span>3D 视角投影透视激活 (鼠标按住左键拖拽旋转/滚轮无级缩放)</span>
+                </div>
+
+                <div v-if="currentTab === 'graph'" class="absolute top-4 right-4 pointer-events-none z-10 glass-panel px-3 py-1.5 rounded-lg text-[9px] text-slate-400 font-sans flex items-center gap-2">
+                    <span>双击空白处创建节点 | 拖动节点可调整位置 | 双击节点删除</span>
+                </div>
+
+                <!-- 关系论的哈斯图状态指示 -->
+                <div v-if="currentTab === 'relation'" class="absolute top-4 left-4 pointer-events-none z-10 glass-panel px-3 py-1.5 rounded-lg text-[9px] text-teal-400 font-mono flex items-center gap-2 glow-text-teal">
+                    <span class="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping"></span>
+                    <span>偏序关系哈斯有向无环图 (智能拓扑分层智能重力排版)</span>
+                </div>
+
+                <!-- Canvas 画布容器 -->
+                <div id="canvas-container" class="flex-1 w-full relative">
+                    <canvas 
+                        id="lab-canvas" 
+                        class="absolute inset-0 cursor-crosshair"
+                        @mousedown="handleCanvasMouseDown"
+                        @mousemove="handleCanvasMouseMove"
+                        @mouseup="handleCanvasMouseUp"
+                        @dblclick="handleCanvasDblClick"
+                        @wheel="handleCanvasWheel"
+                    ></canvas>
+
+                    <!-- 真值表渲染容器 (Logic 专属底部展示区) -->
+                    <div v-if="currentTab === 'logic'" class="absolute inset-x-6 bottom-6 h-[45%] glass-panel rounded-2xl p-4 flex flex-col gap-2 overflow-hidden pointer-events-auto">
+                        <div class="flex justify-between items-center border-b border-slate-900 pb-2">
+                            <span class="text-[10px] text-teal-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <span>📋</span> 真值计算表 (Truth Table Panel)
+                            </span>
+                            <span class="text-[9px] text-slate-500 font-mono">状态矩阵规模: {{ truthTableData.rows.length }} 行 × {{ truthTableData.headers.length }} 列</span>
+                        </div>
+
+                        <!-- 滚动列表 -->
+                        <div class="flex-1 overflow-auto rounded-xl border border-slate-900 bg-slate-950/80">
+                            <table class="w-full text-left text-[10px] font-mono border-collapse">
+                                <thead class="sticky top-0 bg-slate-900 border-b border-slate-800 text-slate-400 z-10">
+                                    <tr>
+                                        <th class="py-2 px-3 text-center border-r border-slate-800/60 w-12">No.</th>
+                                        <th 
+                                            v-for="(header, idx) in truthTableData.headers" 
+                                            :key="idx"
+                                            :class="['py-2 px-3 text-center border-r border-slate-800/60 font-bold', 
+                                              idx === truthTableData.headers.length - 1 ? 'text-teal-300 font-bold bg-teal-950/20' : 'text-slate-300']"
+                                        >
+                                            {{ header }}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr 
+                                        v-for="(row, rIdx) in truthTableData.rows" 
+                                        :key="rIdx"
+                                        :class="['border-b border-slate-900/60 hover:bg-slate-900/40 transition-colors', 
+                                          row[row.length - 1] ? 'bg-emerald-950/5' : 'bg-rose-950/5']"
+                                    >
+                                        <td class="py-1.5 px-3 text-center text-slate-500 border-r border-slate-800/60">{{ rIdx + 1 }}</td>
+                                        <td 
+                                            v-for="(val, cIdx) in row" 
+                                            :key="cIdx"
+                                            :class="['py-1.5 px-3 text-center border-r border-slate-800/60', 
+                                              cIdx === row.length - 1 ? 'font-bold' : '']"
+                                        >
+                                            <span 
+                                                :class="['px-1.5 py-0.5 rounded text-[9px] font-bold font-mono', 
+                                                  val ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]']"
+                                            >
+                                                {{ val ? '1' : '0' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- 原生交互与离散数学核心算法 -->
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentTab: 'graph',
+                    tabs: [
+                        { id: 'graph', name: '图论算法', icon: '🕸️' },
+                        { id: 'logic', name: '数理逻辑', icon: '💡' },
+                        { id: 'relation', name: '集合关系', icon: '📊' },
+                        { id: 'quiz', name: '离散测验', icon: '📝' }
+                    ],
+                    
+                    // --- 模块一：图论控制与状态 ---
+                    graphSettings: {
+                        enable3D: false,
+                        forceEnabled: true
+                    },
+                    graphData: {
+                        nodes: [],
+                        edges: []
+                    },
+                    dijkstraStart: null,
+                    dijkstraEnd: null,
+                    tspRunning: false,
+                    
+                    // --- 模块二：数理逻辑控制与状态 ---
+                    logicFormula: 'P ∧ (Q ∨ ¬R) → S',
+                    logicError: null,
+                    pdnfFormula: '',
+                    pcnfFormula: '',
+                    truthTableData: {
+                        headers: [],
+                        rows: []
+                    },
+                    
+                    // --- 模块三：二元关系控制与状态 ---
+                    relationInput: {
+                        setA: '1, 2, 3, 4',
+                        relR: '(1,1),(2,2),(3,3),(4,4),(1,2),(2,3),(1,3),(3,4),(2,4),(1,4)'
+                    },
+                    relationProps: {
+                        reflexive: false,
+                        symmetric: false,
+                        transitive: false,
+                        antisymmetric: false
+                    },
+                    relationDiagnosis: '偏序关系 (Partial Order)',
+                    
+                    // --- 模块四：离散测验控制与状态 ---
+                    currentQuizIndex: 0,
+                    quizAnswered: false,
+                    selectedQuizAnswer: null,
+                    quizScore: 0,
+                    quizData: [
+                        {
+                            question: "给定有向图的邻接矩阵 M。若该有向图没有奇数度数的节点，那么关于此图必然正确的是：",
+                            options: [
+                                "该图一定是一个有向欧拉图",
+                                "该图的强连通分量数必然为 1",
+                                "图的所有顶点度数之和必定是奇数",
+                                "如果它是弱连通的，则对于入度等于出度的有向图来说，它包含一条欧拉回路"
+                            ],
+                            answer: 3,
+                            explanation: "根据欧拉图的充要条件：弱连通有向图 G 具有欧拉回路的充要条件是每个顶点的入度都等于出度。这与单纯的“奇数度数顶点”在有向图里略有区别。故选 D。"
+                        },
+                        {
+                            question: "设集合 A={1, 2, 3}，A 上的二元关系 R={(1,1), (2,2), (3,3), (1,2), (2,3), (1,3)}。请问二元关系 R 的等价或偏序性质是：",
+                            options: [
+                                "它具有对称性，是一个等价关系",
+                                "它不具有传递性，仅是一个拟序关系",
+                                "它满足自反性、反对称性与传递性，是一个偏序关系",
+                                "它满足反自反性与反对称性，是一个偏序关系"
+                            ],
+                            answer: 2,
+                            explanation: "R中包含所有的恒等关系(1,1),(2,2),(3,3)满足自反；含有(1,2)但没有(2,1)，含有(2,3)但没有(3,2)，满足反对称性；且有(1,2),(2,3)和(1,3)满足传递。自反、反对称、传递构成了偏序关系。故选 C。"
+                        },
+                        {
+                            question: "下列命题公式中，哪一个是永真式 (Tautology)？",
+                            options: [
+                                "(P → Q) → P",
+                                "P ∨ ¬P",
+                                "P ∧ ¬P",
+                                "(P ∧ Q) → ¬P"
+                            ],
+                            answer: 1,
+                            explanation: "P ∨ ¬P 是排中律，在任何赋值下都必然为真，是经典的永真式。故选 B。"
+                        },
+                        {
+                            question: "在集合论中，若集合 A 的基数 |A| = n，则其幂集 P(A)（所有子集构成的集合）的基数 |P(A)| 是多少？",
+                            options: [
+                                "n^2",
+                                "2^n",
+                                "n!",
+                                "2n"
+                            ],
+                            answer: 1,
+                            explanation: "集合 A 的每个元素在子集中都有“在”或“不在”两种选择，共有 n 个元素，因此子集个数为 2^n，即幂集基数为 2^n。故选 B。"
+                        }
+                    ]
+                };
+            },
+            created() {
+                // 用于存放 Canvas 高频粒子、物理模型、拖拽焦点等不需要 Vue 代理的成员
+                this.canvas = null;
+                this.ctx = null;
+                this.forceTickTimer = null;
+                this.camera = {
+                    x: 0,
+                    y: 0,
+                    zoom: 1,
+                    rotX: -0.3, // 3D 三轴旋转弧度
+                    rotY: 0.4
+                };
+                this.dragNode = null;
+                this.particles = []; // 图论流光粒子
+                this.hoveredNode = null;
+                
+                // 3D 鼠标拖动参数
+                this.isMouseDown = false;
+                this.lastMousePos = { x: 0, y: 0 };
+            },
+            mounted() {
+                this.initCanvas();
+                this.loadGraphTemplate('petersen');
+                this.evaluateLogic();
+                this.updateRelation();
+                this.$nextTick(() => {
+                    this.renderMath();
+                });
+            },
+            watch: {
+                currentTab(newTab) {
+                    this.$nextTick(() => {
+                        this.initCanvas();
+                        this.renderMath();
+                    });
+                },
+                logicFormula() {
+                    this.evaluateLogic();
+                }
+            },
+            computed: {
+                isCorrectAnswer() {
+                    return this.selectedQuizAnswer === this.quizData[this.currentQuizIndex].answer;
+                }
+            },
+            methods: {
+                // 切换面板
+                switchTab(tabId) {
+                    this.currentTab = tabId;
+                },
+                
+                // KaTeX 数学公式渲染
+                renderMath() {
+                    try {
+                        renderMathInElement(document.body, {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false}
+                            ],
+                            throwOnError: false
+                        });
+                    } catch(e) {
+                        console.warn("KaTeX 渲染受限或未完全加载", e);
+                    }
+                },
+                
+                // --- 模块一：图论 Canvas 核心物理与引擎 ---
+                initCanvas() {
+                    this.canvas = document.getElementById('lab-canvas');
+                    if (!this.canvas) return;
+                    this.ctx = this.canvas.getContext('2d');
+                    
+                    const container = document.getElementById('canvas-container');
+                    this.canvas.width = container.clientWidth;
+                    this.canvas.height = container.clientHeight;
+                    
+                    // 重置相机坐标至画布中心
+                    this.camera.x = this.canvas.width / 2;
+                    this.camera.y = this.canvas.height / 2;
+                    
+                    // 启动动画渲染循环
+                    if (this.animationFrameId) {
+                        cancelAnimationFrame(this.animationFrameId);
+                    }
+                    const drawLoop = () => {
+                        this.physicsUpdate();
+                        this.drawLab();
+                        this.animationFrameId = requestAnimationFrame(drawLoop);
+                    };
+                    this.animationFrameId = requestAnimationFrame(drawLoop);
+                },
+
+                // 物理学力导向与粒子动力解算
+                physicsUpdate() {
+                    if (this.currentTab !== 'graph' && this.currentTab !== 'relation') return;
+
+                    // 1. 力导向算法 (2D/3D 通用)
+                    const nodes = this.graphData.nodes;
+                    const edges = this.graphData.edges;
+                    
+                    if (this.graphSettings.forceEnabled && nodes.length > 0 && !this.tspRunning) {
+                        const K_r = 3000; // 斥力系数
+                        const K_a = 0.04; // 引力系数
+                        const d_ideal = 130; // 弹簧理想长度
+                        const damp = 0.90; // 摩擦阻尼
+                        const gravity = 0.02; // 回心力
+
+                        // 斥力解算 (库仑力)
+                        for (let i = 0; i < nodes.length; i++) {
+                            for (let j = i + 1; j < nodes.length; j++) {
+                                let dx = nodes[j].x - nodes[i].x;
+                                let dy = nodes[j].y - nodes[i].y;
+                                let dz = (nodes[j].z || 0) - (nodes[i].z || 0);
+                                
+                                let distSqr = dx*dx + dy*dy + dz*dz + 0.1;
+                                let dist = Math.sqrt(distSqr);
+                                
+                                let force = K_r / distSqr;
+                                let fx = (dx / dist) * force;
+                                let fy = (dy / dist) * force;
+                                let fz = (dz / dist) * force;
+
+                                if (!nodes[i].isDragging) {
+                                    nodes[i].vx -= fx;
+                                    nodes[i].vy -= fy;
+                                    nodes[i].vz -= fz;
+                                }
+                                if (!nodes[j].isDragging) {
+                                    nodes[j].vx += fx;
+                                    nodes[j].vy += fy;
+                                    nodes[j].vz += fz;
+                                }
+                            }
+                        }
+
+                        // 引力解算 (胡克定律)
+                        for (let e of edges) {
+                            let u = nodes.find(n => n.id === e.source);
+                            let v = nodes.find(n => n.id === e.target);
+                            if (!u || !v) continue;
+
+                            let dx = v.x - u.x;
+                            let dy = v.y - u.y;
+                            let dz = (v.z || 0) - (u.z || 0);
+                            let dist = Math.sqrt(dx*dx + dy*dy + dz*dz) + 0.1;
+                            
+                            let force = K_a * (dist - d_ideal);
+                            let fx = (dx / dist) * force;
+                            let fy = (dy / dist) * force;
+                            let fz = (dz / dist) * force;
+
+                            if (!u.isDragging) {
+                                u.vx += fx;
+                                u.vy += fy;
+                                u.vz += fz;
+                            }
+                            if (!v.isDragging) {
+                                v.vx -= fx;
+                                v.vy -= fy;
+                                v.vz -= fz;
+                            }
+                        }
+
+                        // 回心重力约束与运动阻尼积分
+                        for (let n of nodes) {
+                            if (n.isDragging) continue;
+                            
+                            // 回心力
+                            n.vx -= n.x * gravity;
+                            n.vy -= n.y * gravity;
+                            n.vz -= (n.z || 0) * gravity;
+
+                            // 状态迭代
+                            n.x += n.vx;
+                            n.y += n.vy;
+                            n.z = (n.z || 0) + n.vz;
+
+                            n.vx *= damp;
+                            n.vy *= damp;
+                            n.vz *= damp;
+                        }
+                    }
+
+                    // 2. 霓虹流动粒子物理步进
+                    for (let i = this.particles.length - 1; i >= 0; i--) {
+                        let p = this.particles[i];
+                        p.progress += p.speed;
+                        if (p.progress >= 1) {
+                            // 移向最短路径的下一个分支或回收
+                            if (p.path && p.pathIndex < p.path.length - 2) {
+                                p.pathIndex++;
+                                let uId = p.path[p.pathIndex];
+                                let vId = p.path[p.pathIndex + 1];
+                                p.sourceNode = nodes.find(n => n.id === uId);
+                                p.targetNode = nodes.find(n => n.id === vId);
+                                p.progress = 0;
+                            } else {
+                                this.particles.splice(i, 1);
+                            }
+                        }
+                    }
+                },
+
+                // Canvas 多维物理渲染绘制主入口
+                drawLab() {
+                    if (!this.canvas || !this.ctx) return;
+                    const ctx = this.ctx;
+                    const width = this.canvas.width;
+                    const height = this.canvas.height;
+                    
+                    ctx.clearRect(0, 0, width, height);
+
+                    if (this.currentTab === 'graph' || this.currentTab === 'relation') {
+                        this.drawNetworkGraph(ctx, width, height);
+                    } else if (this.currentTab === 'logic') {
+                        this.drawLogicGateMock(ctx, width, height);
+                    }
+                },
+
+                // 核心：网络拓扑与 3D 透视投影绘制
+                drawNetworkGraph(ctx, width, height) {
+                    const nodes = this.graphData.nodes;
+                    const edges = this.graphData.edges;
+                    const enable3D = this.graphSettings.enable3D && this.currentTab === 'graph';
+
+                    // 1. 三维旋转矩阵与透视投影变换
+                    let rotX = this.camera.rotX;
+                    let rotY = this.camera.rotY;
+                    let fov = 400; // 焦距
+
+                    for (let n of nodes) {
+                        let x = n.x;
+                        let y = n.y;
+                        let z = n.z || 0;
+
+                        if (enable3D) {
+                            // 绕 Y 轴旋转
+                            let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
+                            let z1 = x * Math.sin(rotY) + z * Math.cos(rotY);
+                            // 绕 X 轴旋转
+                            let y2 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
+                            let z2 = y * Math.sin(rotX) + z1 * Math.cos(rotX);
+
+                            // 透视比
+                            let scale = fov / (fov + z2);
+                            n.projX = this.camera.x + x1 * scale * this.camera.zoom;
+                            n.projY = this.camera.y + y2 * scale * this.camera.zoom;
+                            n.projScale = scale;
+                            n.depth = z2; // 深度缓存
+                        } else {
+                            n.projX = this.camera.x + x * this.camera.zoom;
+                            n.projY = this.camera.y + y * this.camera.zoom;
+                            n.projScale = 1;
+                            n.depth = 0;
+                        }
+                    }
+
+                    // 2. 绘制图论连线 (Edges)
+                    for (let e of edges) {
+                        let u = nodes.find(n => n.id === e.source);
+                        let v = nodes.find(n => n.id === e.target);
+                        if (!u || !v) continue;
+
+                        ctx.beginPath();
+                        ctx.moveTo(u.projX, u.projY);
+                        ctx.lineTo(v.projX, v.projY);
+                        
+                        // 确定边的主题霓虹发光颜色
+                        let strokeColor = 'rgba(20, 184, 166, 0.15)';
+                        let lineWidth = 1.5;
+
+                        if (e.isPathEdge) {
+                            strokeColor = 'rgba(234, 179, 8, 0.85)'; // Dijkstra 黄金最短路
+                            lineWidth = 3.5;
+                            ctx.shadowBlur = 12;
+                            ctx.shadowColor = 'rgba(234, 179, 8, 0.85)';
+                        } else if (e.isTreeEdge) {
+                            strokeColor = 'rgba(99, 102, 241, 0.85)'; // 生成树发光靛蓝
+                            lineWidth = 3;
+                            ctx.shadowBlur = 10;
+                            ctx.shadowColor = 'rgba(99, 102, 241, 0.85)';
+                        } else if (e.isHighlighted) {
+                            strokeColor = 'rgba(20, 184, 166, 0.8)'; // 一般选中高亮
+                            lineWidth = 2.5;
+                        }
+
+                        ctx.strokeStyle = strokeColor;
+                        ctx.lineWidth = lineWidth * (u.projScale + v.projScale)/2;
+                        ctx.stroke();
+                        ctx.shadowBlur = 0; // 重置阴影
+
+                        // 绘制边权重文本
+                        if (this.currentTab === 'graph' && e.weight !== undefined) {
+                            let mx = (u.projX + v.projX) / 2;
+                            let my = (u.projY + v.projY) / 2;
+                            ctx.font = 'bold 9px monospace';
+                            ctx.fillStyle = e.isPathEdge ? '#F59E0B' : '#64748B';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            // 绘制背景微小黑块
+                            ctx.fillStyle = '#020306';
+                            ctx.fillRect(mx - 8, my - 6, 16, 12);
+                            ctx.fillStyle = e.isPathEdge ? '#F59E0B' : '#94A3B8';
+                            ctx.fillText(e.weight, mx, my);
+                        }
+                    }
+
+                    // 3. 绘制流光霓虹粒子 (Particles)
+                    for (let p of this.particles) {
+                        if (!p.sourceNode || !p.targetNode) continue;
+                        let px = p.sourceNode.projX + (p.targetNode.projX - p.sourceNode.projX) * p.progress;
+                        let py = p.sourceNode.projY + (p.targetNode.projY - p.sourceNode.projY) * p.progress;
+                        let size = 6 * ((p.sourceNode.projScale + p.targetNode.projScale)/2);
+
+                        ctx.beginPath();
+                        ctx.arc(px, py, size, 0, Math.PI * 2);
+                        ctx.fillStyle = '#F59E0B'; // 耀眼金黄
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#F59E0B';
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+
+                    // 4. 绘制拓扑节点 (Nodes)
+                    // 对节点按照深度 z（depth）进行排序，实现遮挡关系（从远到近绘制）
+                    const sortedNodes = [...nodes].sort((a, b) => b.depth - a.depth);
+
+                    for (let n of sortedNodes) {
+                        let size = 16 * n.projScale * this.camera.zoom;
+                        if (size < 4) size = 4;
+
+                        ctx.beginPath();
+                        ctx.arc(n.projX, n.projY, size, 0, Math.PI * 2);
+                        
+                        // 节点霓虹环色彩配置
+                        let fillColor = '#040714';
+                        let strokeColor = 'rgba(20, 184, 166, 0.4)';
+                        let shadowColor = 'rgba(20, 184, 166, 0.3)';
+                        let shadowBlur = 0;
+
+                        if (n.isHighlighted) {
+                            strokeColor = '#14B8A6';
+                            shadowBlur = 15;
+                            shadowColor = '#14B8A6';
+                        }
+                        if (this.hoveredNode && this.hoveredNode.id === n.id) {
+                            strokeColor = '#06B6D4';
+                            shadowBlur = 12;
+                            shadowColor = '#06B6D4';
+                        }
+
+                        ctx.shadowBlur = shadowBlur;
+                        ctx.shadowColor = shadowColor;
+                        ctx.fillStyle = fillColor;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        ctx.lineWidth = n.isHighlighted ? 3.5 : 2;
+                        ctx.strokeStyle = strokeColor;
+                        ctx.stroke();
+
+                        // 节点中心发光点
+                        ctx.beginPath();
+                        ctx.arc(n.projX, n.projY, size * 0.25, 0, Math.PI * 2);
+                        ctx.fillStyle = n.isHighlighted ? '#14B8A6' : 'rgba(20, 184, 166, 0.7)';
+                        ctx.fill();
+
+                        // 绘制节点标签 text
+                        ctx.font = `bold ${Math.max(9, Math.round(11 * n.projScale))}px sans-serif`;
+                        ctx.fillStyle = n.isHighlighted ? '#14B8A6' : '#E2E8F0';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(n.label, n.projX, n.projY - size - 7);
+                    }
+                },
+
+                // 逻辑门沙盒仿真概念插图绘制 (Logic Canvas Visualizer)
+                drawLogicGateMock(ctx, width, height) {
+                    ctx.font = '13px monospace';
+                    ctx.fillStyle = 'rgba(20, 184, 166, 0.15)';
+                    ctx.textAlign = 'center';
+                    
+                    // 绘制赛博朋克晶圆导线流
+                    let cy = height * 0.25;
+                    ctx.strokeStyle = 'rgba(20, 184, 166, 0.08)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    for(let i = 0; i < 4; i++) {
+                        ctx.moveTo(60, cy - 40 + i*25);
+                        ctx.lineTo(width - 60, cy - 40 + i*25);
+                    }
+                    ctx.stroke();
+
+                    // 绘制晶体逻辑门
+                    const gates = [
+                        { name: 'NOT Gate', x: width * 0.25, active: true },
+                        { name: 'AND Gate', x: width * 0.5, active: false },
+                        { name: 'OR Gate', x: width * 0.75, active: true }
+                    ];
+
+                    for (let g of gates) {
+                        ctx.shadowBlur = g.active ? 15 : 0;
+                        ctx.shadowColor = 'rgba(20, 184, 166, 0.5)';
+                        
+                        // 绘制门物理卡片
+                        ctx.fillStyle = g.active ? 'rgba(20, 184, 166, 0.08)' : 'rgba(15, 23, 42, 0.6)';
+                        ctx.strokeStyle = g.active ? '#14B8A6' : 'rgba(20, 184, 166, 0.15)';
+                        ctx.lineWidth = 1.5;
+                        
+                        ctx.beginPath();
+                        ctx.roundRect(g.x - 50, cy - 25, 100, 50, 8);
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+
+                        // 绘制文字
+                        ctx.fillStyle = g.active ? '#14B8A6' : '#64748B';
+                        ctx.font = 'bold 10px sans-serif';
+                        ctx.fillText(g.name, g.x, cy + 3);
+
+                        // 绘制信号节点
+                        ctx.beginPath();
+                        ctx.arc(g.x - 50, cy, 4, 0, Math.PI*2);
+                        ctx.arc(g.x + 50, cy, 4, 0, Math.PI*2);
+                        ctx.fillStyle = g.active ? '#14B8A6' : '#475569';
+                        ctx.fill();
+                    }
+                    
+                    // 命题翻译字符
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.fillStyle = '#14B8A6';
+                    ctx.fillText(`“ 数理逻辑电路映射: ${this.logicFormula} ”`, width/2, cy + 55);
+                },
+
+                // --- 2D / 3D Canvas 鼠标手势交互与控制中心 ---
+                handleCanvasMouseDown(e) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+
+                    this.isMouseDown = true;
+                    this.lastMousePos.x = mx;
+                    this.lastMousePos.y = my;
+
+                    if (this.currentTab !== 'graph' && this.currentTab !== 'relation') return;
+
+                    // 检查是否点中了节点
+                    let clicked = null;
+                    for (let n of this.graphData.nodes) {
+                        let dx = n.projX - mx;
+                        let dy = n.projY - my;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        let size = 16 * n.projScale * this.camera.zoom;
+                        if (dist <= size + 5) {
+                            clicked = n;
+                            break;
+                        }
+                    }
+
+                    if (clicked) {
+                        clicked.isDragging = true;
+                        this.dragNode = clicked;
+                        
+                        // 交互选中处理
+                        if (e.button === 0) { // 左键选中寻路端点
+                            if (this.dijkstraStart === null) {
+                                this.dijkstraStart = clicked.id;
+                            } else if (this.dijkstraEnd === null && clicked.id !== this.dijkstraStart) {
+                                this.dijkstraEnd = clicked.id;
+                                this.runDijkstra();
+                            } else {
+                                this.dijkstraStart = clicked.id;
+                                this.dijkstraEnd = null;
+                                // 清除之前的高亮
+                                this.clearHighlights();
+                            }
+                            // 自身高亮
+                            this.clearHighlights();
+                            clicked.isHighlighted = true;
+                        }
+                    }
+                },
+
+                handleCanvasMouseMove(e) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+
+                    const dx = mx - this.lastMousePos.x;
+                    const dy = my - this.lastMousePos.y;
+                    this.lastMousePos.x = mx;
+                    this.lastMousePos.y = my;
+
+                    if (!this.isMouseDown) {
+                        // 悬浮判定
+                        if (this.currentTab === 'graph' || this.currentTab === 'relation') {
+                            this.hoveredNode = null;
+                            for (let n of this.graphData.nodes) {
+                                let dist = Math.sqrt((n.projX - mx)**2 + (n.projY - my)**2);
+                                let size = 16 * n.projScale * this.camera.zoom;
+                                if (dist <= size + 5) {
+                                    this.hoveredNode = n;
+                                    break;
+                                }
+                            }
+                        }
+                        return;
+                    }
+
+                    if (this.dragNode) {
+                        // 拖拽移动节点位置 (基于反投影投影坐标增量计算)
+                        if (this.graphSettings.enable3D && this.currentTab === 'graph') {
+                            // 3D拖动稍微受限，仅在投影面上平移
+                            this.dragNode.x += dx / (this.camera.zoom * this.dragNode.projScale);
+                            this.dragNode.y += dy / (this.camera.zoom * this.dragNode.projScale);
+                        } else {
+                            this.dragNode.x += dx / this.camera.zoom;
+                            this.dragNode.y += dy / this.camera.zoom;
+                        }
+                        this.dragNode.vx = 0;
+                        this.dragNode.vy = 0;
+                    } else {
+                        // 相机或者 3D 视角拖拽旋转
+                        if (this.graphSettings.enable3D && this.currentTab === 'graph') {
+                            this.camera.rotY += dx * 0.007;
+                            this.camera.rotX += dy * 0.007;
+                            // 限制仰角
+                            this.camera.rotX = Math.max(-1.4, Math.min(1.4, this.camera.rotX));
+                        } else {
+                            this.camera.x += dx;
+                            this.camera.y += dy;
+                        }
+                    }
+                },
+
+                handleCanvasMouseUp() {
+                    this.isMouseDown = false;
+                    if (this.dragNode) {
+                        this.dragNode.isDragging = false;
+                        this.dragNode = null;
+                    }
+                },
+
+                handleCanvasWheel(e) {
+                    e.preventDefault();
+                    let zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+                    this.camera.zoom = Math.max(0.2, Math.min(4, this.camera.zoom * zoomFactor));
+                },
+
+                // 双击空白处创建节点，双击节点将其删除
+                handleCanvasDblClick(e) {
+                    if (this.currentTab !== 'graph') return;
+                    const rect = this.canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+
+                    // 判断是否双击了节点
+                    let doubleClickedNode = null;
+                    for (let n of this.graphData.nodes) {
+                        let dist = Math.sqrt((n.projX - mx)**2 + (n.projY - my)**2);
+                        let size = 16 * n.projScale * this.camera.zoom;
+                        if (dist <= size + 5) {
+                            doubleClickedNode = n;
+                            break;
+                        }
+                    }
+
+                    if (doubleClickedNode) {
+                        // 1. 删除节点
+                        const index = this.graphData.nodes.indexOf(doubleClickedNode);
+                        this.graphData.nodes.splice(index, 1);
+                        // 删除该节点关联的所有边
+                        this.graphData.edges = this.graphData.edges.filter(
+                            edge => edge.source !== doubleClickedNode.id && edge.target !== doubleClickedNode.id
+                        );
+                        if (this.dijkstraStart === doubleClickedNode.id) this.dijkstraStart = null;
+                        if (this.dijkstraEnd === doubleClickedNode.id) this.dijkstraEnd = null;
+                        this.clearHighlights();
+                    } else {
+                        // 2. 创建节点 (根据当前视角反投影出 2D 坐标)
+                        let newX = (mx - this.camera.x) / this.camera.zoom;
+                        let newY = (my - this.camera.y) / this.camera.zoom;
+                        
+                        // 生成新标签 (A-Z)
+                        let labelCode = 65 + (this.graphData.nodes.length % 26);
+                        let label = String.fromCharCode(labelCode);
+                        if (this.graphData.nodes.length >= 26) {
+                            label += Math.floor(this.graphData.nodes.length / 26);
+                        }
+
+                        let newId = Date.now().toString() + Math.random().toString(36).substr(2, 4);
+                        let newNode = {
+                            id: newId,
+                            label: label,
+                            x: newX,
+                            y: newY,
+                            z: 0,
+                            vx: 0, vy: 0, vz: 0,
+                            isDragging: false,
+                            isHighlighted: false
+                        };
+
+                        this.graphData.nodes.push(newNode);
+
+                        // 自动与最近的 1-2 个节点连线，让图拓扑更有连接性
+                        if (this.graphData.nodes.length > 1) {
+                            let distances = this.graphData.nodes
+                                .filter(n => n.id !== newId)
+                                .map(n => ({
+                                    id: n.id,
+                                    d: Math.sqrt((n.x - newNode.x)**2 + (n.y - newNode.y)**2)
+                                }))
+                                .sort((a, b) => a.d - b.d);
+                            
+                            // 连接最近的一个节点
+                            let targetId = distances[0].id;
+                            let weight = Math.floor(Math.random() * 9) + 2;
+                            this.graphData.edges.push({
+                                id: Math.random().toString(),
+                                source: newNode.id,
+                                target: targetId,
+                                weight: weight,
+                                isHighlighted: false
+                            });
+                        }
+                    }
+                },
+
+                // --- 经典拓扑图模板加载器 ---
+                loadGraphTemplate(type) {
+                    this.clearGraph();
+                    this.clearHighlights();
+                    
+                    const nodes = [];
+                    const edges = [];
+
+                    if (type === 'petersen') {
+                        // 佩特森图 (阶数=10, 边数=15)
+                        const R_outer = 160;
+                        const R_inner = 80;
+                        
+                        // 外圈节点 A-E
+                        for(let i=0; i<5; i++) {
+                            let angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                            nodes.push({
+                                id: `o${i}`, label: String.fromCharCode(65 + i), // A, B, C, D, E
+                                x: R_outer * Math.cos(angle),
+                                y: R_outer * Math.sin(angle),
+                                z: 0, vx: 0, vy: 0, vz: 0
+                            });
+                        }
+                        // 内圈节点 F-J
+                        for(let i=0; i<5; i++) {
+                            let angle = (i * 2 * Math.PI / 5) - Math.PI / 2;
+                            nodes.push({
+                                id: `i${i}`, label: String.fromCharCode(70 + i), // F, G, H, I, J
+                                x: R_inner * Math.cos(angle),
+                                y: R_inner * Math.sin(angle),
+                                z: 30, vx: 0, vy: 0, vz: 0
+                            });
+                        }
+
+                        // 外圈环形连接
+                        for(let i=0; i<5; i++) {
+                            edges.push({ id: `eo${i}`, source: `o${i}`, target: `o${(i+1)%5}`, weight: 3 });
+                        }
+                        // 内圈星形连接 (隔一步连)
+                        for(let i=0; i<5; i++) {
+                            edges.push({ id: `ei${i}`, source: `i${i}`, target: `i${(i+2)%5}`, weight: 4 });
+                        }
+                        // 内外对应相连
+                        for(let i=0; i<5; i++) {
+                            edges.push({ id: `em${i}`, source: `o${i}`, target: `i${i}`, weight: 5 });
+                        }
+
+                    } else if (type === 'klein') {
+                        // 拓扑克莱因环结构 (3D 透视下最震撼)
+                        const count = 12;
+                        const radius = 130;
+                        const pipeRadius = 45;
+
+                        for (let i = 0; i < count; i++) {
+                            let theta = i * 2 * Math.PI / count;
+                            let cx = radius * Math.cos(theta);
+                            let cy = radius * Math.sin(theta);
+
+                            nodes.push({
+                                id: `k${i}`,
+                                label: String.fromCharCode(65 + (i % 26)),
+                                x: cx + pipeRadius * Math.cos(theta * 2),
+                                y: cy + pipeRadius * Math.sin(theta * 2),
+                                z: pipeRadius * Math.sin(theta),
+                                vx: 0, vy: 0, vz: 0
+                            });
+                        }
+
+                        for (let i = 0; i < count; i++) {
+                            edges.push({ id: `ek1_${i}`, source: `k${i}`, target: `k${(i+1)%count}`, weight: Math.floor(Math.random() * 5) + 3 });
+                            edges.push({ id: `ek2_${i}`, source: `k${i}`, target: `k${(i+3)%count}`, weight: Math.floor(Math.random() * 8) + 4 });
+                        }
+
+                    } else if (type === 'tree') {
+                        // 三层二叉层次树
+                        const levels = [
+                            { count: 1, y: -160, prefix: 'ROOT' },
+                            { count: 2, y: -60, prefix: 'L' },
+                            { count: 4, y: 40, prefix: 'SL' },
+                            { count: 8, y: 140, prefix: 'LEAF' }
+                        ];
+
+                        let nodeIdCounter = 0;
+                        let lastLevelNodes = [];
+
+                        for (let lvl = 0; lvl < levels.length; lvl++) {
+                            let currentLevelNodes = [];
+                            let wGap = 320 / (levels[lvl].count + 1);
+                            
+                            for (let i = 0; i < levels[lvl].count; i++) {
+                                let nodeId = `t${nodeIdCounter++}`;
+                                let label = levels[lvl].prefix + (i + 1);
+                                if (lvl === 0) label = 'R';
+                                else label = String.fromCharCode(65 + nodeIdCounter);
+
+                                let node = {
+                                    id: nodeId,
+                                    label: label,
+                                    x: -160 + (i + 1) * wGap + (Math.random() - 0.5) * 10,
+                                    y: levels[lvl].y,
+                                    z: -10 * lvl,
+                                    vx: 0, vy: 0, vz: 0
+                                };
+                                nodes.push(node);
+                                currentLevelNodes.push(node);
+
+                                // 父子连接
+                                if (lvl > 0) {
+                                    let parentIdx = Math.floor(i / 2);
+                                    let parent = lastLevelNodes[parentIdx];
+                                    if (parent) {
+                                        edges.push({
+                                            id: `et_${nodeId}`,
+                                            source: parent.id,
+                                            target: node.id,
+                                            weight: Math.floor(Math.random()*6) + 2
+                                        });
+                                    }
+                                }
+                            }
+                            lastLevelNodes = currentLevelNodes;
+                        }
+
+                    } else if (type === 'grid') {
+                        // 赛博 4x4 网格拓扑
+                        const size = 3; // 4x4
+                        const step = 85;
+                        const startX = -120;
+                        const startY = -120;
+
+                        for(let r = 0; r <= size; r++) {
+                            for(let c = 0; c <= size; c++) {
+                                let label = String.fromCharCode(65 + (r*4 + c) % 26);
+                                nodes.push({
+                                    id: `g_${r}_${c}`,
+                                    label: label,
+                                    x: startX + c * step,
+                                    y: startY + r * step,
+                                    z: (r + c) * 12,
+                                    vx: 0, vy: 0, vz: 0
+                                });
+                            }
+                        }
+
+                        for(let r = 0; r <= size; r++) {
+                            for(let c = 0; c <= size; c++) {
+                                if (c < size) {
+                                    edges.push({
+                                        id: `egh_${r}_${c}`,
+                                        source: `g_${r}_${c}`,
+                                        target: `g_${r}_${c+1}`,
+                                        weight: Math.floor(Math.random() * 5) + 2
+                                    });
+                                }
+                                if (r < size) {
+                                    edges.push({
+                                        id: `egv_${r}_${c}`,
+                                        source: `g_${r}_${c}`,
+                                        target: `g_${r+1}_${c}`,
+                                        weight: Math.floor(Math.random() * 5) + 2
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    this.graphData.nodes = nodes;
+                    this.graphData.edges = edges;
+                },
+
+                clearGraph() {
+                    this.graphData.nodes = [];
+                    this.graphData.edges = [];
+                    this.particles = [];
+                    this.dijkstraStart = null;
+                    this.dijkstraEnd = null;
+                },
+
+                clearHighlights() {
+                    for (let n of this.graphData.nodes) n.isHighlighted = false;
+                    for (let e of this.graphData.edges) {
+                        e.isHighlighted = false;
+                        e.isTreeEdge = false;
+                        e.isPathEdge = false;
+                    }
+                    this.particles = [];
+                },
+
+                toggleForceLayout() {
+                    this.graphSettings.forceEnabled = !this.graphSettings.forceEnabled;
+                },
+
+                // Dijkstra 高亮粒子松弛算法
+                runDijkstra() {
+                    if (this.dijkstraStart === null || this.dijkstraEnd === null) {
+                        alert("请在控制栏或画布中双击选择起点和终点！");
+                        return;
+                    }
+                    this.clearHighlights();
+
+                    const nodes = this.graphData.nodes;
+                    const edges = this.graphData.edges;
+                    
+                    // Dijkstra 邻接解算
+                    const dist = {};
+                    const prev = {};
+                    const queue = [];
+
+                    for (let n of nodes) {
+                        dist[n.id] = Infinity;
+                        prev[n.id] = null;
+                        queue.push(n.id);
+                    }
+                    dist[this.dijkstraStart] = 0;
+
+                    while (queue.length > 0) {
+                        // 寻找最小距离节点
+                        queue.sort((a, b) => dist[a] - dist[b]);
+                        let u = queue.shift();
+
+                        if (u === this.dijkstraEnd) break;
+                        if (dist[u] === Infinity) break;
+
+                        // 遍历邻接点
+                        let neighbors = edges.filter(e => e.source === u || e.target === u);
+                        for (let edge of neighbors) {
+                            let v = edge.source === u ? edge.target : edge.source;
+                            if (!queue.includes(v)) continue;
+
+                            let alt = dist[u] + edge.weight;
+                            if (alt < dist[v]) {
+                                dist[v] = alt;
+                                prev[v] = u;
+                            }
+                        }
+                    }
+
+                    // 还原最短路径路径
+                    const path = [];
+                    let curr = this.dijkstraEnd;
+                    while (curr !== null) {
+                        path.unshift(curr);
+                        curr = prev[curr];
+                    }
+
+                    if (path[0] !== this.dijkstraStart) {
+                        alert("此网络拓扑非连通，起点与终点间不存在通路！");
+                        return;
+                    }
+
+                    // 高亮路径的顶点和边
+                    for (let i = 0; i < path.length; i++) {
+                        let n = nodes.find(x => x.id === path[i]);
+                        if (n) n.isHighlighted = true;
+
+                        if (i < path.length - 1) {
+                            let edge = edges.find(
+                                e => (e.source === path[i] && e.target === path[i+1]) || 
+                                     (e.source === path[i+1] && e.target === path[i])
+                            );
+                            if (edge) edge.isPathEdge = true;
+                        }
+                    }
+
+                    // 在起点注入流光霓虹粒子
+                    let uId = path[0];
+                    let vId = path[1];
+                    let sNode = nodes.find(n => n.id === uId);
+                    let tNode = nodes.find(n => n.id === vId);
+
+                    this.particles.push({
+                        path: path,
+                        pathIndex: 0,
+                        sourceNode: sNode,
+                        targetNode: tNode,
+                        progress: 0,
+                        speed: 0.03
+                    });
+                },
+
+                // Kruskal 最小生成树算法实现
+                runMST() {
+                    this.clearHighlights();
+                    const nodes = this.graphData.nodes;
+                    const edges = [...this.graphData.edges].sort((a, b) => a.weight - b.weight);
+
+                    if (nodes.length === 0) return;
+
+                    // 并查集实现
+                    const parent = {};
+                    for (let n of nodes) parent[n.id] = n.id;
+
+                    const findSet = (id) => {
+                        if (parent[id] === id) return id;
+                        return parent[id] = findSet(parent[id]);
+                    };
+
+                    const unionSet = (id1, id2) => {
+                        let root1 = findSet(id1);
+                        let root2 = findSet(id2);
+                        if (root1 !== root2) {
+                            parent[root1] = root2;
+                            return true;
+                        }
+                        return false;
+                    };
+
+                    let count = 0;
+                    for (let e of edges) {
+                        if (unionSet(e.source, e.target)) {
+                            // 将原图中的这条边高亮标记为树枝
+                            let originalEdge = this.graphData.edges.find(x => x.id === e.id);
+                            if (originalEdge) originalEdge.isTreeEdge = true;
+
+                            let uNode = nodes.find(n => n.id === e.source);
+                            let vNode = nodes.find(n => n.id === e.target);
+                            if (uNode) uNode.isHighlighted = true;
+                            if (vNode) vNode.isHighlighted = true;
+
+                            count++;
+                            if (count === nodes.length - 1) break;
+                        }
+                    }
+                },
+
+                // 旅行商 TSP 启发式遗传优化可视化
+                runTSP() {
+                    if (this.tspRunning) return;
+                    this.tspRunning = true;
+                    this.clearGraph();
+
+                    // 1. 随机生成 12 个二维分布的城市节点
+                    const nodes = [];
+                    const cityNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                    for(let i=0; i<12; i++) {
+                        nodes.push({
+                            id: `city_${i}`,
+                            label: cityNames[i],
+                            x: (Math.random() - 0.5) * 320,
+                            y: (Math.random() - 0.5) * 320,
+                            z: 0, vx:0, vy:0, vz:0
+                        });
+                    }
+                    this.graphData.nodes = nodes;
+
+                    // 2. 局部 2-Opt 启发式高频收敛迭代
+                    let path = Array.from({ length: 12 }, (_, i) => i);
+                    
+                    // 计算路径总开销
+                    const getDistance = (i1, i2) => {
+                        let c1 = nodes[i1];
+                        let c2 = nodes[i2];
+                        return Math.sqrt((c1.x - c2.x)**2 + (c1.y - c2.y)**2);
+                    };
+                    const getPathCost = (p) => {
+                        let sum = 0;
+                        for(let i=0; i<p.length; i++) {
+                            sum += getDistance(p[i], p[(i+1)%p.length]);
+                        }
+                        return sum;
+                    };
+
+                    let iter = 0;
+                    const interval = setInterval(() => {
+                        let improved = false;
+                        
+                        // 执行一次 2-Opt 邻域搜索
+                        for (let i = 1; i < path.length - 1; i++) {
+                            for (let k = i + 1; k < path.length; k++) {
+                                // 逆转 i 到 k 之间的路径
+                                let newPath = [...path];
+                                let sub = newPath.slice(i, k + 1).reverse();
+                                newPath.splice(i, sub.length, ...sub);
+                                
+                                if (getPathCost(newPath) < getPathCost(path)) {
+                                    path = newPath;
+                                    improved = true;
+                                    break;
+                                }
+                            }
+                            if (improved) break;
+                        }
+
+                        // 将当前寻优路径呈现在 Canvas 连线上
+                        const edges = [];
+                        for(let i=0; i<path.length; i++) {
+                            edges.push({
+                                id: `tsp_${i}`,
+                                source: nodes[path[i]].id,
+                                target: nodes[path[(i+1)%path.length]].id,
+                                isTreeEdge: true // 用蓝色高亮
+                            });
+                        }
+                        this.graphData.edges = edges;
+
+                        iter++;
+                        if (!improved || iter > 100) {
+                            clearInterval(interval);
+                            this.tspRunning = false;
+                            for (let n of this.graphData.nodes) n.isHighlighted = true;
+                        }
+                    }, 80);
+                },
+
+                // 统计拓扑结构参数
+                calcConnectedComponents() {
+                    const nodes = this.graphData.nodes;
+                    if (nodes.length === 0) return 0;
+                    const edges = this.graphData.edges;
+
+                    const visited = {};
+                    for (let n of nodes) visited[n.id] = false;
+
+                    const dfs = (id) => {
+                        visited[id] = true;
+                        let neighbors = edges.filter(e => e.source === id || e.target === id);
+                        for (let edge of neighbors) {
+                            let next = edge.source === id ? edge.target : edge.source;
+                            if (visited[next] === false) {
+                                dfs(next);
+                            }
+                        }
+                    };
+
+                    let count = 0;
+                    for (let n of nodes) {
+                        if (visited[n.id] === false) {
+                            dfs(n.id);
+                            count++;
+                        }
+                    }
+                    return count;
+                },
+
+                isEulerian() {
+                    // 半欧拉图判定：奇数度顶点的个数是 0 或者是 2
+                    const nodes = this.graphData.nodes;
+                    if (nodes.length === 0) return false;
+                    const edges = this.graphData.edges;
+
+                    let oddDegreeCount = 0;
+                    for (let n of nodes) {
+                        let degree = edges.filter(e => e.source === n.id || e.target === n.id).length;
+                        if (degree % 2 !== 0) oddDegreeCount++;
+                    }
+                    return oddDegreeCount === 0 || oddDegreeCount === 2;
+                },
+
+
+                // --- 模块二：数理逻辑运算逻辑 ---
+                insertOp(op) {
+                    this.logicFormula += op;
+                    this.evaluateLogic();
+                },
+
+                // 中缀逻辑解析器与真值表范式演算
+                evaluateLogic() {
+                    this.logicError = null;
+                    const formula = this.logicFormula.replace(/\s+/g, '');
+                    if (!formula) {
+                        this.truthTableData = { headers: [], rows: [] };
+                        this.pdnfFormula = '';
+                        this.pcnfFormula = '';
+                        return;
+                    }
+
+                    try {
+                        // 1. 词法提取独立变量 (支持 P, Q, R, S)
+                        const vars = [...new Set(formula.match(/[PQRS]/g) || [])].sort();
+                        if (vars.length === 0) {
+                            throw new Error("命题未检测到有效的逻辑变量 (P, Q, R, S)！");
+                        }
+
+                        // 2. 生成 2^N 种二进制真值状态
+                        const rowCount = Math.pow(2, vars.length);
+                        const rows = [];
+                        const pdnfTerms = [];
+                        const pcnfTerms = [];
+
+                        // 表达式词法分词并转后缀
+                        const tokens = this.tokenize(formula);
+                        const rpn = this.shuntingYard(tokens);
+
+                        for(let i = 0; i < rowCount; i++) {
+                            // 构造变元真值字典
+                            const state = {};
+                            const rowVals = [];
+                            for(let j = 0; j < vars.length; j++) {
+                                // 高位对应字典序在前的变量
+                                const val = ((i >> (vars.length - 1 - j)) & 1) === 1;
+                                state[vars[j]] = val;
+                                rowVals.push(val);
+                            }
+
+                            // 求解后缀表达式真值
+                            const res = this.evalRPN(rpn, state);
+                            rowVals.push(res);
+                            rows.push(rowVals);
+
+                            // 累加主范式积项/和项
+                            if (res) {
+                                // 极小项 (PDNF)
+                                let minterm = vars.map((v, idx) => {
+                                    return state[v] ? v : `¬${v}`;
+                                }).join(' ∧ ');
+                                pdnfTerms.push(`(${minterm})`);
+                            } else {
+                                // 极大项 (PCNF)
+                                let maxterm = vars.map((v, idx) => {
+                                    return state[v] ? `¬${v}` : v;
+                                }).join(' ∨ ');
+                                pcnfTerms.push(`(${maxterm})`);
+                            }
+                        }
+
+                        // 3. 装填响应式结果
+                        this.truthTableData = {
+                            headers: [...vars, 'F'],
+                            rows: rows
+                        };
+
+                        // 主析取/合取范式文字输出与 KaTeX 化
+                        this.pdnfFormula = pdnfTerms.length > 0 ? pdnfTerms.join(' ∨ ') : '∅ (永假式)';
+                        this.pcnfFormula = pcnfTerms.length > 0 ? pcnfTerms.join(' ∧ ') : '∅ (永真式)';
+
+                        this.$nextTick(() => {
+                            this.renderMath();
+                        });
+
+                    } catch (e) {
+                        this.logicError = `解析异常: ${e.message}`;
+                    }
+                },
+
+                // 词法解析分词
+                tokenize(str) {
+                    const tokens = [];
+                    let idx = 0;
+                    while (idx < str.length) {
+                        let c = str[idx];
+                        if (c === '(' || c === ')' || c === '¬' || c === '∧' || c === '∨' || c === '→' || c === '↔') {
+                            tokens.push(c);
+                            idx++;
+                        } else if (/[PQRS]/.test(c)) {
+                            tokens.push(c);
+                            idx++;
+                        } else {
+                            throw new Error(`未知的非规范字符: ${c}`);
+                        }
+                    }
+                    return tokens;
+                },
+
+                // 双栈 Shunting-Yard 后缀转换
+                shuntingYard(tokens) {
+                    const output = [];
+                    const ops = [];
+                    const prec = { '¬': 4, '∧': 3, '∨': 2, '→': 1, '↔': 0 };
+
+                    for (let token of tokens) {
+                        if (/[PQRS]/.test(token)) {
+                            output.push(token);
+                        } else if (token === '(') {
+                            ops.push(token);
+                        } else if (token === ')') {
+                            while (ops.length > 0 && ops[ops.length - 1] !== '(') {
+                                output.push(ops.pop());
+                            }
+                            if (ops.length === 0) throw new Error("括号括号不匹配！");
+                            ops.pop(); // 弹出 '('
+                        } else {
+                            // 操作符
+                            while (
+                                ops.length > 0 && 
+                                ops[ops.length - 1] !== '(' && 
+                                prec[ops[ops.length - 1]] >= prec[token]
+                            ) {
+                                output.push(ops.pop());
+                            }
+                            ops.push(token);
+                        }
+                    }
+
+                    while (ops.length > 0) {
+                        let op = ops.pop();
+                        if (op === '(') throw new Error("括号括号不匹配！");
+                        output.push(op);
+                    }
+                    return output;
+                },
+
+                // 后缀逆波兰状态求值
+                evalRPN(rpn, state) {
+                    const stack = [];
+                    for (let token of rpn) {
+                        if (/[PQRS]/.test(token)) {
+                            stack.push(state[token]);
+                        } else if (token === '¬') {
+                            if (stack.length < 1) throw new Error("非操作符算子缺少参数！");
+                            let val = stack.pop();
+                            stack.push(!val);
+                        } else {
+                            // 双目算子
+                            if (stack.length < 2) throw new Error("双目操作符算子缺少参数！");
+                            let r = stack.pop();
+                            let l = stack.pop();
+                            if (token === '∧') {
+                                stack.push(l && r);
+                            } else if (token === '∨') {
+                                stack.push(l || r);
+                            } else if (token === '→') {
+                                // 单条件: l → r 判定为 !l || r
+                                stack.push(!l || r);
+                            } else if (token === '↔') {
+                                // 双条件
+                                stack.push(l === r);
+                            }
+                        }
+                    }
+                    if (stack.length !== 1) throw new Error("操作算子与变量比例失衡！");
+                    return stack[0];
+                },
+
+
+                // --- 模块三：关系论与哈斯图解算 ---
+                updateRelation() {
+                    try {
+                        const setElements = this.relationInput.setA.split(',')
+                            .map(x => x.trim())
+                            .filter(x => x.length > 0);
+                        
+                        if (setElements.length === 0) {
+                            throw new Error("集合 A 不能为空");
+                        }
+
+                        // 解析二元关系 R, 输入格式形如: (1,1),(2,2),(1,2)
+                        const relString = this.relationInput.relR.replace(/\s+/g, '');
+                        const relRegex = /\(([^)]+)\)/g;
+                        let match;
+                        const relPairs = [];
+
+                        while ((match = relRegex.exec(relString)) !== null) {
+                            let parts = match[1].split(',');
+                            if (parts.length === 2) {
+                                relPairs.push([parts[0].trim(), parts[1].trim()]);
+                            }
+                        }
+
+                        // 过滤出不在集合 A 中的元素对
+                        const validPairs = relPairs.filter(p => setElements.includes(p[0]) && setElements.includes(p[1]));
+
+                        // 1. 构建布尔关系矩阵 M
+                        const N = setElements.length;
+                        const matrix = Array.from({ length: N }, () => Array(N).fill(false));
+                        const elemIdx = {};
+                        setElements.forEach((el, idx) => { elemIdx[el] = idx; });
+
+                        for (let pair of validPairs) {
+                            let r = elemIdx[pair[0]];
+                            let c = elemIdx[pair[1]];
+                            matrix[r][c] = true;
+                        }
+
+                        // 2. 关系性质诊断
+                        // A. 自反性
+                        let refl = true;
+                        for (let i = 0; i < N; i++) if (!matrix[i][i]) refl = false;
+                        
+                        // B. 对称性
+                        let symm = true;
+                        for (let i = 0; i < N; i++) {
+                            for (let j = 0; j < N; j++) {
+                                if (matrix[i][j] !== matrix[j][i]) symm = false;
+                            }
+                        }
+
+                        // C. 反对称性
+                        let antisymm = true;
+                        for (let i = 0; i < N; i++) {
+                            for (let j = 0; j < N; j++) {
+                                if (i !== j && matrix[i][j] && matrix[j][i]) antisymm = false;
+                            }
+                        }
+
+                        // D. 传递性
+                        let trans = true;
+                        for (let i = 0; i < N; i++) {
+                            for (let j = 0; j < N; j++) {
+                                for (let k = 0; k < N; k++) {
+                                    if (matrix[i][j] && matrix[j][k] && !matrix[i][k]) trans = false;
+                                }
+                            }
+                        }
+
+                        this.relationProps = {
+                            reflexive: refl,
+                            symmetric: symm,
+                            transitive: trans,
+                            antisymmetric: antisymm
+                        };
+
+                        // 关系大类诊断
+                        if (refl && symm && trans) {
+                            this.relationDiagnosis = "✨ 等价关系 (Equivalence Relation)";
+                        } else if (refl && antisymm && trans) {
+                            this.relationDiagnosis = "🕸️ 偏序关系 (Partial Order)";
+                        } else if (!refl && antisymm && trans) {
+                            this.relationDiagnosis = "📐 拟序关系 (Strict Partial Order)";
+                        } else {
+                            this.relationDiagnosis = "❌ 普通二元关系 (无特殊等价或偏序分类)";
+                        }
+
+                        // 3. 如果是偏序关系，我们在 Canvas 上绘制对应的 Hasse 拓扑图
+                        // (即使不是严格的偏序，为了课件展示，我们强制移除自环和冗余边，绘制一张伪哈斯拓扑图，避免程序崩溃)
+                        this.generateHasseGraph(setElements, matrix);
+
+                    } catch(e) {
+                        console.error("二元关系解析报错:", e);
+                    }
+                },
+
+                // 哈斯图 Hasse 传递收缩与分层排版算法
+                generateHasseGraph(elements, matrix) {
+                    const N = elements.length;
+                    const nodes = [];
+                    const edges = [];
+
+                    // 初始化顶点
+                    elements.forEach((el, idx) => {
+                        nodes.push({
+                            id: `h_${idx}`,
+                            label: el,
+                            x: 0, y: 0, z: 0,
+                            vx: 0, vy: 0, vz: 0,
+                            isHighlighted: false
+                        });
+                    });
+
+                    // A. 传递收缩 (Transitive Reduction)
+                    // 首先复制邻接关系，排除自环
+                    const adj = Array.from({ length: N }, () => Array(N).fill(false));
+                    for (let i = 0; i < N; i++) {
+                        for (let j = 0; j < N; j++) {
+                            if (i !== j) adj[i][j] = matrix[i][j];
+                        }
+                    }
+
+                    // 传递收缩：若存在间接通路，则删除直接通路边
+                    const reduced = Array.from({ length: N }, () => Array(N).fill(false));
+                    for (let i = 0; i < N; i++) {
+                        for (let j = 0; j < N; j++) {
+                            if (adj[i][j]) {
+                                // 检查从 i 到 j 是否存在长度大于等于 2 的间接路径
+                                let hasIndirect = false;
+                                for (let k = 0; k < N; k++) {
+                                    if (k !== i && k !== j && adj[i][k] && adj[k][j]) {
+                                        hasIndirect = true;
+                                        break;
+                                    }
+                                }
+                                if (!hasIndirect) {
+                                    reduced[i][j] = true;
+                                }
+                            }
+                        }
+                    }
+
+                    // B. 基于出入度的 DAG 最长距离拓扑分层 (Hasse Layering)
+                    const level = Array(N).fill(0);
+                    // 拓扑排序计算各节点层级
+                    const inDegree = Array(N).fill(0);
+                    for (let i = 0; i < N; i++) {
+                        for (let j = 0; j < N; j++) {
+                            if (reduced[i][j]) inDegree[j]++;
+                        }
+                    }
+
+                    const queue = [];
+                    for (let i = 0; i < N; i++) {
+                        if (inDegree[i] === 0) queue.push(i);
+                    }
+
+                    const topoOrder = [];
+                    while (queue.length > 0) {
+                        let u = queue.shift();
+                        topoOrder.push(u);
+                        for (let v = 0; v < N; v++) {
+                            if (reduced[u][v]) {
+                                inDegree[v]--;
+                                if (inDegree[v] === 0) queue.push(v);
+                            }
+                        }
+                    }
+
+                    // 计算 level 最长路径
+                    for (let u of topoOrder) {
+                        for (let v = 0; v < N; v++) {
+                            if (reduced[u][v]) {
+                                level[v] = Math.max(level[v], level[u] + 1);
+                            }
+                        }
+                    }
+
+                    // C. 坐标排布 (自底向上布局：小 level 在下，大 level 在上)
+                    const maxLevel = Math.max(...level, 0);
+                    const layers = Array.from({ length: maxLevel + 1 }, () => []);
+                    
+                    nodes.forEach((n, idx) => {
+                        layers[level[idx]].push(n);
+                    });
+
+                    // 布局尺寸常量
+                    const heightGap = 90;
+                    const canvasHeight = this.canvas ? this.canvas.height : 450;
+                    const startY = 120; // 离顶部的距离
+
+                    for (let L = 0; L <= maxLevel; L++) {
+                        let layerNodes = layers[L];
+                        let N_layer = layerNodes.length;
+                        let xStep = 240 / (N_layer + 1);
+
+                        layerNodes.forEach((node, idx) => {
+                            node.x = -120 + (idx + 1) * xStep + (Math.random() - 0.5)*3;
+                            // 层级自底向上
+                            node.y = startY + (maxLevel - L) * heightGap - (canvasHeight/2);
+                        });
+                    }
+
+                    // D. 构造边
+                    for (let i = 0; i < N; i++) {
+                        for (let j = 0; j < N; j++) {
+                            if (reduced[i][j]) {
+                                edges.push({
+                                    id: `he_${i}_${j}`,
+                                    source: `h_${i}`,
+                                    target: `h_${j}`,
+                                    isHighlighted: true // Hasse 连线发光
+                                });
+                            }
+                        }
+                    }
+
+                    // 高亮显示极小元和极大元
+                    nodes.forEach((n, idx) => {
+                        let isMinimal = true;
+                        let isMaximal = true;
+                        for (let i = 0; i < N; i++) {
+                            if (reduced[i][idx]) isMinimal = false;
+                            if (reduced[idx][i]) isMaximal = false;
+                        }
+                        if (isMinimal || isMaximal) {
+                            n.isHighlighted = true;
+                        }
+                    });
+
+                    this.graphData.nodes = nodes;
+                    this.graphData.edges = edges;
+                    this.graphSettings.forceEnabled = false; // 关闭力导向，保持 Hasse 图规整
+                },
+
+
+                // --- 模块四：离散测验控制 ---
+                answerQuiz(idx) {
+                    if (this.quizAnswered) return;
+                    this.selectedQuizAnswer = idx;
+                    this.quizAnswered = true;
+                    if (this.selectedQuizAnswer === this.quizData[this.currentQuizIndex].answer) {
+                        this.quizScore += 25; // 每题 25 分
+                    }
+                    this.$nextTick(() => {
+                        this.renderMath();
+                    });
+                },
+
+                getQuizOptClass(idx) {
+                    if (!this.quizAnswered) {
+                        return 'bg-slate-900 border-slate-800 hover:border-teal-500/30 text-slate-300';
+                    }
+                    const correctIdx = this.quizData[this.currentQuizIndex].answer;
+                    if (idx === correctIdx) {
+                        return 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400 font-bold';
+                    }
+                    if (idx === this.selectedQuizAnswer) {
+                        return 'bg-rose-500/10 border-rose-500/40 text-rose-400 font-bold';
+                    }
+                    return 'bg-slate-900 border-slate-900 text-slate-500 opacity-60';
+                },
+
+                nextQuiz() {
+                    this.quizAnswered = false;
+                    this.selectedQuizAnswer = null;
+                    if (this.currentQuizIndex < this.quizData.length - 1) {
+                        this.currentQuizIndex++;
+                    } else {
+                        // 重新开始挑战
+                        this.currentQuizIndex = 0;
+                        this.quizScore = 0;
+                    }
+                    this.$nextTick(() => {
+                        this.renderMath();
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
